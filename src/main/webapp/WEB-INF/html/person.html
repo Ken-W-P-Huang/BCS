@@ -1,0 +1,76 @@
+<html>
+<head>
+    <title></title>
+    <script type="text/javascript" src="/js/avalon.js"></script>
+    <script type="text/javascript" src="/js/jquery.js"></script>
+    <script type="text/javascript" src="/js/jquery-migrate.js"></script>
+    <!--[if lt IE 9]>
+    <script src="/js/json2.js"></script>
+    <![endif]-->
+    <script type="text/javascript" src="/js/bcs.js"></script>
+    <script>
+        BCS.loadPageInfo("/person/data")
+    </script>
+</head>
+<body>
+<div id="app"  ms-controller="box">
+    <h1>{{name}}</h1>
+    <h1>{{age}}</h1>
+    <button @click="openWindow" ms-click="openWindow">detail</button>
+<br/>    <button @click="openWindowWithSelf" ms-click="openWindowWithSelf">Self</button>
+    <button @click="openWindowWithblank" ms-click="openWindowWithblank">_blank</button>
+</div>
+<a href="detail?name=href&age=11">click me</a>
+<script type="text/javascript">
+    if(window.$page){
+//        const vm = new Vue({
+//            el:'#app',
+//            data:window.$page.data,
+//            methods:{
+//                openWindow(){
+//                    const pageData = {data:{name:'cyb',age:'1111111'},url:'detail?name=cyb&age=1111111'} //模拟ajax获取数据，
+//                    BCS.openWindow($page,'_self')
+//                }
+//            }
+//        })
+        var vm = avalon.define({
+            $id:'box',
+            name:window.$page.data.name,
+            age:window.$page.data.age,
+            openWindow:function () {
+                $.ajax({url:'detail/data?name=cyb&age=1111111',
+                    type:'GET',
+                    async:true,
+                    dataType:'text',
+                    success:function (data) {
+                        /*data的url属性可以在客户端构建也可以在服务器段构建*/
+                        BCS.openWindow(JSON.parse(data),'_self')
+                    }})
+
+            },
+            openWindowWithSelf:function () {
+                /**
+                 * 从ajax获取数据。url需要自行构建，如果是get则需要在url后构造get参数。这里故意将参数写错（name=yyyy），可见这里
+                 * url的作用只是获取html页面而已，并没有参与实际业务。进入detail页面后再次回车或者刷新会执行get请求，此时这些参数就会
+                 * 参与业务，更改页面信息。
+                 */
+                var newWindow = window.open("detail?name=yyyy&age=00","_self",'',false)
+                newWindow.name=JSON.stringify({url:"detail?name=test&age=00",
+                    data:{name:'aaa',age:'20'}})
+//                newWindow.$timestamp="hello_self"
+//                BCS.sessionData.set(BCS.PAGE_KEY,JSON.stringify({name:'aaa',age:'20'}))
+//                newWindow.$page={name:'aaa',age:'20'}
+            },
+            openWindowWithblank:function () {
+                var newWindow = window.open("detail?name=yyyy&age=00","_blank",'',false)
+                newWindow.name=JSON.stringify({url:"detail",
+                    data:{name:'aaa',age:'20'}})
+//                newWindow.$timestamp="hello_blank"
+//                BCS.sessionData.set(BCS.PAGE_KEY,JSON.stringify({name:'aaa',age:'20'}))
+//                newWindow.$page={name:'aaa',age:'20'}
+            }
+        })
+    }
+</script>
+</body>
+</html>
