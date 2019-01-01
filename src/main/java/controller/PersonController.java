@@ -1,21 +1,17 @@
-package controller;
+package com.easepal.controller;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.Map;
 
 /**
  * Created by kenhuang on 2018/10/17.
  */
 @Controller
-
 public class PersonController {
     @RequestMapping(value = "/person")
     public String authenticatePerson(){
@@ -25,9 +21,15 @@ public class PersonController {
 
     @RequestMapping(value = "/person/data")
 
-    public @ResponseBody Person getData() throws IOException {
+    public @ResponseBody Person getData(String name,String age) throws IOException {
         System.out.println("persondata");
-        return  new Person("aaa","2222");
+        if(name== null || "".equals(name)){
+            name="default";
+        }
+        if(age== null || "".equals(age)){
+            age="11";
+        }
+        return  new Person(name,age);
     }
     @RequestMapping(value = "/detail")
     public String authenticateDetail(){
@@ -50,6 +52,13 @@ public class PersonController {
         System.out.println("detail");
         return "pagedata";
     }
+
+    @RequestMapping(value = "/vue")
+    public String vue(){
+        System.out.println("vue");
+        return "vue";
+    }
+
 
 }
 class Detail{
