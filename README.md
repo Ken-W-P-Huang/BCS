@@ -11,7 +11,7 @@ This project is just a tiny demo of BC/S concept.
 The whole trick is in js/patch/bcs.js which make use of window.name parameter to pass data between different windows.
 
 For Get requests triggered by address bar or clicking refresh/back/forward button of browser or href in page content:
-1. At the beginning, browser make request to server. For example, http://127.0.0.1/person(might add some extra parms).
+1. At the beginning, browser make request to server. For example, http://127.0.0.1:8080/vue(might add some extra parms).
 2. The application server such as tomcat response to browser with corresponding page through method authenticatePerson
 in PersonController.java(same as below).Authentication & Authorization could be executed at the same time.
 3. After received the page, the browser will execute method loadPageInfo in bcs.js to load data of this page from server.
