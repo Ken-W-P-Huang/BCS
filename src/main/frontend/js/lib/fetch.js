@@ -1,47 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    <div ms-controller='app'>
-        <ul>
-            <li ms-for="(key,value) in @data">{{key}}-->{{value}}</li>
-        </ul>
-        <p>Hello,{{@aa}}!</p>
-
-    </div>
-</body>
-<script type="text/javascript">
-    String.prototype.toFirstUpperCase = function () {
-        return this.charAt(0).toUpperCase()+ this.slice(1);
-    }
-    window.HttpMethodEnum = {
-        'POST':'POST',
-        'DELETE':'DELETE',
-        'PUT':'PUT',
-        'GET':'GET',
-        'HEAD':'HEAD',
-        'TRACE':'TRACE',
-        'OPTIONS':'OPTIONS',
-        'PATCH':'PATCH'
-    }
-    Function.prototype.extend = function(superClass,publicObject,staticObject) {
-        if(typeof this  === 'function'){
-            if(typeof superClass === 'function' ){
-                var Super = function(){}
-                Super.prototype = superClass.prototype
-                this.prototype = new Super()
-                this.prototype.constructor = this
-            }
-            if(typeof publicObject === 'object'){
-                this.prototype.shallowCopy(publicObject)
-            }
-            if(typeof staticObject === 'object'){
-                this.shallowCopy(staticObject)
-            }
-        }
+(function(window,undefined) {
+    if(typeof  window.fetch === "function"){
+        return
     }
     var support = {
         searchParams: 'URLSearchParams' in window,
@@ -575,9 +534,9 @@
     function Response(body, init) {
         init = init||{}
         Body.call(this,body)
-        var type = ResponseTypeEnum.DEFAULT
-        var status = init.status
-        if (1223 === internal.status) {
+        var type = init.type || ResponseTypeEnum.DEFAULT
+        var status = init.status || 0
+        if (1223 === status) {
             status = 204
         }
         var ok = status >= 200 && status < 300
@@ -630,13 +589,127 @@
             return new Response(null, {status: status, headers: {location: url}})
         }
     }
-//    new Request('')
-//    try{
-//        new Request()
-//    }catch(e){
-//
-//    }
-    var a = new Response()
-    var c = new Request('',{cache:'default',credentials:'omit',method:'options',body:{1:2}})
-</script>
-</html>
+
+    function JSONP() {
+        var scriptNode = window.document.createElement('script')
+        var head = window.document.getElementsByTagName('head')[0]
+        scriptNode.open  = function (method,url) {
+            this.readyState = 1
+            url += (url.indexOf('?') === -1) ? '?' : '&'
+            this.src = url
+            this.status = 200
+            this.statusText = 'ok'
+            this.response = {}
+        }
+
+        scriptNode.getAllResponseHeaders = function () {
+            return ''
+        }
+        scriptNode.getResponseHeader = function (headerName) {
+            return null
+        }
+        scriptNode.send = function () {
+            this.readyState = 2
+            this.callbackFunctionName = this.jsonpCallback
+            if(this.jsonpCallback){
+                if(typeof window[this.callbackFunctionName] !== "function" ){
+                    throw new TypeError(this.callbackFunctionName + ' is not Function type')
+                }
+            }else{
+                this.callbackFunctionName = ('jsonp' + Math.random()).replace(/0\./, '')
+                this.callbackFunction = window[this.callbackFunctionName] = function (data) {
+                    this.response = data
+                }.bind(this)
+            }
+            this.src= this.src + 'jsonpCallback=' + this.callbackFunctionName
+            head.appendChild(this)
+        }
+        scriptNode.setRequestHeader = function (name, value) {
+            this[name] = value
+        }
+        scriptNode.abort = function () {
+           head.removeChild(this)
+           if(this.callbackFunction){
+               // IE8 throws an exception when you try to delete a property on window
+               // http://stackoverflow.com/a/1824228/751089
+               try {
+                   delete window[this.callbackFunctionName]
+               } catch (e) {
+                   window[this.callbackFunctionName] = undefined
+               }
+           }
+        }
+        return scriptNode
+    }
+
+// https://www.w3cschool.cn/fetch_api/fetch_api-6ls42k12.html
+        window.Headers = Headers
+        window.Request = Request
+        window.Response = Response
+        window.fetch = function (input, init) {
+            return new Promise(function (resolve,reject) {
+                var request,xhr,timer
+                function responseURL(xhr) {
+                    if ('responseURL' in xhr) {
+                        return xhr.responseURL
+                    }
+                    // Avoid security warnings on getResponseHeader when not allowed by CORS
+                    if (xhr.getResponseHeader && /^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
+                        return xhr.getResponseHeader('X-Request-URL')
+                    }
+                    return null
+                }
+                if (!input && (input instanceof Request)) {
+                    request = input
+                } else {
+                    request = new Request(input, init)
+                }
+                if (window.XMLHttpRequest) {
+                    xhr = new XMLHttpRequest()
+                    if (init instanceof Object && init.credentials === 'include') {
+                        xhr.withCredentials = true
+                    }
+                    xhr.onerror = function (error) {
+                        reject(error)
+                    }
+                } else {
+                    xhr = new window.ActiveXObject('Microsoft.XMLHTTP')
+                }
+                xhr.onload = xhr.onreadystatechange = function () {
+                    /*Chrome只要有应答都返回resolve*/
+                    if (xhr.readyState === 4) {
+                        // clearInterval(timer)
+                        var status = (xhr.status === 1223) ? 204 : xhr.status
+                        if (status < 100 || status > 599) {
+                            xhr.abort()
+                            reject(new TypeError('Network request failed'))
+                            return
+                        }
+                        var options = {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            headers: Headers.headers(xhr),
+                            url: responseURL(xhr)
+                        }
+                        var body = 'response' in xhr ? xhr.response : xhr.responseText
+                        xhr.abort()
+                        resolve(new Response(body, options))
+                    }
+                }
+
+                xhr.open(request.method, request.url, true)
+                request.headers.forEach(function (value, name) {
+                    xhr.setRequestHeader(name, value)
+                })
+                xhr.send(request.getBody())
+                // if (typeof init.timeout === 'number') {
+                //     timer = setTimeout(function () {
+                //         xhr.abort()
+                //         reject(new TypeError('Network request timeout'))
+                //     }, init.timeout)
+                // }
+            })
+        }
+})(this)
+
+

@@ -28,10 +28,10 @@
 //                || navigator.userAgent.indexOf("compatible") > -1 && navigator.userAgent.indexOf("MSIE") > -1
 //                || navigator.userAgent.indexOf("Edge") > -1
 //                || (navigator.userAgent.indexOf('Trident') > -1 && userAgent.indexOf("rv:11.0") > -1)) {
-//                var pageInfo, newWindow = window.open('', WindowName.blank)
+//                var pageInfo, newWindow = window.open('', WindowNameEnum.blank)
 //            }
             $.ajax({url:'person/data',
-                type:HttpMethod.get,
+                type:HttpMethodEnum.get,
                 async:false,
                 dataType:'json',
                 success:function (data) {
@@ -40,8 +40,8 @@
                     data.data.age = 50
                     data.title = 'blank'
                     try{
-//                        BCS.openWindow(data,WindowName.blank,newWindow)
-                        BCS.openWindow(data,WindowName.blank)
+//                        BCS.openWindow(data,WindowNameEnum.blank,newWindow)
+                        BCS.openWindow(data,WindowNameEnum.blank)
                     }catch(e){
                         e.printStackTrace()
                     }
@@ -54,10 +54,10 @@
 //                || navigator.userAgent.indexOf("compatible") > -1 && navigator.userAgent.indexOf("MSIE") > -1
 //                || navigator.userAgent.indexOf("Edge") > -1
 //                || (navigator.userAgent.indexOf('Trident') > -1 && userAgent.indexOf("rv:11.0") > -1)) {
-//                var pageInfo, newWindow = window.open('', WindowName.self)
+//                var pageInfo, newWindow = window.open('', WindowNameEnum.self)
 //            }
             $.ajax({url:'person/data',
-                type:HttpMethod.get,
+                type:HttpMethodEnum.get,
                 async:false,
                 dataType:'json',
                 success:function (data) {
@@ -66,8 +66,8 @@
                     data.data.age = 100
                     data.title = 'self'
                     try{
-//                        BCS.openWindow(data,WindowName.self,newWindow)
-                        BCS.openWindow(data,WindowName.self)
+//                        BCS.openWindow(data,WindowNameEnum.self,newWindow)
+                        BCS.openWindow(data,WindowNameEnum.self)
                     }catch(e){
                         e.printStackTrace()
                     }

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        /*#test{*/
+            /*-sand-transform: rotate(45deg);*/
+            /*transform: rotate(45deg);*/
+        /*}*/
+    </style>
+
+    <script type="text/javascript" src="../js/BCS.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css">
+
+    <script type="text/javascript">
+        browser.applyPatches(PatchEnum.CSS3,PatchEnum.TRANSFORM,PatchEnum.PLACEHOLDER,PatchEnum.FETCH,PatchEnum.FETCH_JSONP)
+//        new Promise(function (resolve,reject) {
+//            var request
+//            if (window.XMLHttpRequest) {
+//                request = new XMLHttpRequest()
+//            } else {
+//                request = new ActiveXObject('Microsoft.XMLHTTP')
+//            }
+//            request.onreadystatechange = function () {
+//                if (request.readyState === 4) {
+//                    // 判断响应结果:
+//                    if (request.status === 200) {
+//                        return resolve(request.responseText);
+//                    } else {
+//                        return reject(request.status);
+//                    }
+//                } else {
+//
+//                }
+//            }
+//            request.open('GET', '/test.html');
+//            request.send();
+//        }).then(function(response) {
+//            alert(JSON.stringify(response))
+//
+//        })['catch'](function (error) {
+//            console.log(JSON.stringify(error))
+//        })
+        var request = new Request('/test.html')
+        fetch(request).then(function(response) {
+            return response.json()
+        }).then(function (data) {
+            console.log(JSON.stringify(data))
+        })['catch'](function (error) {
+            console.log(JSON.stringify(error))
+        })
+
+
+//        function ViewController(element) {
+//            BCSViewController.call(this,element)
+//            // get the canvas element using the DOM
+//            var canvas = document.getElementById('c');
+//            if (typeof FlashCanvas != "undefined") {
+//                canvas = FlashCanvas.initElement(canvas);
+//            }
+//            var redView = new BCSView2({ width:'100px',
+//                height:'100px',
+//                backgroundColor:'red'})
+//            this.getReady = function () {
+//                this.view.addSubView(redView)
+//                var blueView = new BCSView2()
+//                blueView.setStyle({
+//                    width:'100px',
+//                    height:'100px',
+//                    backgroundColor:'blue',
+//                    left:'500px',
+//                    top:'100px',
+//                    borderRadius:'10px',
+//                    behavior:'url(../js/PIE.htc)'
+//                })
+//                this.view.addSubView(blueView)
+//            }
+//            this.viewDidLoad = function () {
+//                this.draw()
+//                if(window.cssSandpaper){
+//                    cssSandpaper.setTransform(redView.layer, "rotate(25deg)")
+//                    cssSandpaper.setOpacity(redView.layer, 0.9)
+//                    cssSandpaper.setBoxShadow(redView.layer, "10px 10px 5px #ffcccc");
+//                    cssSandpaper.setGradient(redView.layer, "-sand-gradient(linear, center top, center bottom, from(#0000ff), to(#ff0000));")
+//                }else{
+//                    redView.setStyle({
+//                        transform:'skew(-17deg, 45deg) rotate(-125deg)'
+//                    })
+//                }
+//            }
+//
+//            this.draw = function () {
+//                Placeholders.enable()
+//                // Make sure we don't execute when canvas isn't supported
+//                if (canvas.getContext){
+//                    // use getContext to use the canvas for drawing
+//                    var ctx = canvas.getContext('2d');
+//                    // Draw shapes
+//                    for (i=0;i<4;i++){
+//                        for(j=0;j<3;j++){
+//                            ctx.beginPath();
+//                            var x          = 25+j*50;               // x coordinate
+//                            var y          = 25+i*50;               // y coordinate
+//                            var radius     = 20;                    // Arc radius
+//                            var startAngle = 0;                     // Starting point on circle
+//                            var endAngle   = Math.PI+(Math.PI*j)/2; // End point on circle
+//                            var clockwise  = i%2==0 ? false : true; // clockwise or anticlockwise
+//                            ctx.arc(x,y,radius,startAngle,endAngle, clockwise);
+//                            if (i>1){
+//                                ctx.fill();
+//                            } else {
+//                                ctx.stroke();
+//                            }
+//                        }
+//                    }
+//                } else {
+//                    alert('You need Safari or Firefox 1.5+ to see this demo.');
+//                }
+//
+//            }
+//        }
+//        ViewController.extend(BCSViewController)
+//        browser.runWith(ViewController,'app')
+//       fetch('/vue').then(function (response) {
+//           return response.text()
+//       }).then(function (body) {
+//           alert(body)
+//       })['catch'](function (error) {
+//           alert(JSON.stringify(error))
+//       })
+    </script>
+
+</head>
+<body>
+<div id="app" width="100%" height="100%">
+    <canvas id="c"  width="500" height="330" style="border:1px solid #000000;"></canvas>
+    <div id="test" style="background-color: aqua;width:100px;height:100px" ></div>
+    <p>
+        <label>Your email<br>
+            <input type="email" placeholder="my@email.com" name="email" style="padding: 0px 14px; line-height: 38px; height: 38px">
+        </label>
+    </p>
+</div>
+</body>
+</html>
+
+
+<!--<script src="../js/cssQuery-p.js"></script>-->
+<!--<script src="../js/sylvester.js"></script>-->
+<!--<script src="../js/EventHelpers.js"></script>-->
+<!--<script src="../js/cssSandpaper.js"></script>-->
+<!--//        window.onload =function () {-->
+<!--//            var redView = document.createElement('div')-->
+<!--//            redView.style.width = 100-->
+<!--//            redView.style.height = 100-->
+<!--//            redView.style.top = 200-->
+<!--//            redView.style.backgroundColor = 'green'-->
+<!--//            document.body.appendChild(redView)-->
+<!--//            cssSandpaper.setTransform(redView, "rotate(25deg) scale(2,2)")-->
+<!--//            cssSandpaper.setOpacity(redView, 0.9)-->
+<!--//            cssSandpaper.setBoxShadow(redView, "10px 10px 5px #ffcccc");-->
+<!--//            cssSandpaper.setGradient(redView, "-sand-gradient(linear, center top, center bottom, from(#0000ff), to(#ff0000));")-->
+<!--//        }-->

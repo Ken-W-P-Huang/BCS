@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/BC-S.iml" filepath="$PROJECT_DIR$/.idea/modules/BC-S.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/BC-S_main.iml" filepath="$PROJECT_DIR$/.idea/modules/BC-S_main.iml" group="BC-S" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/BC-S_test.iml" filepath="$PROJECT_DIR$/.idea/modules/BC-S_test.iml" group="BC-S" />
     </modules>
   </component>
 </project>

@@ -1,4 +1,4 @@
-package com.easepal.controller;
+package controller;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.springframework.stereotype.Controller;
@@ -57,6 +57,11 @@ public class PersonController {
     public String vue(){
         System.out.println("vue");
         return "vue";
+    }
+    @RequestMapping(value = "/test")
+    public String test(){
+        System.out.println("test");
+        return "test";
     }
 
 
