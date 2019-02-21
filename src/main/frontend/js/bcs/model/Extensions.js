@@ -13,6 +13,24 @@ function Extensions(window) {
      * https://stackoverflow.com/questions/21729895/jquery-conflict-with-native-prototype
      */
     function extendObject () {
+        Object.prototype.getClass = function () {
+            if (this.constructor && this.constructor.toString()) {
+                if(this.constructor.name) {
+                    return this.constructor.name;
+                }
+                var arr
+                var str = this.constructor.toString()
+                if(str.charAt(0) === '[') {
+                    arr = str.match(/\[\w+\s*(\w+)\]/)
+                } else {
+                    arr = str.match(/function\s*(\w+)/)
+                }
+                if (arr && arr.length ===2) {
+                    return arr[1]
+                }
+            }
+            return undefined
+        }
         Object.prototype.overload = function (attributes,values) {
             var i,length
             if(attributes.length > values.length){
@@ -170,6 +188,7 @@ function Extensions(window) {
          * @returns {*}
          */
         Function.prototype.getName = function (callee) {
+            // return this.name || this.toString().match(/function\s*([^(]*)\(/)[1]
             if(callee.name){
                 return callee.name
             }
@@ -199,6 +218,11 @@ function Extensions(window) {
             }
             return "anonymous"
         }
+        Function.ensureArgs = function(args, expected) {
+             if (args.length < expected) {
+                 throw new TypeError(expected +' argument required, but only '+args.length+' present.')
+             }
+         }
     }
     /**
      * IE6 无法对Window.prototype进行扩展
@@ -275,6 +299,28 @@ function Extensions(window) {
                 })
             } else if (document.lastChild === document.body) {
                 callback();
+            }
+        }
+        if(!window.Iterator){
+            window.Iterator = function(object) {
+                function MapIterator(object) {
+
+                }
+                function ArrayIterator(array) {
+                    var index = 0
+                    this.next = function () {
+                        if(index < array.length ){
+                            return {done: false, value:array[index]}
+                        }else{
+                            return {done: true, value:undefined}
+                        }
+                    }
+                }
+                if(Array.isArray(object)){
+                    return new ArrayIterator(object)
+                }else{
+                    return new MapIterator(object)
+                }
             }
         }
 

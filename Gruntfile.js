@@ -52,12 +52,12 @@ module.exports = function (grunt) {
                 "esversion": 6,
                 "moz": false,           //Allow Mozilla specific syntax
                 "evil": false,          //Tolerate use of `eval` and `new Function()`
-                "expr": false,          //Tolerate `ExpressionStatement` as Programs
+                "expr": true,          //Tolerate `ExpressionStatement` as Programs
                 "funcscope": false,     //Tolerate defining variables inside control statements
                 "globalstrict": false,  //Allow global "use strict" (also enables 'strict')
                 "iterator": false,      //Tolerate using the `__iterator__` property
                 "lastsemic": false,
-                "laxbreak": false,      //Tolerate possibly unsafe line breakings
+                "laxbreak": true,      //Tolerate possibly unsafe line breakings
                 "laxcomma": false,      //Tolerate comma-first style coding
                 "loopfunc": false,      //Tolerate functions being defined in loops
                 "multistr": false,      //Tolerate multi-line strings
@@ -150,13 +150,16 @@ module.exports = function (grunt) {
                 sourceMap: false,
                 presets: ["es2015"],
                 plugins: [
+                    ["babel-plugin-transform-es3-property-literals"],
+                    ["babel-plugin-transform-es3-member-expression-literals"],
                     ['babel-plugin-transform-es2015-modules-umd', { "loose": true }],
                 ]
             },
             dist: {
                 files: {
                     // '<%= frontend %>/js/dist/BCS.js': ['<%= concat.BCSConcat.dest %>']
-                    '<%= webapp %>/js/BCS.js': ['<%= concat.BCSConcat.dest %>']
+                    '<%= webapp %>/js/BCS.js': ['<%= concat.BCSConcat.dest %>'],
+                    '<%= frontend %>/js/lib/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js']
                 }
             }
         },
@@ -190,7 +193,7 @@ module.exports = function (grunt) {
         watch: {
             js:{
                 files: ['<%= frontend %>/**/*.js'],
-                tasks: ['jshint','includes','concat','babel',],
+                tasks: ['jshint','babel','includes','concat',],
                 options: {
                     livereload: true,
                 }

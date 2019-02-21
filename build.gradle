@@ -117,19 +117,25 @@ javaweb {
             json:"http://cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.js",
             "es5-shim":"https://raw.githubusercontent.com/es-shims/es5-shim/master/es5-shim.js",
             "es5-sham":"https://raw.githubusercontent.com/es-shims/es5-shim/master/es5-sham.js",
+            'es6-shim':'https://raw.githubusercontent.com/paulmillr/es6-shim/master/es6-shim.js',
+            'es6-collections':'https://raw.githubusercontent.com/WebReflection/es6-collections/master/index.js',
             "history":"https://github.com/browserstate/history.js/zipball/master/",
             'history.adapter.native':'https://raw.githubusercontent.com/browserstate/history.js/master/scripts/uncompressed/history.adapter.native.js',
             'selectivizr':'http://selectivizr.com/downloads/selectivizr-1.0.2.zip',
             flexibility:"https://raw.githubusercontent.com/jonathantneal/flexibility/master/flexibility.js",
             'location-origin':'https://raw.githubusercontent.com/shinnn/location-origin.js/master/dist/location-origin.js',
-            'fetch':'https://raw.githubusercontent.com/RubyLouvre/fetch-polyfill/master/dist/index.js',
             'bluebird':'https://cdn.jsdelivr.net/bluebird/2.10.2/bluebird.js',
             'usertiming':'https://raw.githubusercontent.com/nicjansma/usertiming.js/master/src/usertiming.js',
+            'Blob':'https://raw.githubusercontent.com/eligrey/Blob.js/master/Blob.js',
+            'FileSaver':'https://raw.githubusercontent.com/koffsyrup/FileSaver.js/master/FileSaver.js',
+            'canvas-toBlob':'https://raw.githubusercontent.com/eligrey/canvas-toBlob.js/master/canvas-toBlob.js',
+            'FormData':'https://raw.githubusercontent.com/jimmywarting/FormData/master/FormData.js',
             /* html */
             'placeholders':'https://raw.githubusercontent.com/jamesallardice/Placeholders.js/master/dist/placeholders.js',
             html5shiv:"https://raw.githubusercontent.com/aFarkas/html5shiv/master/dist/html5shiv.js",
             "html5shiv-printshiv":"https://raw.githubusercontent.com/aFarkas/html5shiv/master/dist/html5shiv-printshiv.js",
             "mediaelement":"https://raw.githubusercontent.com/mediaelement/mediaelement/master/build/mediaelement.js",
+            'classList':'https://raw.githubusercontent.com/eligrey/classList.js/master/classList.js',
             //css3
             'PIE_uncompressed.htc':"http://css3pie.com/download-latest-2.x/",
             'PIE_IE678_uncompressed':"http://css3pie.com/download-latest-2.x/",
@@ -142,6 +148,9 @@ javaweb {
             'sylvester.src':'http://sylvester.jcoglan.com/assets/sylvester-0-1-3.zip',
             'cssSandpaper':'https://raw.githubusercontent.com/zoltan-dulac/cssSandpaper/master/shared/js/cssSandpaper.js',
             'Cango3D-8v00':'http://www.arc.id.au/Cango3D-8v00.js',
+    ]
+    swfDependencies=[
+        
     ]
     vcsType='git'
     vcsRemotes=[remote:'ssh://git@phabricator.windfish.club:2222/diffusion/13/imassage.git']

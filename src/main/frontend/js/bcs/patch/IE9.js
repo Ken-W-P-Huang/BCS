@@ -2,7 +2,7 @@
  * Created by kenhuang on 2018/12/16.
  */
 
-(function (window) {
+(function (window,document) {
 
     function patchConsole(window) {
         /**
@@ -64,6 +64,12 @@
     function patchPlaceholder() {
         // import 'placeholders.js'
     }
+    
+    function patchBlob() {
+        // import 'Blob.js'
+    }
+
+
     if(window.browser){
         var patches =  {
             'patchWebSockets':patchWebSockets,
@@ -71,10 +77,12 @@
             'patchWebPerformance':patchWebPerformance,
             'patchTransform':patchTransform,
             'patchPlaceholder':patchPlaceholder,
+            'patchBlob':patchBlob,
             'patchConsole':patchConsole}
         if(window.browser.version === 9){
            patches.patchCSS3 = patchCSS3
         }
         window.browser.addPatches(patches)
     }
-})(this)
+    patchBlob()
+})(this,this.document)

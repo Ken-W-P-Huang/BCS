@@ -38,6 +38,12 @@
     /**
      * Created by kenhuang on 2019/1/25.
      */
+    /**
+     *
+     *
+     * Blob:https://github.com/eligrey/Blob.js
+     *
+     */
 
     function File(fullPath) {
         'use strict';
@@ -352,15 +358,19 @@
             'TRANSFORM': 'patchTransform',
             'PLACEHOLDER': 'patchPlaceholder',
             'CONSOLE': 'patchConsole',
+            'BLOB': 'patchBlob',
             /* IE10 */
             'LOCATION_ORIGIN': 'patchLocationOrigin',
             /* Edge */
             'PROMISE': 'patchPromise',
             'FETCH': 'patchFetch',
+            'ES6': 'patchES6',
             'HTML5': 'patchHTML5',
             'BEACON': 'patchBeacon',
+            'FORM_DATA': 'patchFormData',
             /* Common */
-            'FETCH_JSONP': 'patchFetchJSONP'
+            'FETCH_JSONP': 'patchFetchJSONP',
+            'FILE_SAVER': 'patchFileSaver'
         };
         Object.prototype.shallowCopy.call(window, module.exports);
     }
@@ -629,6 +639,24 @@
          * https://stackoverflow.com/questions/21729895/jquery-conflict-with-native-prototype
          */
         function extendObject() {
+            Object.prototype.getClass = function () {
+                if (this.constructor && this.constructor.toString()) {
+                    if (this.constructor.name) {
+                        return this.constructor.name;
+                    }
+                    var arr;
+                    var str = this.constructor.toString();
+                    if (str.charAt(0) === '[') {
+                        arr = str.match(/\[\w+\s*(\w+)\]/);
+                    } else {
+                        arr = str.match(/function\s*(\w+)/);
+                    }
+                    if (arr && arr.length === 2) {
+                        return arr[1];
+                    }
+                }
+                return undefined;
+            };
             Object.prototype.overload = function (attributes, values) {
                 var i, length;
                 if (attributes.length > values.length) {
@@ -785,6 +813,7 @@
              * @returns {*}
              */
             Function.prototype.getName = function (callee) {
+                // return this.name || this.toString().match(/function\s*([^(]*)\(/)[1]
                 if (callee.name) {
                     return callee.name;
                 }
@@ -813,6 +842,11 @@
                     }
                 }
                 return "anonymous";
+            };
+            Function.ensureArgs = function (args, expected) {
+                if (args.length < expected) {
+                    throw new TypeError(expected + ' argument required, but only ' + args.length + ' present.');
+                }
             };
         }
         /**
@@ -888,6 +922,26 @@
                     callback();
                 }
             };
+            if (!window.Iterator) {
+                window.Iterator = function (object) {
+                    function MapIterator(object) {}
+                    function ArrayIterator(array) {
+                        var index = 0;
+                        this.next = function () {
+                            if (index < array.length) {
+                                return { done: false, value: array[index] };
+                            } else {
+                                return { done: true, value: undefined };
+                            }
+                        };
+                    }
+                    if (Array.isArray(object)) {
+                        return new ArrayIterator(object);
+                    } else {
+                        return new MapIterator(object);
+                    }
+                };
+            }
         }
         function extendString() {
             /* 和cssSandpaper冲突 */

@@ -1,3 +1,6 @@
+// https://www.w3cschool.cn/fetch_api/fetch_api-6ls42k12.html
+// https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API/Using_Fetch
+// https://segmentfault.com/a/1190000004322487
 (function(window,undefined) {
     if(typeof  window.fetch === "function"){
         return
@@ -17,30 +20,10 @@
         arrayBuffer: 'ArrayBuffer' in window
     }
 
-    function Iterator(object) {
-        function MapIterator(object) {
-
-        }
-        function ArrayIterator(array) {
-            var index = 0
-            this.next = function () {
-                if(index < array.length ){
-                    return {done: false, value:array[index]}
-                }else{
-                    return {done: true, value:undefined}
-                }
-            }
-        }
-        if(Array.isArray(object)){
-            return new ArrayIterator(object)
-        }else{
-            return new MapIterator(object)
-        }
-    }
-
     function Headers(init) {
         var map = {}
         this.append = function (name, value) {
+            Function.ensureArgs(arguments, 2)
             name = Headers.normalizeName(name)
             value = Headers.normalizeValue(value)
             var list = map[name]
@@ -52,26 +35,32 @@
         }
 
         this['delete'] = function (name) {
+            Function.ensureArgs(arguments, 1)
             delete map[Headers.normalizeName(name)]
         }
 
         this.get = function (name) {
+            Function.ensureArgs(arguments, 1)
             var values = map[Headers.normalizeName(name)]
             return values ? values[0] : null
         }
 
         this.getAll = function (name) {
+            Function.ensureArgs(arguments, 1)
             return map[Headers.normalizeName(name)] || []
         }
 
         this.has = function (name) {
+            Function.ensureArgs(arguments, 1)
             return map.hasOwnProperty(Headers.normalizeName(name))
         }
 
         this.set = function (name, value) {
+            Function.ensureArgs(arguments, 2)
             map[Headers.normalizeName(name)] = [Headers.normalizeValue(value)]
         }
         this.forEach = function (callback, thisArg) {
+            Function.ensureArgs(arguments, 1)
             for (var name in map) {
                 if (map.hasOwnProperty(name)) {
                     map[name].forEach(function (value) { // jshint ignore:line
@@ -85,12 +74,15 @@
             init.forEach(function (value, name) {
                 this.append(name, value)
             }, this)
-        } else if (init) {
+        } else if (init instanceof Object) {
             for (var name in init) {
                 if (init.hasOwnProperty(name)) {
                     this.append(name, init[name])
                 }
             }
+        }else{
+            throw new TypeError('Failed to construct \''+this.getClass()+'\': The provided value is not of type \'' +
+                '(sequence<sequence<ByteString>> or record<ByteString, ByteString>)\'')
         }
     }
     {
@@ -118,6 +110,10 @@
             return new Iterator(items)
         }
 
+        Headers.prototype.toString = function() {
+            return '[object Headers]'
+        }
+
         if (support.iterable) {
             Headers.prototype[Symbol.iterator] = Headers.prototype.entries
         }
@@ -128,6 +124,7 @@
             return value
         }
         Headers.normalizeName = function (name) {
+            Function.ensureArgs(arguments, 1)
             name = Headers.normalizeValue(name)
             if (/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(name)) {
                 throw new TypeError('Invalid character in header field name')
@@ -135,7 +132,8 @@
             return name.toLowerCase()
         }
         Headers.headers = function (xhr) {
-            var head = new Headers()
+            Function.ensureArgs(arguments, 1)
+            var headers = new Headers()
             if (xhr.getAllResponseHeaders) {
                 var headerStr = xhr.getAllResponseHeaders() || ''
                 if (/\S/.test(headerStr)) {
@@ -149,12 +147,12 @@
                         if (index > 0) {
                             var key = headerPair.substring(0, index).trim()
                             var value = headerPair.substring(index + 2).trim()
-                            head.append(key, value)
+                            headers.append(key, value)
                         }
                     }
                 }
             }
-            return head
+            return headers
         }
     }
 
@@ -192,16 +190,12 @@
             self[method] = function () {
                 var promise
                 if(bodyUsed){
-                    var clazz
-                    if(this instanceof Request){
-                        clazz = 'Request'
-                    }else if(this instanceof Response){
-                        clazz = 'Response'
-                    }
-                    promise = Promise.reject(new TypeError('Failed to execute \''+ method +'\' on \''+clazz+'\'' +
-                        ': body stream is locked'))
+                    //todo Already read
+                    promise = Promise.reject(new TypeError('Failed to execute \''+ method +'\' on \''+this.getClass()+
+                        '\': body stream is locked'))
                 }else{
-                    if(this.getMethod() !== HttpMethodEnum.GET && this.getMethod() !== HttpMethodEnum.HEAD ){
+                    if(!(this instanceof Request) || (this.getMethod() !== HttpMethodEnum.GET &&
+                            this.getMethod() !== HttpMethodEnum.HEAD )){
                         bodyUsed = true
                     }
                     promise = Promise.resolve(body)
@@ -348,13 +342,13 @@
         'UNSAFE_URL':'unsafe-url'
     }
     var requestCheckList = {
-        cache:{name:'RequestCache',enum:RequestCacheEnum} ,
-        credentials:{name:'RequestCredentials',enum:RequestCredentialsEnum} ,
+        cache:{name:'RequestCache','enum':RequestCacheEnum} ,
+        credentials:{name:'RequestCredentials','enum':RequestCredentialsEnum} ,
         integrity: String,
         keepalive: Boolean,
-        method: {name:'HttpMethod',enum:HttpMethodEnum} ,
-        mode: {name:'RequestMode',enum:RequestModeEnum},
-        redirect: {name:'RequestRedirect',enum:RequestRedirectEnum},
+        method: {name:'HttpMethod','enum':HttpMethodEnum} ,
+        mode: {name:'RequestMode','enum':RequestModeEnum},
+        redirect: {name:'RequestRedirect','enum':RequestRedirectEnum},
         referrer: String,
         referrerPolicy: ReferrerPolicyEnum
     }
@@ -364,7 +358,7 @@
         }
         var body = '',self = this,internalValuePool = [],temp,checker,headers = '',temp1,url,referrer
         var internal = {
-            cache: RequestCacheEnum.default,
+            cache: RequestCacheEnum['default'],
 //            context:null,  //已经从标准中删除
             credentials: RequestCredentialsEnum.SAME_ORIGIN,
             integrity: "",
@@ -372,7 +366,7 @@
             method: HttpMethodEnum.GET,
             mode: RequestModeEnum.CORS,
             redirect: RequestRedirectEnum.FOLLOW,
-            referrerPolicy: "",
+            referrerPolicy: ""
         }
         if(requestInitDict){
             if(requestInitDict instanceof Object){
@@ -422,8 +416,8 @@
                             }else{
                                 /* 检查取值是否合法 */
                                 temp1 = temp.replace(/-/g,'_').toUpperCase()
-                                if( temp1 in checker.enum){
-                                    temp = checker.enum[temp1]
+                                if( temp1 in checker['enum']){
+                                    temp = checker['enum'][temp1]
                                 }else{
                                     throw new TypeError('Failed to construct \'Request\': The provided value \''+temp +
                                         '\' is not a valid enum value of type '+ checker.name)
@@ -441,22 +435,32 @@
         internal.url = url
         internal.headers = new Headers(headers)
         internal.referrer = referrer
-        // if(!internal.headers.get('x-requested-with')){
-        //     internal.headers.set('X-Requested-With', 'XMLHttpRequest')
-        // }
+        if(!internal.headers.get('x-requested-with')){
+            internal.headers.set('X-Requested-With', 'XMLHttpRequest')
+        }
         if (!internal.headers.get('content-type')) {
             var bodyType = this.getBodyType()
             switch (bodyType) {
-                case 'text':
+                case BodyType.TEXT:
                     internal.headers.set('content-type', 'text/plain;charset=UTF-8')
                     break
-                case 'blob':
+                case BodyType.JSON:
+                    internal.headers.set('content-type', 'application/json')
+                    break
+                case BodyType.FORM_DATA:
+                    internal.headers.set('content-type', 'multipart/form-data')
+                    break
+                case BodyType.ARRAY_BUFFER:
+                    break
+                case BodyType.BLOB:
                     if (body && body.type) {
                         internal.headers.set('content-type', body.type)
                     }
                     break
-                case 'searchParams':
+                case BodyType.SEARCH_PARAMS:
                     internal.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
+                    break
+                default:
                     break
             }
         }
@@ -484,9 +488,6 @@
                 var urlLowerCase = url.toLowerCase()
                 if(urlLowerCase.startsWith('http')|| urlLowerCase.startsWith('https')){
                     urlLowerCase = urlLowerCase.replace(/\\/g,'//')
-                    if(!urlLowerCase.endsWith('/')){
-                        urlLowerCase += '/'
-                    }
                     return urlLowerCase
                 }else{
                     var index = hostUrl.lastIndexOf('/')
@@ -511,16 +512,18 @@
                 return defaultValue
             }
         }
+        Request.prototype.toString = function() {
+            return '[object Request]'
+        }
         Request.extend(Body)
     }
-
 
     var ResponseTypeEnum = {
         'DEFAULT':'default',
         'BASIC':'basic',
         'CORS':'cors',
         'ERROR':'error',
-        'OPAQUE':'opaque',
+        'OPAQUE':'opaque'
     }
 
     var responseCheckList = {
@@ -568,6 +571,9 @@
     }
     {
         Response.extend(Body)
+        Response.prototype.toString = function() {
+            return '[object Response]'
+        }
         Response.prototype.clone = function () {
             return new Response(this.getBody(), {
                 type:this.getType(),
@@ -590,65 +596,12 @@
         }
     }
 
-    function JSONP() {
-        var scriptNode = window.document.createElement('script')
-        var head = window.document.getElementsByTagName('head')[0]
-        scriptNode.open  = function (method,url) {
-            this.readyState = 1
-            url += (url.indexOf('?') === -1) ? '?' : '&'
-            this.src = url
-            this.status = 200
-            this.statusText = 'ok'
-            this.response = {}
-        }
-
-        scriptNode.getAllResponseHeaders = function () {
-            return ''
-        }
-        scriptNode.getResponseHeader = function (headerName) {
-            return null
-        }
-        scriptNode.send = function () {
-            this.readyState = 2
-            this.callbackFunctionName = this.jsonpCallback
-            if(this.jsonpCallback){
-                if(typeof window[this.callbackFunctionName] !== "function" ){
-                    throw new TypeError(this.callbackFunctionName + ' is not Function type')
-                }
-            }else{
-                this.callbackFunctionName = ('jsonp' + Math.random()).replace(/0\./, '')
-                this.callbackFunction = window[this.callbackFunctionName] = function (data) {
-                    this.response = data
-                }.bind(this)
-            }
-            this.src= this.src + 'jsonpCallback=' + this.callbackFunctionName
-            head.appendChild(this)
-        }
-        scriptNode.setRequestHeader = function (name, value) {
-            this[name] = value
-        }
-        scriptNode.abort = function () {
-           head.removeChild(this)
-           if(this.callbackFunction){
-               // IE8 throws an exception when you try to delete a property on window
-               // http://stackoverflow.com/a/1824228/751089
-               try {
-                   delete window[this.callbackFunctionName]
-               } catch (e) {
-                   window[this.callbackFunctionName] = undefined
-               }
-           }
-        }
-        return scriptNode
-    }
-
-// https://www.w3cschool.cn/fetch_api/fetch_api-6ls42k12.html
         window.Headers = Headers
         window.Request = Request
         window.Response = Response
         window.fetch = function (input, init) {
             return new Promise(function (resolve,reject) {
-                var request,xhr,timer
+                var request,xmlHttpRequest,timer
                 function responseURL(xhr) {
                     if ('responseURL' in xhr) {
                         return xhr.responseURL
@@ -665,51 +618,66 @@
                     request = new Request(input, init)
                 }
                 if (window.XMLHttpRequest) {
-                    xhr = new XMLHttpRequest()
+                    xmlHttpRequest = new XMLHttpRequest()
                     if (init instanceof Object && init.credentials === 'include') {
-                        xhr.withCredentials = true
+                        xmlHttpRequest.withCredentials = true
                     }
-                    xhr.onerror = function (error) {
+                    xmlHttpRequest.onerror = function (error) {
+                        clearInterval(timer)
+                        xmlHttpRequest.abort()
                         reject(error)
                     }
                 } else {
-                    xhr = new window.ActiveXObject('Microsoft.XMLHTTP')
+                    xmlHttpRequest = new window.ActiveXObject('Microsoft.XMLHTTP')
                 }
-                xhr.onload = xhr.onreadystatechange = function () {
+                xmlHttpRequest.onload = xmlHttpRequest.onreadystatechange = function () {
                     /*Chrome只要有应答都返回resolve*/
-                    if (xhr.readyState === 4) {
-                        // clearInterval(timer)
-                        var status = (xhr.status === 1223) ? 204 : xhr.status
-                        if (status < 100 || status > 599) {
-                            xhr.abort()
+                    if (xmlHttpRequest.readyState === 4) {
+                        var body = 'response' in xmlHttpRequest ? xmlHttpRequest.response : xmlHttpRequest.responseText
+                        var response = new Response(body, {
+                            status: xmlHttpRequest.status,
+                            statusText: xmlHttpRequest.statusText,
+                            headers: Headers.headers(xmlHttpRequest),
+                            url: responseURL(xmlHttpRequest)
+                        })
+                        clearInterval(timer)
+                        xmlHttpRequest.abort()
+                        if(response.getOk()){
+                            resolve(response)
+                        }else{
                             reject(new TypeError('Network request failed'))
-                            return
                         }
-                        var options = {
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            headers: Headers.headers(xhr),
-                            url: responseURL(xhr)
-                        }
-                        var body = 'response' in xhr ? xhr.response : xhr.responseText
-                        xhr.abort()
-                        resolve(new Response(body, options))
                     }
                 }
 
-                xhr.open(request.method, request.url, true)
-                request.headers.forEach(function (value, name) {
-                    xhr.setRequestHeader(name, value)
+                xmlHttpRequest.open(request.getMethod(), request.url, true)
+                request.getHeaders().forEach(function (value, name) {
+                    xmlHttpRequest.setRequestHeader(name, value)
                 })
-                xhr.send(request.getBody())
-                // if (typeof init.timeout === 'number') {
-                //     timer = setTimeout(function () {
-                //         xhr.abort()
-                //         reject(new TypeError('Network request timeout'))
-                //     }, init.timeout)
-                // }
+                request.json().then(function (data) {
+                    // timer = setTimeout(function () {
+                    //     xmlHttpRequest.abort()
+                    //     reject(new TypeError('Network request timeout'))
+                    // }, timeout)
+                    xmlHttpRequest.send(data)
+                })
             })
         }
 })(this)
+
+// Promise.race([
+//     fetch(URL),
+//     new Promise(function(resolve,reject){
+//         setTimeout(function () {
+//             xhr.abort()
+//             reject(new TypeError('Network request timeout'))
+//         },2000)
+//     })])
+//     .then(function () {
+//
+//     })['catch'](function () {
+//
+// })
+
 
 

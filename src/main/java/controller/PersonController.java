@@ -63,7 +63,11 @@ public class PersonController {
         System.out.println("test");
         return "test";
     }
-
+    @RequestMapping(value = "/video")
+    public String video(){
+        System.out.println("video");
+        return "video";
+    }
 
 }
 class Detail{

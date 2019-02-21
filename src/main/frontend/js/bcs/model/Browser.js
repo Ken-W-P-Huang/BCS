@@ -1,6 +1,14 @@
 /**
  * Created by kenhuang on 2019/1/25.
  */
+/**
+ *
+ *
+ * Blob:https://github.com/eligrey/Blob.js
+ *
+ */
+
+
 import Extensions from './Extensions'
 import {BCSViewController} from '../controller/BCSViewController'
 
@@ -318,15 +326,19 @@ if (typeof window === 'undefined') {
         'TRANSFORM': 'patchTransform',
         'PLACEHOLDER': 'patchPlaceholder',
         'CONSOLE': 'patchConsole',
+        'BLOB':'patchBlob',
         /* IE10 */
         'LOCATION_ORIGIN': 'patchLocationOrigin',
         /* Edge */
         'PROMISE': 'patchPromise',
         'FETCH': 'patchFetch',
+        'ES6':'patchES6',
         'HTML5': 'patchHTML5',
         'BEACON': 'patchBeacon',
+        'FORM_DATA':'patchFormData',
         /* Common */
-        'FETCH_JSONP':'patchFetchJSONP'
+        'FETCH_JSONP':'patchFetchJSONP',
+        'FILE_SAVER':'patchFileSaver'
     }
     Object.prototype.shallowCopy.call(window,module.exports)
 }

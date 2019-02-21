@@ -34,5 +34,77 @@
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 
+    <!--https://blog.csdn.net/ruixue0117/article/details/46619767-->
+    <!--音频-->
+    <mime-mapping>
+        <extension>mp3</extension>
+        <mime-type>audio/mp3</mime-type>
+    </mime-mapping>
+    <!--视频,流媒体才能在video元素上播放-->
+    <mime-mapping>
+        <extension>mp4</extension>
+        <mime-type>application/octet-stream</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>rmvb</extension>
+        <mime-type>application/octet-stream</mime-type>
+    </mime-mapping>
+
+    <!--文档-->
+    <mime-mapping>
+        <extension>mht</extension>
+        <mime-type>text/x-mht</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>doc</extension>
+        <mime-type>application/msword</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>xls</extension>
+        <mime-type>application/vnd.ms-excel</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>ppt</extension>
+        <mime-type>application/vnd.ms-powerpoint</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>pdf</extension>
+        <mime-type>application/pdf</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>txt</extension>
+        <mime-type>applcation/txt</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>chm</extension>
+        <mime-type>application/chm</mime-type>
+    </mime-mapping>
+    <!--压缩-->
+    <mime-mapping>
+        <extension>rar</extension>
+        <mime-type>application/octet-stream</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>zip</extension>
+        <mime-type>application/zip</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>iso</extension>
+        <mime-type>application/octet-stream</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>ape</extension>
+        <mime-type>application/octet-stream</mime-type>
+    </mime-mapping>
+    <!--图片-->
+    <mime-mapping>
+        <extension>ico</extension>
+        <mime-type>image/x-icon</mime-type>
+    </mime-mapping>
+
+
+
+
+
 
 </web-app>  

@@ -6,10 +6,15 @@
     function patchFetchJSONP() {
         // import 'fetch-jsonp.js'
     }
+    
+    function patchFileSaver() {
+        // import 'FileSaver.js'
+    }
 
     if(window.browser){
         window.browser.addPatches({
-            'patchFetchJSONP':patchFetchJSONP
+            'patchFetchJSONP':patchFetchJSONP,
+            'patchFileSaver':patchFileSaver
         })
     }
 
