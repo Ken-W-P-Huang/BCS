@@ -1,13 +1,29 @@
 /**
  * Created by kenhuang on 2019/2/20.
  */
-(function (window) {
+(function (window,document) {
     function patchClassList(window) {
         // import "classList.js"
     }
-    if(window.browser){
-        window.browser.addPatches({
-            'patchClassList':patchClassList
-        })
+    function patchGetUserMedia() {
+        // import "getUserMedia.js"
     }
-})(this)
+    function patchXPath() {
+        // import 'wgxpath.install.js'
+    }
+    function patchCurrentScript() {
+        // import 'document.currentScript.js'
+    }
+    if(window.browser){
+        var patches = {
+            'patchClassList':patchClassList,
+            'patchGetUserMedia':patchGetUserMedia,
+            'patchCurrentScript':patchCurrentScript
+        }
+        if(window.browser.isIE && window.browser.version >= 10 && window.browser.version <= 11){
+            patches.patchXPath = patchXPath
+        }
+        window.browser.addPatches(patches)
+
+    }
+})(this,this.document)

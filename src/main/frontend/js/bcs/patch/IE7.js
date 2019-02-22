@@ -1,7 +1,7 @@
 /**
  * Created by kenhuang on 2018/12/16.
  */
-(function (window) {
+(function (window,document) {
     /**
      * https://gist.github.com/remy/350433
      * window.name 存放2mb
@@ -111,4 +111,4 @@
     if(window.browser){
         window.browser.addPatches({'patchStorage':patchStorage})
     }
-})(this)
+})(this,this.document)

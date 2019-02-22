@@ -4,7 +4,7 @@
 
 (function (window,document) {
 
-    function patchConsole(window) {
+    function patchConsole() {
         /**
          * 直接禁用console相关功能。可以在IE6安装companionjs启用
          * IE8/9只能在调试模式下才启用console
@@ -31,14 +31,1718 @@
             }
         }
     }
-    function patchWebSockets(window) {
-        // import ''
+    function patchHTML5() {
+/**
+* @preserve HTML5 Shiv 3.7.3 | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
+*/
+;(function(window, document) {
+/*jshint evil:true */
+  /** version */
+  var version = '3.7.3';
+
+  /** Preset options */
+  var options = window.html5 || {};
+
+  /** Used to skip problem elements */
+  var reSkip = /^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i;
+
+  /** Not all elements can be cloned in IE **/
+  var saveClones = /^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i;
+
+  /** Detect whether the browser supports default html5 styles */
+  var supportsHtml5Styles;
+
+  /** Name of the expando, to work with multiple documents or to re-shiv one document */
+  var expando = '_html5shiv';
+
+  /** The id for the the documents expando */
+  var expanID = 0;
+
+  /** Cached data for each document */
+  var expandoData = {};
+
+  /** Detect whether the browser supports unknown elements */
+  var supportsUnknownElements;
+
+  (function() {
+    try {
+        var a = document.createElement('a');
+        a.innerHTML = '<xyz></xyz>';
+        //if the hidden property is implemented we can assume, that the browser supports basic HTML5 Styles
+        supportsHtml5Styles = ('hidden' in a);
+
+        supportsUnknownElements = a.childNodes.length == 1 || (function() {
+          // assign a false positive if unable to shiv
+          (document.createElement)('a');
+          var frag = document.createDocumentFragment();
+          return (
+            typeof frag.cloneNode == 'undefined' ||
+            typeof frag.createDocumentFragment == 'undefined' ||
+            typeof frag.createElement == 'undefined'
+          );
+        }());
+    } catch(e) {
+      // assign a false positive if detection fails => unable to shiv
+      supportsHtml5Styles = true;
+      supportsUnknownElements = true;
     }
-    function patchHistory(window) {
+
+  }());
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Creates a style sheet with the given CSS text and adds it to the document.
+   * @private
+   * @param {Document} ownerDocument The document.
+   * @param {String} cssText The CSS text.
+   * @returns {StyleSheet} The style element.
+   */
+  function addStyleSheet(ownerDocument, cssText) {
+    var p = ownerDocument.createElement('p'),
+        parent = ownerDocument.getElementsByTagName('head')[0] || ownerDocument.documentElement;
+
+    p.innerHTML = 'x<style>' + cssText + '</style>';
+    return parent.insertBefore(p.lastChild, parent.firstChild);
+  }
+
+  /**
+   * Returns the value of `html5.elements` as an array.
+   * @private
+   * @returns {Array} An array of shived element node names.
+   */
+  function getElements() {
+    var elements = html5.elements;
+    return typeof elements == 'string' ? elements.split(' ') : elements;
+  }
+
+  /**
+   * Extends the built-in list of html5 elements
+   * @memberOf html5
+   * @param {String|Array} newElements whitespace separated list or array of new element names to shiv
+   * @param {Document} ownerDocument The context document.
+   */
+  function addElements(newElements, ownerDocument) {
+    var elements = html5.elements;
+    if(typeof elements != 'string'){
+      elements = elements.join(' ');
+    }
+    if(typeof newElements != 'string'){
+      newElements = newElements.join(' ');
+    }
+    html5.elements = elements +' '+ newElements;
+    shivDocument(ownerDocument);
+  }
+
+    /**
+   * Returns the data associated to the given document
+   * @private
+   * @param {Document} ownerDocument The document.
+   * @returns {Object} An object of data.
+   */
+  function getExpandoData(ownerDocument) {
+    var data = expandoData[ownerDocument[expando]];
+    if (!data) {
+        data = {};
+        expanID++;
+        ownerDocument[expando] = expanID;
+        expandoData[expanID] = data;
+    }
+    return data;
+  }
+
+  /**
+   * returns a shived element for the given nodeName and document
+   * @memberOf html5
+   * @param {String} nodeName name of the element
+   * @param {Document} ownerDocument The context document.
+   * @returns {Object} The shived element.
+   */
+  function createElement(nodeName, ownerDocument, data){
+    if (!ownerDocument) {
+        ownerDocument = document;
+    }
+    if(supportsUnknownElements){
+        return ownerDocument.createElement(nodeName);
+    }
+    if (!data) {
+        data = getExpandoData(ownerDocument);
+    }
+    var node;
+
+    if (data.cache[nodeName]) {
+        node = data.cache[nodeName].cloneNode();
+    } else if (saveClones.test(nodeName)) {
+        node = (data.cache[nodeName] = data.createElem(nodeName)).cloneNode();
+    } else {
+        node = data.createElem(nodeName);
+    }
+
+    // Avoid adding some elements to fragments in IE < 9 because
+    // * Attributes like `name` or `type` cannot be set/changed once an element
+    //   is inserted into a document/fragment
+    // * Link elements with `src` attributes that are inaccessible, as with
+    //   a 403 response, will cause the tab/window to crash
+    // * Script elements appended to fragments will execute when their `src`
+    //   or `text` property is set
+    return node.canHaveChildren && !reSkip.test(nodeName) && !node.tagUrn ? data.frag.appendChild(node) : node;
+  }
+
+  /**
+   * returns a shived DocumentFragment for the given document
+   * @memberOf html5
+   * @param {Document} ownerDocument The context document.
+   * @returns {Object} The shived DocumentFragment.
+   */
+  function createDocumentFragment(ownerDocument, data){
+    if (!ownerDocument) {
+        ownerDocument = document;
+    }
+    if(supportsUnknownElements){
+        return ownerDocument.createDocumentFragment();
+    }
+    data = data || getExpandoData(ownerDocument);
+    var clone = data.frag.cloneNode(),
+        i = 0,
+        elems = getElements(),
+        l = elems.length;
+    for(;i<l;i++){
+        clone.createElement(elems[i]);
+    }
+    return clone;
+  }
+
+  /**
+   * Shivs the `createElement` and `createDocumentFragment` methods of the document.
+   * @private
+   * @param {Document|DocumentFragment} ownerDocument The document.
+   * @param {Object} data of the document.
+   */
+  function shivMethods(ownerDocument, data) {
+    if (!data.cache) {
+        data.cache = {};
+        data.createElem = ownerDocument.createElement;
+        data.createFrag = ownerDocument.createDocumentFragment;
+        data.frag = data.createFrag();
+    }
+
+
+    ownerDocument.createElement = function(nodeName) {
+      //abort shiv
+      if (!html5.shivMethods) {
+          return data.createElem(nodeName);
+      }
+      return createElement(nodeName, ownerDocument, data);
+    };
+
+    ownerDocument.createDocumentFragment = Function('h,f', 'return function(){' +
+      'var n=f.cloneNode(),c=n.createElement;' +
+      'h.shivMethods&&(' +
+        // unroll the `createElement` calls
+        getElements().join().replace(/[\w\-:]+/g, function(nodeName) {
+          data.createElem(nodeName);
+          data.frag.createElement(nodeName);
+          return 'c("' + nodeName + '")';
+        }) +
+      ');return n}'
+    )(html5, data.frag);
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Shivs the given document.
+   * @memberOf html5
+   * @param {Document} ownerDocument The document to shiv.
+   * @returns {Document} The shived document.
+   */
+  function shivDocument(ownerDocument) {
+    if (!ownerDocument) {
+        ownerDocument = document;
+    }
+    var data = getExpandoData(ownerDocument);
+
+    if (html5.shivCSS && !supportsHtml5Styles && !data.hasCSS) {
+      data.hasCSS = !!addStyleSheet(ownerDocument,
+        // corrects block display not defined in IE6/7/8/9
+        'article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}' +
+        // adds styling not present in IE6/7/8/9
+        'mark{background:#FF0;color:#000}' +
+        // hides non-rendered elements
+        'template{display:none}'
+      );
+    }
+    if (!supportsUnknownElements) {
+      shivMethods(ownerDocument, data);
+    }
+    return ownerDocument;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * The `html5` object is exposed so that more elements can be shived and
+   * existing shiving can be detected on iframes.
+   * @type Object
+   * @example
+   *
+   * // options can be changed before the script is included
+   * html5 = { 'elements': 'mark section', 'shivCSS': false, 'shivMethods': false };
+   */
+  var html5 = {
+
+    /**
+     * An array or space separated string of node names of the elements to shiv.
+     * @memberOf html5
+     * @type Array|String
+     */
+    'elements': options.elements || 'abbr article aside audio bdi canvas data datalist details dialog figcaption figure footer header hgroup main mark meter nav output picture progress section summary template time video',
+
+    /**
+     * current version of html5shiv
+     */
+    'version': version,
+
+    /**
+     * A flag to indicate that the HTML5 style sheet should be inserted.
+     * @memberOf html5
+     * @type Boolean
+     */
+    'shivCSS': (options.shivCSS !== false),
+
+    /**
+     * Is equal to true if a browser supports creating unknown/HTML5 elements
+     * @memberOf html5
+     * @type boolean
+     */
+    'supportsUnknownElements': supportsUnknownElements,
+
+    /**
+     * A flag to indicate that the document's `createElement` and `createDocumentFragment`
+     * methods should be overwritten.
+     * @memberOf html5
+     * @type Boolean
+     */
+    'shivMethods': (options.shivMethods !== false),
+
+    /**
+     * A string to describe the type of `html5` object ("default" or "default print").
+     * @memberOf html5
+     * @type String
+     */
+    'type': 'default',
+
+    // shivs the document according to the specified `html5` object options
+    'shivDocument': shivDocument,
+
+    //creates a shived element
+    createElement: createElement,
+
+    //creates a shived documentFragment
+    createDocumentFragment: createDocumentFragment,
+
+    //extends list of elements
+    addElements: addElements
+  };
+
+  /*--------------------------------------------------------------------------*/
+
+  // expose html5
+  window.html5 = html5;
+
+  // shiv the document
+  shivDocument(document);
+
+  /*------------------------------- Print Shiv -------------------------------*/
+
+  /** Used to filter media types */
+  var reMedia = /^$|\b(?:all|print)\b/;
+
+  /** Used to namespace printable elements */
+  var shivNamespace = 'html5shiv';
+
+  /** Detect whether the browser supports shivable style sheets */
+  var supportsShivableSheets = !supportsUnknownElements && (function() {
+    // assign a false negative if unable to shiv
+    var docEl = document.documentElement;
+    return !(
+      typeof document.namespaces == 'undefined' ||
+      typeof document.parentWindow == 'undefined' ||
+      typeof docEl.applyElement == 'undefined' ||
+      typeof docEl.removeNode == 'undefined' ||
+      typeof window.attachEvent == 'undefined'
+    );
+  }());
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Wraps all HTML5 elements in the given document with printable elements.
+   * (eg. the "header" element is wrapped with the "html5shiv:header" element)
+   * @private
+   * @param {Document} ownerDocument The document.
+   * @returns {Array} An array wrappers added.
+   */
+  function addWrappers(ownerDocument) {
+    var node,
+        nodes = ownerDocument.getElementsByTagName('*'),
+        index = nodes.length,
+        reElements = RegExp('^(?:' + getElements().join('|') + ')$', 'i'),
+        result = [];
+
+    while (index--) {
+      node = nodes[index];
+      if (reElements.test(node.nodeName)) {
+        result.push(node.applyElement(createWrapper(node)));
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Creates a printable wrapper for the given element.
+   * @private
+   * @param {Element} element The element.
+   * @returns {Element} The wrapper.
+   */
+  function createWrapper(element) {
+    var node,
+        nodes = element.attributes,
+        index = nodes.length,
+        wrapper = element.ownerDocument.createElement(shivNamespace + ':' + element.nodeName);
+
+    // copy element attributes to the wrapper
+    while (index--) {
+      node = nodes[index];
+      node.specified && wrapper.setAttribute(node.nodeName, node.nodeValue);
+    }
+    // copy element styles to the wrapper
+    wrapper.style.cssText = element.style.cssText;
+    return wrapper;
+  }
+
+  /**
+   * Shivs the given CSS text.
+   * (eg. header{} becomes html5shiv\:header{})
+   * @private
+   * @param {String} cssText The CSS text to shiv.
+   * @returns {String} The shived CSS text.
+   */
+  function shivCssText(cssText) {
+    var pair,
+        parts = cssText.split('{'),
+        index = parts.length,
+        reElements = RegExp('(^|[\\s,>+~])(' + getElements().join('|') + ')(?=[[\\s,>+~#.:]|$)', 'gi'),
+        replacement = '$1' + shivNamespace + '\\:$2';
+
+    while (index--) {
+      pair = parts[index] = parts[index].split('}');
+      pair[pair.length - 1] = pair[pair.length - 1].replace(reElements, replacement);
+      parts[index] = pair.join('}');
+    }
+    return parts.join('{');
+  }
+
+  /**
+   * Removes the given wrappers, leaving the original elements.
+   * @private
+   * @params {Array} wrappers An array of printable wrappers.
+   */
+  function removeWrappers(wrappers) {
+    var index = wrappers.length;
+    while (index--) {
+      wrappers[index].removeNode();
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Shivs the given document for print.
+   * @memberOf html5
+   * @param {Document} ownerDocument The document to shiv.
+   * @returns {Document} The shived document.
+   */
+  function shivPrint(ownerDocument) {
+    var shivedSheet,
+        wrappers,
+        data = getExpandoData(ownerDocument),
+        namespaces = ownerDocument.namespaces,
+        ownerWindow = ownerDocument.parentWindow;
+
+    if (!supportsShivableSheets || ownerDocument.printShived) {
+      return ownerDocument;
+    }
+    if (typeof namespaces[shivNamespace] == 'undefined') {
+      namespaces.add(shivNamespace);
+    }
+
+    function removeSheet() {
+      clearTimeout(data._removeSheetTimer);
+      if (shivedSheet) {
+          shivedSheet.removeNode(true);
+      }
+      shivedSheet= null;
+    }
+
+    ownerWindow.attachEvent('onbeforeprint', function() {
+
+      removeSheet();
+
+      var imports,
+          length,
+          sheet,
+          collection = ownerDocument.styleSheets,
+          cssText = [],
+          index = collection.length,
+          sheets = Array(index);
+
+      // convert styleSheets collection to an array
+      while (index--) {
+        sheets[index] = collection[index];
+      }
+      // concat all style sheet CSS text
+      while ((sheet = sheets.pop())) {
+        // IE does not enforce a same origin policy for external style sheets...
+        // but has trouble with some dynamically created stylesheets
+        if (!sheet.disabled && reMedia.test(sheet.media)) {
+
+          try {
+            imports = sheet.imports;
+            length = imports.length;
+          } catch(er){
+            length = 0;
+          }
+
+          for (index = 0; index < length; index++) {
+            sheets.push(imports[index]);
+          }
+
+          try {
+            cssText.push(sheet.cssText);
+          } catch(er){}
+        }
+      }
+
+      // wrap all HTML5 elements with printable elements and add the shived style sheet
+      cssText = shivCssText(cssText.reverse().join(''));
+      wrappers = addWrappers(ownerDocument);
+      shivedSheet = addStyleSheet(ownerDocument, cssText);
+
+    });
+
+    ownerWindow.attachEvent('onafterprint', function() {
+      // remove wrappers, leaving the original elements, and remove the shived style sheet
+      removeWrappers(wrappers);
+      clearTimeout(data._removeSheetTimer);
+      data._removeSheetTimer = setTimeout(removeSheet, 500);
+    });
+
+    ownerDocument.printShived = true;
+    return ownerDocument;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  // expose API
+  html5.type += ' print';
+  html5.shivPrint = shivPrint;
+
+  // shiv for print
+  shivPrint(document);
+
+  if(typeof module == 'object' && module.exports){
+    module.exports = html5;
+  }
+
+}(typeof window !== "undefined" ? window : this, document));
+
+    }
+    function patchWebSockets() {
+// Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
+// License: New BSD License
+// Reference: http://dev.w3.org/html5/websockets/
+// Reference: http://tools.ietf.org/html/rfc6455
+
+(function() {
+  
+  if (window.WEB_SOCKET_FORCE_FLASH) {
+    // Keeps going.
+  } else if (window.WebSocket) {
+    return;
+  } else if (window.MozWebSocket) {
+    // Firefox.
+    window.WebSocket = MozWebSocket;
+    return;
+  }
+  
+  var logger;
+  if (window.WEB_SOCKET_LOGGER) {
+    logger = WEB_SOCKET_LOGGER;
+  } else if (window.console && window.console.log && window.console.error) {
+    // In some environment, console is defined but console.log or console.error is missing.
+    logger = window.console;
+  } else {
+    logger = {log: function(){ }, error: function(){ }};
+  }
+  
+  // swfobject.hasFlashPlayerVersion("10.0.0") doesn't work with Gnash.
+  if (swfobject.getFlashPlayerVersion().major < 10) {
+    logger.error("Flash Player >= 10.0.0 is required.");
+    return;
+  }
+  if (location.protocol == "file:") {
+    logger.error(
+      "WARNING: web-socket-js doesn't work in file:///... URL " +
+      "unless you set Flash Security Settings properly. " +
+      "Open the page via Web server i.e. http://...");
+  }
+
+  /**
+   * Our own implementation of WebSocket class using Flash.
+   * @param {string} url
+   * @param {array or string} protocols
+   * @param {string} proxyHost
+   * @param {int} proxyPort
+   * @param {string} headers
+   */
+  window.WebSocket = function(url, protocols, proxyHost, proxyPort, headers) {
+    var self = this;
+    self.__id = WebSocket.__nextId++;
+    WebSocket.__instances[self.__id] = self;
+    self.readyState = WebSocket.CONNECTING;
+    self.bufferedAmount = 0;
+    self.__events = {};
+    if (!protocols) {
+      protocols = [];
+    } else if (typeof protocols == "string") {
+      protocols = [protocols];
+    }
+    // Uses setTimeout() to make sure __createFlash() runs after the caller sets ws.onopen etc.
+    // Otherwise, when onopen fires immediately, onopen is called before it is set.
+    self.__createTask = setTimeout(function() {
+      WebSocket.__addTask(function() {
+        self.__createTask = null;
+        WebSocket.__flash.create(
+            self.__id, url, protocols, proxyHost || null, proxyPort || 0, headers || null);
+      });
+    }, 0);
+  };
+
+  /**
+   * Send data to the web socket.
+   * @param {string} data  The data to send to the socket.
+   * @return {boolean}  True for success, false for failure.
+   */
+  WebSocket.prototype.send = function(data) {
+    if (this.readyState == WebSocket.CONNECTING) {
+      throw "INVALID_STATE_ERR: Web Socket connection has not been established";
+    }
+    // We use encodeURIComponent() here, because FABridge doesn't work if
+    // the argument includes some characters. We don't use escape() here
+    // because of this:
+    // https://developer.mozilla.org/en/Core_JavaScript_1.5_Guide/Functions#escape_and_unescape_Functions
+    // But it looks decodeURIComponent(encodeURIComponent(s)) doesn't
+    // preserve all Unicode characters either e.g. "\uffff" in Firefox.
+    // Note by wtritch: Hopefully this will not be necessary using ExternalInterface.  Will require
+    // additional testing.
+    var result = WebSocket.__flash.send(this.__id, encodeURIComponent(data));
+    if (result < 0) { // success
+      return true;
+    } else {
+      this.bufferedAmount += result;
+      return false;
+    }
+  };
+
+  /**
+   * Close this web socket gracefully.
+   */
+  WebSocket.prototype.close = function() {
+    if (this.__createTask) {
+      clearTimeout(this.__createTask);
+      this.__createTask = null;
+      this.readyState = WebSocket.CLOSED;
+      return;
+    }
+    if (this.readyState == WebSocket.CLOSED || this.readyState == WebSocket.CLOSING) {
+      return;
+    }
+    this.readyState = WebSocket.CLOSING;
+    WebSocket.__flash.close(this.__id);
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {string} type
+   * @param {function} listener
+   * @param {boolean} useCapture
+   * @return void
+   */
+  WebSocket.prototype.addEventListener = function(type, listener, useCapture) {
+    if (!(type in this.__events)) {
+      this.__events[type] = [];
+    }
+    this.__events[type].push(listener);
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {string} type
+   * @param {function} listener
+   * @param {boolean} useCapture
+   * @return void
+   */
+  WebSocket.prototype.removeEventListener = function(type, listener, useCapture) {
+    if (!(type in this.__events)) return;
+    var events = this.__events[type];
+    for (var i = events.length - 1; i >= 0; --i) {
+      if (events[i] === listener) {
+        events.splice(i, 1);
+        break;
+      }
+    }
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {Event} event
+   * @return void
+   */
+  WebSocket.prototype.dispatchEvent = function(event) {
+    var events = this.__events[event.type] || [];
+    for (var i = 0; i < events.length; ++i) {
+      events[i](event);
+    }
+    var handler = this["on" + event.type];
+    if (handler) handler.apply(this, [event]);
+  };
+
+  /**
+   * Handles an event from Flash.
+   * @param {Object} flashEvent
+   */
+  WebSocket.prototype.__handleEvent = function(flashEvent) {
+    
+    if ("readyState" in flashEvent) {
+      this.readyState = flashEvent.readyState;
+    }
+    if ("protocol" in flashEvent) {
+      this.protocol = flashEvent.protocol;
+    }
+    
+    var jsEvent;
+    if (flashEvent.type == "open" || flashEvent.type == "error") {
+      jsEvent = this.__createSimpleEvent(flashEvent.type);
+    } else if (flashEvent.type == "close") {
+      jsEvent = this.__createSimpleEvent("close");
+      jsEvent.wasClean = flashEvent.wasClean ? true : false;
+      jsEvent.code = flashEvent.code;
+      jsEvent.reason = flashEvent.reason;
+    } else if (flashEvent.type == "message") {
+      var data = decodeURIComponent(flashEvent.message);
+      jsEvent = this.__createMessageEvent("message", data);
+    } else {
+      throw "unknown event type: " + flashEvent.type;
+    }
+    
+    this.dispatchEvent(jsEvent);
+    
+  };
+  
+  WebSocket.prototype.__createSimpleEvent = function(type) {
+    if (document.createEvent && window.Event) {
+      var event = document.createEvent("Event");
+      event.initEvent(type, false, false);
+      return event;
+    } else {
+      return {type: type, bubbles: false, cancelable: false};
+    }
+  };
+  
+  WebSocket.prototype.__createMessageEvent = function(type, data) {
+    if (window.MessageEvent && typeof(MessageEvent) == "function" && !window.opera) {
+      return new MessageEvent("message", {
+        "view": window,
+        "bubbles": false,
+        "cancelable": false,
+        "data": data
+      });
+    } else if (document.createEvent && window.MessageEvent && !window.opera) {
+      var event = document.createEvent("MessageEvent");
+    	event.initMessageEvent("message", false, false, data, null, null, window, null);
+      return event;
+    } else {
+      // Old IE and Opera, the latter one truncates the data parameter after any 0x00 bytes.
+      return {type: type, data: data, bubbles: false, cancelable: false};
+    }
+  };
+  
+  /**
+   * Define the WebSocket readyState enumeration.
+   */
+  WebSocket.CONNECTING = 0;
+  WebSocket.OPEN = 1;
+  WebSocket.CLOSING = 2;
+  WebSocket.CLOSED = 3;
+
+  // Field to check implementation of WebSocket.
+  WebSocket.__isFlashImplementation = true;
+  WebSocket.__initialized = false;
+  WebSocket.__flash = null;
+  WebSocket.__instances = {};
+  WebSocket.__tasks = [];
+  WebSocket.__nextId = 0;
+  
+  /**
+   * Load a new flash security policy file.
+   * @param {string} url
+   */
+  WebSocket.loadFlashPolicyFile = function(url){
+    WebSocket.__addTask(function() {
+      WebSocket.__flash.loadManualPolicyFile(url);
+    });
+  };
+
+  /**
+   * Loads WebSocketMain.swf and creates WebSocketMain object in Flash.
+   */
+  WebSocket.__initialize = function() {
+    
+    if (WebSocket.__initialized) return;
+    WebSocket.__initialized = true;
+    
+    if (WebSocket.__swfLocation) {
+      // For backword compatibility.
+      window.WEB_SOCKET_SWF_LOCATION = WebSocket.__swfLocation;
+    }
+    if (!window.WEB_SOCKET_SWF_LOCATION) {
+      logger.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
+      return;
+    }
+    if (!window.WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR &&
+        !WEB_SOCKET_SWF_LOCATION.match(/(^|\/)WebSocketMainInsecure\.swf(\?.*)?$/) &&
+        WEB_SOCKET_SWF_LOCATION.match(/^\w+:\/\/([^\/]+)/)) {
+      var swfHost = RegExp.$1;
+      if (location.host != swfHost) {
+        logger.error(
+            "[WebSocket] You must host HTML and WebSocketMain.swf in the same host " +
+            "('" + location.host + "' != '" + swfHost + "'). " +
+            "See also 'How to host HTML file and SWF file in different domains' section " +
+            "in README.md. If you use WebSocketMainInsecure.swf, you can suppress this message " +
+            "by WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR = true;");
+      }
+    }
+    var container = document.createElement("div");
+    container.id = "webSocketContainer";
+    // Hides Flash box. We cannot use display: none or visibility: hidden because it prevents
+    // Flash from loading at least in IE. So we move it out of the screen at (-100, -100).
+    // But this even doesn't work with Flash Lite (e.g. in Droid Incredible). So with Flash
+    // Lite, we put it at (0, 0). This shows 1x1 box visible at left-top corner but this is
+    // the best we can do as far as we know now.
+    container.style.position = "absolute";
+    if (WebSocket.__isFlashLite()) {
+      container.style.left = "0px";
+      container.style.top = "0px";
+    } else {
+      container.style.left = "-100px";
+      container.style.top = "-100px";
+    }
+    var holder = document.createElement("div");
+    holder.id = "webSocketFlash";
+    container.appendChild(holder);
+    document.body.appendChild(container);
+    // See this article for hasPriority:
+    // http://help.adobe.com/en_US/as3/mobile/WS4bebcd66a74275c36cfb8137124318eebc6-7ffd.html
+    swfobject.embedSWF(
+      WEB_SOCKET_SWF_LOCATION,
+      "webSocketFlash",
+      "1" /* width */,
+      "1" /* height */,
+      "10.0.0" /* SWF version */,
+      null,
+      null,
+      {hasPriority: true, swliveconnect : true, allowScriptAccess: "always"},
+      null,
+      function(e) {
+        if (!e.success) {
+          logger.error("[WebSocket] swfobject.embedSWF failed");
+        }
+      }
+    );
+    
+  };
+  
+  /**
+   * Called by Flash to notify JS that it's fully loaded and ready
+   * for communication.
+   */
+  WebSocket.__onFlashInitialized = function() {
+    // We need to set a timeout here to avoid round-trip calls
+    // to flash during the initialization process.
+    setTimeout(function() {
+      WebSocket.__flash = document.getElementById("webSocketFlash");
+      WebSocket.__flash.setCallerUrl(location.href);
+      WebSocket.__flash.setDebug(!!window.WEB_SOCKET_DEBUG);
+      for (var i = 0; i < WebSocket.__tasks.length; ++i) {
+        WebSocket.__tasks[i]();
+      }
+      WebSocket.__tasks = [];
+    }, 0);
+  };
+  
+  /**
+   * Called by Flash to notify WebSockets events are fired.
+   */
+  WebSocket.__onFlashEvent = function() {
+    setTimeout(function() {
+      try {
+        // Gets events using receiveEvents() instead of getting it from event object
+        // of Flash event. This is to make sure to keep message order.
+        // It seems sometimes Flash events don't arrive in the same order as they are sent.
+        var events = WebSocket.__flash.receiveEvents();
+        for (var i = 0; i < events.length; ++i) {
+          WebSocket.__instances[events[i].webSocketId].__handleEvent(events[i]);
+        }
+      } catch (e) {
+        logger.error(e);
+      }
+    }, 0);
+    return true;
+  };
+  
+  // Called by Flash.
+  WebSocket.__log = function(message) {
+    logger.log(decodeURIComponent(message));
+  };
+  
+  // Called by Flash.
+  WebSocket.__error = function(message) {
+    logger.error(decodeURIComponent(message));
+  };
+  
+  WebSocket.__addTask = function(task) {
+    if (WebSocket.__flash) {
+      task();
+    } else {
+      WebSocket.__tasks.push(task);
+    }
+  };
+  
+  /**
+   * Test if the browser is running flash lite.
+   * @return {boolean} True if flash lite is running, false otherwise.
+   */
+  WebSocket.__isFlashLite = function() {
+    if (!window.navigator || !window.navigator.mimeTypes) {
+      return false;
+    }
+    var mimeType = window.navigator.mimeTypes["application/x-shockwave-flash"];
+    if (!mimeType || !mimeType.enabledPlugin || !mimeType.enabledPlugin.filename) {
+      return false;
+    }
+    return mimeType.enabledPlugin.filename.match(/flashlite/i) ? true : false;
+  };
+  
+  if (!window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION) {
+    // NOTE:
+    //   This fires immediately if web_socket.js is dynamically loaded after
+    //   the document is loaded.
+    swfobject.addDomLoadEvent(function() {
+      WebSocket.__initialize();
+    });
+  }
+  
+})();
+
+/*!	SWFObject v2.2 <http://code.google.com/p/swfobject/> 
+	is released under the MIT License <http://www.opensource.org/licenses/mit-license.php> 
+*/
+
+var swfobject = function() {
+	
+	var UNDEF = "undefined",
+		OBJECT = "object",
+		SHOCKWAVE_FLASH = "Shockwave Flash",
+		SHOCKWAVE_FLASH_AX = "ShockwaveFlash.ShockwaveFlash",
+		FLASH_MIME_TYPE = "application/x-shockwave-flash",
+		EXPRESS_INSTALL_ID = "SWFObjectExprInst",
+		ON_READY_STATE_CHANGE = "onreadystatechange",
+		
+		win = window,
+		doc = document,
+		nav = navigator,
+		
+		plugin = false,
+		domLoadFnArr = [main],
+		regObjArr = [],
+		objIdArr = [],
+		listenersArr = [],
+		storedAltContent,
+		storedAltContentId,
+		storedCallbackFn,
+		storedCallbackObj,
+		isDomLoaded = false,
+		isExpressInstallActive = false,
+		dynamicStylesheet,
+		dynamicStylesheetMedia,
+		autoHideShow = true,
+	
+	/* Centralized function for browser feature detection
+		- User agent string detection is only used when no good alternative is possible
+		- Is executed directly for optimal performance
+	*/	
+	ua = function() {
+		var w3cdom = typeof doc.getElementById != UNDEF && typeof doc.getElementsByTagName != UNDEF && typeof doc.createElement != UNDEF,
+			u = nav.userAgent.toLowerCase(),
+			p = nav.platform.toLowerCase(),
+			windows = p ? /win/.test(p) : /win/.test(u),
+			mac = p ? /mac/.test(p) : /mac/.test(u),
+			webkit = /webkit/.test(u) ? parseFloat(u.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, "$1")) : false, // returns either the webkit version or false if not webkit
+			ie = !+"\v1", // feature detection based on Andrea Giammarchi's solution: http://webreflection.blogspot.com/2009/01/32-bytes-to-know-if-your-browser-is-ie.html
+			playerVersion = [0,0,0],
+			d = null;
+		if (typeof nav.plugins != UNDEF && typeof nav.plugins[SHOCKWAVE_FLASH] == OBJECT) {
+			d = nav.plugins[SHOCKWAVE_FLASH].description;
+			if (d && !(typeof nav.mimeTypes != UNDEF && nav.mimeTypes[FLASH_MIME_TYPE] && !nav.mimeTypes[FLASH_MIME_TYPE].enabledPlugin)) { // navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin indicates whether plug-ins are enabled or disabled in Safari 3+
+				plugin = true;
+				ie = false; // cascaded feature detection for Internet Explorer
+				d = d.replace(/^.*\s+(\S+\s+\S+$)/, "$1");
+				playerVersion[0] = parseInt(d.replace(/^(.*)\..*$/, "$1"), 10);
+				playerVersion[1] = parseInt(d.replace(/^.*\.(.*)\s.*$/, "$1"), 10);
+				playerVersion[2] = /[a-zA-Z]/.test(d) ? parseInt(d.replace(/^.*[a-zA-Z]+(.*)$/, "$1"), 10) : 0;
+			}
+		}
+		else if (typeof win.ActiveXObject != UNDEF) {
+			try {
+				var a = new ActiveXObject(SHOCKWAVE_FLASH_AX);
+				if (a) { // a will return null when ActiveX is disabled
+					d = a.GetVariable("$version");
+					if (d) {
+						ie = true; // cascaded feature detection for Internet Explorer
+						d = d.split(" ")[1].split(",");
+						playerVersion = [parseInt(d[0], 10), parseInt(d[1], 10), parseInt(d[2], 10)];
+					}
+				}
+			}
+			catch(e) {}
+		}
+		return { w3:w3cdom, pv:playerVersion, wk:webkit, ie:ie, win:windows, mac:mac };
+	}(),
+	
+	/* Cross-browser onDomLoad
+		- Will fire an event as soon as the DOM of a web page is loaded
+		- Internet Explorer workaround based on Diego Perini's solution: http://javascript.nwbox.com/IEContentLoaded/
+		- Regular onload serves as fallback
+	*/ 
+	onDomLoad = function() {
+		if (!ua.w3) { return; }
+		if ((typeof doc.readyState != UNDEF && doc.readyState == "complete") || (typeof doc.readyState == UNDEF && (doc.getElementsByTagName("body")[0] || doc.body))) { // function is fired after onload, e.g. when script is inserted dynamically 
+			callDomLoadFunctions();
+		}
+		if (!isDomLoaded) {
+			if (typeof doc.addEventListener != UNDEF) {
+				doc.addEventListener("DOMContentLoaded", callDomLoadFunctions, false);
+			}		
+			if (ua.ie && ua.win) {
+				doc.attachEvent(ON_READY_STATE_CHANGE, function() {
+					if (doc.readyState == "complete") {
+						doc.detachEvent(ON_READY_STATE_CHANGE, arguments.callee);
+						callDomLoadFunctions();
+					}
+				});
+				if (win == top) { // if not inside an iframe
+					(function(){
+						if (isDomLoaded) { return; }
+						try {
+							doc.documentElement.doScroll("left");
+						}
+						catch(e) {
+							setTimeout(arguments.callee, 0);
+							return;
+						}
+						callDomLoadFunctions();
+					})();
+				}
+			}
+			if (ua.wk) {
+				(function(){
+					if (isDomLoaded) { return; }
+					if (!/loaded|complete/.test(doc.readyState)) {
+						setTimeout(arguments.callee, 0);
+						return;
+					}
+					callDomLoadFunctions();
+				})();
+			}
+			addLoadEvent(callDomLoadFunctions);
+		}
+	}();
+	
+	function callDomLoadFunctions() {
+		if (isDomLoaded) { return; }
+		try { // test if we can really add/remove elements to/from the DOM; we don't want to fire it too early
+			var t = doc.getElementsByTagName("body")[0].appendChild(createElement("span"));
+			t.parentNode.removeChild(t);
+		}
+		catch (e) { return; }
+		isDomLoaded = true;
+		var dl = domLoadFnArr.length;
+		for (var i = 0; i < dl; i++) {
+			domLoadFnArr[i]();
+		}
+	}
+	
+	function addDomLoadEvent(fn) {
+		if (isDomLoaded) {
+			fn();
+		}
+		else { 
+			domLoadFnArr[domLoadFnArr.length] = fn; // Array.push() is only available in IE5.5+
+		}
+	}
+	
+	/* Cross-browser onload
+		- Based on James Edwards' solution: http://brothercake.com/site/resources/scripts/onload/
+		- Will fire an event as soon as a web page including all of its assets are loaded 
+	 */
+	function addLoadEvent(fn) {
+		if (typeof win.addEventListener != UNDEF) {
+			win.addEventListener("load", fn, false);
+		}
+		else if (typeof doc.addEventListener != UNDEF) {
+			doc.addEventListener("load", fn, false);
+		}
+		else if (typeof win.attachEvent != UNDEF) {
+			addListener(win, "onload", fn);
+		}
+		else if (typeof win.onload == "function") {
+			var fnOld = win.onload;
+			win.onload = function() {
+				fnOld();
+				fn();
+			};
+		}
+		else {
+			win.onload = fn;
+		}
+	}
+	
+	/* Main function
+		- Will preferably execute onDomLoad, otherwise onload (as a fallback)
+	*/
+	function main() { 
+		if (plugin) {
+			testPlayerVersion();
+		}
+		else {
+			matchVersions();
+		}
+	}
+	
+	/* Detect the Flash Player version for non-Internet Explorer browsers
+		- Detecting the plug-in version via the object element is more precise than using the plugins collection item's description:
+		  a. Both release and build numbers can be detected
+		  b. Avoid wrong descriptions by corrupt installers provided by Adobe
+		  c. Avoid wrong descriptions by multiple Flash Player entries in the plugin Array, caused by incorrect browser imports
+		- Disadvantage of this method is that it depends on the availability of the DOM, while the plugins collection is immediately available
+	*/
+	function testPlayerVersion() {
+		var b = doc.getElementsByTagName("body")[0];
+		var o = createElement(OBJECT);
+		o.setAttribute("type", FLASH_MIME_TYPE);
+		var t = b.appendChild(o);
+		if (t) {
+			var counter = 0;
+			(function(){
+				if (typeof t.GetVariable != UNDEF) {
+					var d = t.GetVariable("$version");
+					if (d) {
+						d = d.split(" ")[1].split(",");
+						ua.pv = [parseInt(d[0], 10), parseInt(d[1], 10), parseInt(d[2], 10)];
+					}
+				}
+				else if (counter < 10) {
+					counter++;
+					setTimeout(arguments.callee, 10);
+					return;
+				}
+				b.removeChild(o);
+				t = null;
+				matchVersions();
+			})();
+		}
+		else {
+			matchVersions();
+		}
+	}
+	
+	/* Perform Flash Player and SWF version matching; static publishing only
+	*/
+	function matchVersions() {
+		var rl = regObjArr.length;
+		if (rl > 0) {
+			for (var i = 0; i < rl; i++) { // for each registered object element
+				var id = regObjArr[i].id;
+				var cb = regObjArr[i].callbackFn;
+				var cbObj = {success:false, id:id};
+				if (ua.pv[0] > 0) {
+					var obj = getElementById(id);
+					if (obj) {
+						if (hasPlayerVersion(regObjArr[i].swfVersion) && !(ua.wk && ua.wk < 312)) { // Flash Player version >= published SWF version: Houston, we have a match!
+							setVisibility(id, true);
+							if (cb) {
+								cbObj.success = true;
+								cbObj.ref = getObjectById(id);
+								cb(cbObj);
+							}
+						}
+						else if (regObjArr[i].expressInstall && canExpressInstall()) { // show the Adobe Express Install dialog if set by the web page author and if supported
+							var att = {};
+							att.data = regObjArr[i].expressInstall;
+							att.width = obj.getAttribute("width") || "0";
+							att.height = obj.getAttribute("height") || "0";
+							if (obj.getAttribute("class")) { att.styleclass = obj.getAttribute("class"); }
+							if (obj.getAttribute("align")) { att.align = obj.getAttribute("align"); }
+							// parse HTML object param element's name-value pairs
+							var par = {};
+							var p = obj.getElementsByTagName("param");
+							var pl = p.length;
+							for (var j = 0; j < pl; j++) {
+								if (p[j].getAttribute("name").toLowerCase() != "movie") {
+									par[p[j].getAttribute("name")] = p[j].getAttribute("value");
+								}
+							}
+							showExpressInstall(att, par, id, cb);
+						}
+						else { // Flash Player and SWF version mismatch or an older Webkit engine that ignores the HTML object element's nested param elements: display alternative content instead of SWF
+							displayAltContent(obj);
+							if (cb) { cb(cbObj); }
+						}
+					}
+				}
+				else {	// if no Flash Player is installed or the fp version cannot be detected we let the HTML object element do its job (either show a SWF or alternative content)
+					setVisibility(id, true);
+					if (cb) {
+						var o = getObjectById(id); // test whether there is an HTML object element or not
+						if (o && typeof o.SetVariable != UNDEF) { 
+							cbObj.success = true;
+							cbObj.ref = o;
+						}
+						cb(cbObj);
+					}
+				}
+			}
+		}
+	}
+	
+	function getObjectById(objectIdStr) {
+		var r = null;
+		var o = getElementById(objectIdStr);
+		if (o && o.nodeName == "OBJECT") {
+			if (typeof o.SetVariable != UNDEF) {
+				r = o;
+			}
+			else {
+				var n = o.getElementsByTagName(OBJECT)[0];
+				if (n) {
+					r = n;
+				}
+			}
+		}
+		return r;
+	}
+	
+	/* Requirements for Adobe Express Install
+		- only one instance can be active at a time
+		- fp 6.0.65 or higher
+		- Win/Mac OS only
+		- no Webkit engines older than version 312
+	*/
+	function canExpressInstall() {
+		return !isExpressInstallActive && hasPlayerVersion("6.0.65") && (ua.win || ua.mac) && !(ua.wk && ua.wk < 312);
+	}
+	
+	/* Show the Adobe Express Install dialog
+		- Reference: http://www.adobe.com/cfusion/knowledgebase/index.cfm?id=6a253b75
+	*/
+	function showExpressInstall(att, par, replaceElemIdStr, callbackFn) {
+		isExpressInstallActive = true;
+		storedCallbackFn = callbackFn || null;
+		storedCallbackObj = {success:false, id:replaceElemIdStr};
+		var obj = getElementById(replaceElemIdStr);
+		if (obj) {
+			if (obj.nodeName == "OBJECT") { // static publishing
+				storedAltContent = abstractAltContent(obj);
+				storedAltContentId = null;
+			}
+			else { // dynamic publishing
+				storedAltContent = obj;
+				storedAltContentId = replaceElemIdStr;
+			}
+			att.id = EXPRESS_INSTALL_ID;
+			if (typeof att.width == UNDEF || (!/%$/.test(att.width) && parseInt(att.width, 10) < 310)) { att.width = "310"; }
+			if (typeof att.height == UNDEF || (!/%$/.test(att.height) && parseInt(att.height, 10) < 137)) { att.height = "137"; }
+			doc.title = doc.title.slice(0, 47) + " - Flash Player Installation";
+			var pt = ua.ie && ua.win ? "ActiveX" : "PlugIn",
+				fv = "MMredirectURL=" + win.location.toString().replace(/&/g,"%26") + "&MMplayerType=" + pt + "&MMdoctitle=" + doc.title;
+			if (typeof par.flashvars != UNDEF) {
+				par.flashvars += "&" + fv;
+			}
+			else {
+				par.flashvars = fv;
+			}
+			// IE only: when a SWF is loading (AND: not available in cache) wait for the readyState of the object element to become 4 before removing it,
+			// because you cannot properly cancel a loading SWF file without breaking browser load references, also obj.onreadystatechange doesn't work
+			if (ua.ie && ua.win && obj.readyState != 4) {
+				var newObj = createElement("div");
+				replaceElemIdStr += "SWFObjectNew";
+				newObj.setAttribute("id", replaceElemIdStr);
+				obj.parentNode.insertBefore(newObj, obj); // insert placeholder div that will be replaced by the object element that loads expressinstall.swf
+				obj.style.display = "none";
+				(function(){
+					if (obj.readyState == 4) {
+						obj.parentNode.removeChild(obj);
+					}
+					else {
+						setTimeout(arguments.callee, 10);
+					}
+				})();
+			}
+			createSWF(att, par, replaceElemIdStr);
+		}
+	}
+	
+	/* Functions to abstract and display alternative content
+	*/
+	function displayAltContent(obj) {
+		if (ua.ie && ua.win && obj.readyState != 4) {
+			// IE only: when a SWF is loading (AND: not available in cache) wait for the readyState of the object element to become 4 before removing it,
+			// because you cannot properly cancel a loading SWF file without breaking browser load references, also obj.onreadystatechange doesn't work
+			var el = createElement("div");
+			obj.parentNode.insertBefore(el, obj); // insert placeholder div that will be replaced by the alternative content
+			el.parentNode.replaceChild(abstractAltContent(obj), el);
+			obj.style.display = "none";
+			(function(){
+				if (obj.readyState == 4) {
+					obj.parentNode.removeChild(obj);
+				}
+				else {
+					setTimeout(arguments.callee, 10);
+				}
+			})();
+		}
+		else {
+			obj.parentNode.replaceChild(abstractAltContent(obj), obj);
+		}
+	} 
+
+	function abstractAltContent(obj) {
+		var ac = createElement("div");
+		if (ua.win && ua.ie) {
+			ac.innerHTML = obj.innerHTML;
+		}
+		else {
+			var nestedObj = obj.getElementsByTagName(OBJECT)[0];
+			if (nestedObj) {
+				var c = nestedObj.childNodes;
+				if (c) {
+					var cl = c.length;
+					for (var i = 0; i < cl; i++) {
+						if (!(c[i].nodeType == 1 && c[i].nodeName == "PARAM") && !(c[i].nodeType == 8)) {
+							ac.appendChild(c[i].cloneNode(true));
+						}
+					}
+				}
+			}
+		}
+		return ac;
+	}
+	
+	/* Cross-browser dynamic SWF creation
+	*/
+	function createSWF(attObj, parObj, id) {
+		var r, el = getElementById(id);
+		if (ua.wk && ua.wk < 312) { return r; }
+		if (el) {
+			if (typeof attObj.id == UNDEF) { // if no 'id' is defined for the object element, it will inherit the 'id' from the alternative content
+				attObj.id = id;
+			}
+			if (ua.ie && ua.win) { // Internet Explorer + the HTML object element + W3C DOM methods do not combine: fall back to outerHTML
+				var att = "";
+				for (var i in attObj) {
+					if (attObj[i] != Object.prototype[i]) { // filter out prototype additions from other potential libraries
+						if (i.toLowerCase() == "data") {
+							parObj.movie = attObj[i];
+						}
+						else if (i.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
+							att += ' class="' + attObj[i] + '"';
+						}
+						else if (i.toLowerCase() != "classid") {
+							att += ' ' + i + '="' + attObj[i] + '"';
+						}
+					}
+				}
+				var par = "";
+				for (var j in parObj) {
+					if (parObj[j] != Object.prototype[j]) { // filter out prototype additions from other potential libraries
+						par += '<param name="' + j + '" value="' + parObj[j] + '" />';
+					}
+				}
+				el.outerHTML = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"' + att + '>' + par + '</object>';
+				objIdArr[objIdArr.length] = attObj.id; // stored to fix object 'leaks' on unload (dynamic publishing only)
+				r = getElementById(attObj.id);	
+			}
+			else { // well-behaving browsers
+				var o = createElement(OBJECT);
+				o.setAttribute("type", FLASH_MIME_TYPE);
+				for (var m in attObj) {
+					if (attObj[m] != Object.prototype[m]) { // filter out prototype additions from other potential libraries
+						if (m.toLowerCase() == "styleclass") { // 'class' is an ECMA4 reserved keyword
+							o.setAttribute("class", attObj[m]);
+						}
+						else if (m.toLowerCase() != "classid") { // filter out IE specific attribute
+							o.setAttribute(m, attObj[m]);
+						}
+					}
+				}
+				for (var n in parObj) {
+					if (parObj[n] != Object.prototype[n] && n.toLowerCase() != "movie") { // filter out prototype additions from other potential libraries and IE specific param element
+						createObjParam(o, n, parObj[n]);
+					}
+				}
+				el.parentNode.replaceChild(o, el);
+				r = o;
+			}
+		}
+		return r;
+	}
+	
+	function createObjParam(el, pName, pValue) {
+		var p = createElement("param");
+		p.setAttribute("name", pName);	
+		p.setAttribute("value", pValue);
+		el.appendChild(p);
+	}
+	
+	/* Cross-browser SWF removal
+		- Especially needed to safely and completely remove a SWF in Internet Explorer
+	*/
+	function removeSWF(id) {
+		var obj = getElementById(id);
+		if (obj && obj.nodeName == "OBJECT") {
+			if (ua.ie && ua.win) {
+				obj.style.display = "none";
+				(function(){
+					if (obj.readyState == 4) {
+						removeObjectInIE(id);
+					}
+					else {
+						setTimeout(arguments.callee, 10);
+					}
+				})();
+			}
+			else {
+				obj.parentNode.removeChild(obj);
+			}
+		}
+	}
+	
+	function removeObjectInIE(id) {
+		var obj = getElementById(id);
+		if (obj) {
+			for (var i in obj) {
+				if (typeof obj[i] == "function") {
+					obj[i] = null;
+				}
+			}
+			obj.parentNode.removeChild(obj);
+		}
+	}
+	
+	/* Functions to optimize JavaScript compression
+	*/
+	function getElementById(id) {
+		var el = null;
+		try {
+			el = doc.getElementById(id);
+		}
+		catch (e) {}
+		return el;
+	}
+	
+	function createElement(el) {
+		return doc.createElement(el);
+	}
+	
+	/* Updated attachEvent function for Internet Explorer
+		- Stores attachEvent information in an Array, so on unload the detachEvent functions can be called to avoid memory leaks
+	*/	
+	function addListener(target, eventType, fn) {
+		target.attachEvent(eventType, fn);
+		listenersArr[listenersArr.length] = [target, eventType, fn];
+	}
+	
+	/* Flash Player and SWF content version matching
+	*/
+	function hasPlayerVersion(rv) {
+		var pv = ua.pv, v = rv.split(".");
+		v[0] = parseInt(v[0], 10);
+		v[1] = parseInt(v[1], 10) || 0; // supports short notation, e.g. "9" instead of "9.0.0"
+		v[2] = parseInt(v[2], 10) || 0;
+		return (pv[0] > v[0] || (pv[0] == v[0] && pv[1] > v[1]) || (pv[0] == v[0] && pv[1] == v[1] && pv[2] >= v[2])) ? true : false;
+	}
+	
+	/* Cross-browser dynamic CSS creation
+		- Based on Bobby van der Sluis' solution: http://www.bobbyvandersluis.com/articles/dynamicCSS.php
+	*/	
+	function createCSS(sel, decl, media, newStyle) {
+		if (ua.ie && ua.mac) { return; }
+		var h = doc.getElementsByTagName("head")[0];
+		if (!h) { return; } // to also support badly authored HTML pages that lack a head element
+		var m = (media && typeof media == "string") ? media : "screen";
+		if (newStyle) {
+			dynamicStylesheet = null;
+			dynamicStylesheetMedia = null;
+		}
+		if (!dynamicStylesheet || dynamicStylesheetMedia != m) { 
+			// create dynamic stylesheet + get a global reference to it
+			var s = createElement("style");
+			s.setAttribute("type", "text/css");
+			s.setAttribute("media", m);
+			dynamicStylesheet = h.appendChild(s);
+			if (ua.ie && ua.win && typeof doc.styleSheets != UNDEF && doc.styleSheets.length > 0) {
+				dynamicStylesheet = doc.styleSheets[doc.styleSheets.length - 1];
+			}
+			dynamicStylesheetMedia = m;
+		}
+		// add style rule
+		if (ua.ie && ua.win) {
+			if (dynamicStylesheet && typeof dynamicStylesheet.addRule == OBJECT) {
+				dynamicStylesheet.addRule(sel, decl);
+			}
+		}
+		else {
+			if (dynamicStylesheet && typeof doc.createTextNode != UNDEF) {
+				dynamicStylesheet.appendChild(doc.createTextNode(sel + " {" + decl + "}"));
+			}
+		}
+	}
+	
+	function setVisibility(id, isVisible) {
+		if (!autoHideShow) { return; }
+		var v = isVisible ? "visible" : "hidden";
+		if (isDomLoaded && getElementById(id)) {
+			getElementById(id).style.visibility = v;
+		}
+		else {
+			createCSS("#" + id, "visibility:" + v);
+		}
+	}
+
+	/* Filter to avoid XSS attacks
+	*/
+	function urlEncodeIfNecessary(s) {
+		var regex = /[\\\"<>\.;]/;
+		var hasBadChars = regex.exec(s) != null;
+		return hasBadChars && typeof encodeURIComponent != UNDEF ? encodeURIComponent(s) : s;
+	}
+	
+	/* Release memory to avoid memory leaks caused by closures, fix hanging audio/video threads and force open sockets/NetConnections to disconnect (Internet Explorer only)
+	*/
+	var cleanup = function() {
+		if (ua.ie && ua.win) {
+			window.attachEvent("onunload", function() {
+				// remove listeners to avoid memory leaks
+				var ll = listenersArr.length;
+				for (var i = 0; i < ll; i++) {
+					listenersArr[i][0].detachEvent(listenersArr[i][1], listenersArr[i][2]);
+				}
+				// cleanup dynamically embedded objects to fix audio/video threads and force open sockets and NetConnections to disconnect
+				var il = objIdArr.length;
+				for (var j = 0; j < il; j++) {
+					removeSWF(objIdArr[j]);
+				}
+				// cleanup library's main closures to avoid memory leaks
+				for (var k in ua) {
+					ua[k] = null;
+				}
+				ua = null;
+				for (var l in swfobject) {
+					swfobject[l] = null;
+				}
+				swfobject = null;
+			});
+		}
+	}();
+	
+	return {
+		/* Public API
+			- Reference: http://code.google.com/p/swfobject/wiki/documentation
+		*/ 
+		registerObject: function(objectIdStr, swfVersionStr, xiSwfUrlStr, callbackFn) {
+			if (ua.w3 && objectIdStr && swfVersionStr) {
+				var regObj = {};
+				regObj.id = objectIdStr;
+				regObj.swfVersion = swfVersionStr;
+				regObj.expressInstall = xiSwfUrlStr;
+				regObj.callbackFn = callbackFn;
+				regObjArr[regObjArr.length] = regObj;
+				setVisibility(objectIdStr, false);
+			}
+			else if (callbackFn) {
+				callbackFn({success:false, id:objectIdStr});
+			}
+		},
+		
+		getObjectById: function(objectIdStr) {
+			if (ua.w3) {
+				return getObjectById(objectIdStr);
+			}
+		},
+		
+		embedSWF: function(swfUrlStr, replaceElemIdStr, widthStr, heightStr, swfVersionStr, xiSwfUrlStr, flashvarsObj, parObj, attObj, callbackFn) {
+			var callbackObj = {success:false, id:replaceElemIdStr};
+			if (ua.w3 && !(ua.wk && ua.wk < 312) && swfUrlStr && replaceElemIdStr && widthStr && heightStr && swfVersionStr) {
+				setVisibility(replaceElemIdStr, false);
+				addDomLoadEvent(function() {
+					widthStr += ""; // auto-convert to string
+					heightStr += "";
+					var att = {};
+					if (attObj && typeof attObj === OBJECT) {
+						for (var i in attObj) { // copy object to avoid the use of references, because web authors often reuse attObj for multiple SWFs
+							att[i] = attObj[i];
+						}
+					}
+					att.data = swfUrlStr;
+					att.width = widthStr;
+					att.height = heightStr;
+					var par = {}; 
+					if (parObj && typeof parObj === OBJECT) {
+						for (var j in parObj) { // copy object to avoid the use of references, because web authors often reuse parObj for multiple SWFs
+							par[j] = parObj[j];
+						}
+					}
+					if (flashvarsObj && typeof flashvarsObj === OBJECT) {
+						for (var k in flashvarsObj) { // copy object to avoid the use of references, because web authors often reuse flashvarsObj for multiple SWFs
+							if (typeof par.flashvars != UNDEF) {
+								par.flashvars += "&" + k + "=" + flashvarsObj[k];
+							}
+							else {
+								par.flashvars = k + "=" + flashvarsObj[k];
+							}
+						}
+					}
+					if (hasPlayerVersion(swfVersionStr)) { // create SWF
+						var obj = createSWF(att, par, replaceElemIdStr);
+						if (att.id == replaceElemIdStr) {
+							setVisibility(replaceElemIdStr, true);
+						}
+						callbackObj.success = true;
+						callbackObj.ref = obj;
+					}
+					else if (xiSwfUrlStr && canExpressInstall()) { // show Adobe Express Install
+						att.data = xiSwfUrlStr;
+						showExpressInstall(att, par, replaceElemIdStr, callbackFn);
+						return;
+					}
+					else { // show alternative content
+						setVisibility(replaceElemIdStr, true);
+					}
+					if (callbackFn) { callbackFn(callbackObj); }
+				});
+			}
+			else if (callbackFn) { callbackFn(callbackObj);	}
+		},
+		
+		switchOffAutoHideShow: function() {
+			autoHideShow = false;
+		},
+		
+		ua: ua,
+		
+		getFlashPlayerVersion: function() {
+			return { major:ua.pv[0], minor:ua.pv[1], release:ua.pv[2] };
+		},
+		
+		hasFlashPlayerVersion: hasPlayerVersion,
+		
+		createSWF: function(attObj, parObj, replaceElemIdStr) {
+			if (ua.w3) {
+				return createSWF(attObj, parObj, replaceElemIdStr);
+			}
+			else {
+				return undefined;
+			}
+		},
+		
+		showExpressInstall: function(att, par, replaceElemIdStr, callbackFn) {
+			if (ua.w3 && canExpressInstall()) {
+				showExpressInstall(att, par, replaceElemIdStr, callbackFn);
+			}
+		},
+		
+		removeSWF: function(objElemIdStr) {
+			if (ua.w3) {
+				removeSWF(objElemIdStr);
+			}
+		},
+		
+		createCSS: function(selStr, declStr, mediaStr, newStyleBoolean) {
+			if (ua.w3) {
+				createCSS(selStr, declStr, mediaStr, newStyleBoolean);
+			}
+		},
+		
+		addDomLoadEvent: addDomLoadEvent,
+		
+		addLoadEvent: addLoadEvent,
+		
+		getQueryParamValue: function(param) {
+			var q = doc.location.search || doc.location.hash;
+			if (q) {
+				if (/\?/.test(q)) { q = q.split("?")[1]; } // strip question mark
+				if (param == null) {
+					return urlEncodeIfNecessary(q);
+				}
+				var pairs = q.split("&");
+				for (var i = 0; i < pairs.length; i++) {
+					if (pairs[i].substring(0, pairs[i].indexOf("=")) == param) {
+						return urlEncodeIfNecessary(pairs[i].substring((pairs[i].indexOf("=") + 1)));
+					}
+				}
+			}
+			return "";
+		},
+		
+		// For internal usage only
+		expressInstallCallback: function() {
+			if (isExpressInstallActive) {
+				var obj = getElementById(EXPRESS_INSTALL_ID);
+				if (obj && storedAltContent) {
+					obj.parentNode.replaceChild(storedAltContent, obj);
+					if (storedAltContentId) {
+						setVisibility(storedAltContentId, true);
+						if (ua.ie && ua.win) { storedAltContent.style.display = "block"; }
+					}
+					if (storedCallbackFn) { storedCallbackFn(storedCallbackObj); }
+				}
+				isExpressInstallActive = false;
+			} 
+		}
+	};
+}();
+
+
+    }
+    function patchHistory() {
         // import ''
     }
 
-    function patchCSS3(window) {
+    function patchCSS3() {
 /*
 PIE: CSS3 rendering for IE
 Version 2.0beta1
@@ -3032,10 +4736,10 @@ PIE[ 'detach' ] = function( el ) {
 
 })( window, document );
     }
-    function patchCSS3Filter(window) {
+    function patchCSS3Filter() {
 
     }
-    function patchTransform(window,document) {
+    function patchTransform() {
 /*******************************************************************************
  * This notice must be untouched at all times.
  *
@@ -7285,7 +8989,7 @@ EventHelpers.addPageLoadEvent('cssSandpaper.init')
         window.MatrixGenerator = MatrixGenerator
         /* jshint ignore:end */
     }
-    function patchWebPerformance(window) {
+    function patchWebPerformance() {
 /* eslint-env browser,amd,node */
 //
 // usertiming.js
@@ -8876,20 +10580,2121 @@ EventHelpers.addPageLoadEvent('cssSandpaper.init')
 
     }
 
+    function patchBase64() {
+;(function () {
 
+  var object = (
+    // #34: CommonJS
+    typeof exports === 'object' && exports !== null &&
+    typeof exports.nodeType !== 'number' ?
+      exports :
+    // #8: web workers
+    typeof self != 'undefined' ?
+      self :
+    // #31: ExtendScript
+      $.global
+  );
+
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+  function InvalidCharacterError(message) {
+    this.message = message;
+  }
+  InvalidCharacterError.prototype = new Error;
+  InvalidCharacterError.prototype.name = 'InvalidCharacterError';
+
+  // encoder
+  // [https://gist.github.com/999166] by [https://github.com/nignag]
+  object.btoa || (
+  object.btoa = function (input) {
+    var str = String(input);
+    for (
+      // initialize result and counter
+      var block, charCode, idx = 0, map = chars, output = '';
+      // if the next str index does not exist:
+      //   change the mapping table to "="
+      //   check if d has no fractional digits
+      str.charAt(idx | 0) || (map = '=', idx % 1);
+      // "8 - idx % 1 * 8" generates the sequence 2, 4, 6, 8
+      output += map.charAt(63 & block >> 8 - idx % 1 * 8)
+    ) {
+      charCode = str.charCodeAt(idx += 3/4);
+      if (charCode > 0xFF) {
+        throw new InvalidCharacterError("'btoa' failed: The string to be encoded contains characters outside of the Latin1 range.");
+      }
+      block = block << 8 | charCode;
+    }
+    return output;
+  });
+
+  // decoder
+  // [https://gist.github.com/1020396] by [https://github.com/atk]
+  object.atob || (
+  object.atob = function (input) {
+    var str = String(input).replace(/[=]+$/, ''); // #31: ExtendScript bad parse of /=
+    if (str.length % 4 == 1) {
+      throw new InvalidCharacterError("'atob' failed: The string to be decoded is not correctly encoded.");
+    }
+    for (
+      // initialize result and counters
+      var bc = 0, bs, buffer, idx = 0, output = '';
+      // get next character
+      buffer = str.charAt(idx++);
+      // character found in table? initialize bit storage and add its ascii value;
+      ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
+        // and if not first of each 4 characters,
+        // convert the first 8 bits to one ascii character
+        bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+    ) {
+      // try to find character in table (0-63, not found => -1)
+      buffer = chars.indexOf(buffer);
+    }
+    return output;
+  });
+
+}());
+
+    }
+    function patchTypedArray() {
+/*
+ Copyright (c) 2010, Linden Research, Inc.
+ Copyright (c) 2014, Joshua Bell
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ $/LicenseInfo$
+ */
+
+// Original can be found at:
+//   https://bitbucket.org/lindenlab/llsd
+// Modifications by Joshua Bell inexorabletash@gmail.com
+//   https://github.com/inexorabletash/polyfill
+
+// ES3/ES5 implementation of the Krhonos Typed Array Specification
+//   Ref: http://www.khronos.org/registry/typedarray/specs/latest/
+//   Date: 2011-02-01
+//
+// Variations:
+//  * Allows typed_array.get/set() as alias for subscripts (typed_array[])
+//  * Gradually migrating structure from Khronos spec to ES2015 spec
+//
+// Caveats:
+//  * Beyond 10000 or so entries, polyfilled array accessors (ta[0],
+//    etc) become memory-prohibitive, so array creation will fail. Set
+//    self.TYPED_ARRAY_POLYFILL_NO_ARRAY_ACCESSORS=true to disable
+//    creation of accessors. Your code will need to use the
+//    non-standard get()/set() instead, and will need to add those to
+//    native arrays for interop.
+(function(global) {
+  'use strict';
+  var undefined = (void 0); // Paranoia
+
+  // Beyond this value, index getters/setters (i.e. array[0], array[1]) are so slow to
+  // create, and consume so much memory, that the browser appears frozen.
+  var MAX_ARRAY_LENGTH = 1e5;
+
+  // Approximations of internal ECMAScript conversion functions
+  function Type(v) {
+    switch(typeof v) {
+    case 'undefined': return 'undefined';
+    case 'boolean': return 'boolean';
+    case 'number': return 'number';
+    case 'string': return 'string';
+    default: return v === null ? 'null' : 'object';
+    }
+  }
+
+  // Class returns internal [[Class]] property, used to avoid cross-frame instanceof issues:
+  function Class(v) { return Object.prototype.toString.call(v).replace(/^\[object *|\]$/g, ''); }
+  function IsCallable(o) { return typeof o === 'function'; }
+  function ToObject(v) {
+    if (v === null || v === undefined) throw TypeError();
+    return Object(v);
+  }
+  function ToInt32(v) { return v >> 0; }
+  function ToUint32(v) { return v >>> 0; }
+
+  // Snapshot intrinsics
+  var LN2 = Math.LN2,
+      abs = Math.abs,
+      floor = Math.floor,
+      log = Math.log,
+      max = Math.max,
+      min = Math.min,
+      pow = Math.pow,
+      round = Math.round;
+
+  // emulate ES5 getter/setter API using legacy APIs
+  // http://blogs.msdn.com/b/ie/archive/2010/09/07/transitioning-existing-code-to-the-es5-getter-setter-apis.aspx
+  // (second clause tests for Object.defineProperty() in IE<9 that only supports extending DOM prototypes, but
+  // note that IE<9 does not support __defineGetter__ or __defineSetter__ so it just renders the method harmless)
+
+  (function() {
+    var orig = Object.defineProperty;
+    var dom_only = !(function(){try{return Object.defineProperty({},'x',{});}catch(_){return false;}}());
+
+    if (!orig || dom_only) {
+      Object.defineProperty = function (o, prop, desc) {
+        // In IE8 try built-in implementation for defining properties on DOM prototypes.
+        if (orig)
+          try { return orig(o, prop, desc); } catch (_) {}
+        if (o !== Object(o))
+          throw TypeError('Object.defineProperty called on non-object');
+        if (Object.prototype.__defineGetter__ && ('get' in desc))
+          Object.prototype.__defineGetter__.call(o, prop, desc.get);
+        if (Object.prototype.__defineSetter__ && ('set' in desc))
+          Object.prototype.__defineSetter__.call(o, prop, desc.set);
+        if ('value' in desc)
+          o[prop] = desc.value;
+        return o;
+      };
+    }
+  }());
+
+  // ES5: Make obj[index] an alias for obj._getter(index)/obj._setter(index, value)
+  // for index in 0 ... obj.length
+  function makeArrayAccessors(obj) {
+    if ('TYPED_ARRAY_POLYFILL_NO_ARRAY_ACCESSORS' in global)
+      return;
+
+    if (obj.length > MAX_ARRAY_LENGTH) throw RangeError('Array too large for polyfill');
+
+    function makeArrayAccessor(index) {
+      Object.defineProperty(obj, index, {
+        'get': function() { return obj._getter(index); },
+        'set': function(v) { obj._setter(index, v); },
+        enumerable: true,
+        configurable: false
+      });
+    }
+
+    var i;
+    for (i = 0; i < obj.length; i += 1) {
+      makeArrayAccessor(i);
+    }
+  }
+
+  // Internal conversion functions:
+  //    pack<Type>()   - take a number (interpreted as Type), output a byte array
+  //    unpack<Type>() - take a byte array, output a Type-like number
+
+  function as_signed(value, bits) { var s = 32 - bits; return (value << s) >> s; }
+  function as_unsigned(value, bits) { var s = 32 - bits; return (value << s) >>> s; }
+
+  function packI8(n) { return [n & 0xff]; }
+  function unpackI8(bytes) { return as_signed(bytes[0], 8); }
+
+  function packU8(n) { return [n & 0xff]; }
+  function unpackU8(bytes) { return as_unsigned(bytes[0], 8); }
+
+  function packU8Clamped(n) { n = round(Number(n)); return [n < 0 ? 0 : n > 0xff ? 0xff : n & 0xff]; }
+
+  function packI16(n) { return [n & 0xff, (n >> 8) & 0xff]; }
+  function unpackI16(bytes) { return as_signed(bytes[1] << 8 | bytes[0], 16); }
+
+  function packU16(n) { return [n & 0xff, (n >> 8) & 0xff]; }
+  function unpackU16(bytes) { return as_unsigned(bytes[1] << 8 | bytes[0], 16); }
+
+  function packI32(n) { return [n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]; }
+  function unpackI32(bytes) { return as_signed(bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0], 32); }
+
+  function packU32(n) { return [n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]; }
+  function unpackU32(bytes) { return as_unsigned(bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0], 32); }
+
+  function packIEEE754(v, ebits, fbits) {
+
+    var bias = (1 << (ebits - 1)) - 1;
+
+    function roundToEven(n) {
+      var w = floor(n), f = n - w;
+      if (f < 0.5)
+        return w;
+      if (f > 0.5)
+        return w + 1;
+      return w % 2 ? w + 1 : w;
+    }
+
+    // Compute sign, exponent, fraction
+    var s, e, f;
+    if (v !== v) {
+      // NaN
+      // http://dev.w3.org/2006/webapi/WebIDL/#es-type-mapping
+      e = (1 << ebits) - 1; f = pow(2, fbits - 1); s = 0;
+    } else if (v === Infinity || v === -Infinity) {
+      e = (1 << ebits) - 1; f = 0; s = (v < 0) ? 1 : 0;
+    } else if (v === 0) {
+      e = 0; f = 0; s = (1 / v === -Infinity) ? 1 : 0;
+    } else {
+      s = v < 0;
+      v = abs(v);
+
+      if (v >= pow(2, 1 - bias)) {
+        // Normalized
+        e = min(floor(log(v) / LN2), 1023);
+        var significand = v / pow(2, e);
+        if (significand < 1) {
+          e -= 1;
+          significand *= 2;
+        }
+        if (significand >= 2) {
+          e += 1;
+          significand /= 2;
+        }
+        var d = pow(2, fbits);
+        f = roundToEven(significand * d) - d;
+        e += bias;
+        if (f / d >= 1) {
+          e += 1;
+          f = 0;
+        }
+        if (e > 2 * bias) {
+          // Overflow
+          e = (1 << ebits) - 1;
+          f = 0;
+        }
+      } else {
+        // Denormalized
+        e = 0;
+        f = roundToEven(v / pow(2, 1 - bias - fbits));
+      }
+    }
+
+    // Pack sign, exponent, fraction
+    var bits = [], i;
+    for (i = fbits; i; i -= 1) { bits.push(f % 2 ? 1 : 0); f = floor(f / 2); }
+    for (i = ebits; i; i -= 1) { bits.push(e % 2 ? 1 : 0); e = floor(e / 2); }
+    bits.push(s ? 1 : 0);
+    bits.reverse();
+    var str = bits.join('');
+
+    // Bits to bytes
+    var bytes = [];
+    while (str.length) {
+      bytes.unshift(parseInt(str.substring(0, 8), 2));
+      str = str.substring(8);
+    }
+    return bytes;
+  }
+
+  function unpackIEEE754(bytes, ebits, fbits) {
+    // Bytes to bits
+    var bits = [], i, j, b, str,
+        bias, s, e, f;
+
+    for (i = 0; i < bytes.length; ++i) {
+      b = bytes[i];
+      for (j = 8; j; j -= 1) {
+        bits.push(b % 2 ? 1 : 0); b = b >> 1;
+      }
+    }
+    bits.reverse();
+    str = bits.join('');
+
+    // Unpack sign, exponent, fraction
+    bias = (1 << (ebits - 1)) - 1;
+    s = parseInt(str.substring(0, 1), 2) ? -1 : 1;
+    e = parseInt(str.substring(1, 1 + ebits), 2);
+    f = parseInt(str.substring(1 + ebits), 2);
+
+    // Produce number
+    if (e === (1 << ebits) - 1) {
+      return f !== 0 ? NaN : s * Infinity;
+    } else if (e > 0) {
+      // Normalized
+      return s * pow(2, e - bias) * (1 + f / pow(2, fbits));
+    } else if (f !== 0) {
+      // Denormalized
+      return s * pow(2, -(bias - 1)) * (f / pow(2, fbits));
+    } else {
+      return s < 0 ? -0 : 0;
+    }
+  }
+
+  function unpackF64(b) { return unpackIEEE754(b, 11, 52); }
+  function packF64(v) { return packIEEE754(v, 11, 52); }
+  function unpackF32(b) { return unpackIEEE754(b, 8, 23); }
+  function packF32(v) { return packIEEE754(v, 8, 23); }
+
+  //
+  // 3 The ArrayBuffer Type
+  //
+
+  (function() {
+
+    function ArrayBuffer(length) {
+      length = ToInt32(length);
+      if (length < 0) throw RangeError('ArrayBuffer size is not a small enough positive integer.');
+      Object.defineProperty(this, 'byteLength', {value: length});
+      Object.defineProperty(this, '_bytes', {value: Array(length)});
+
+      for (var i = 0; i < length; i += 1)
+        this._bytes[i] = 0;
+    }
+
+    global.ArrayBuffer = global.ArrayBuffer || ArrayBuffer;
+
+    //
+    // 5 The Typed Array View Types
+    //
+
+    function $TypedArray$() {
+
+      // %TypedArray% ( length )
+      if (!arguments.length || typeof arguments[0] !== 'object') {
+        return (function(length) {
+          length = ToInt32(length);
+          if (length < 0) throw RangeError('length is not a small enough positive integer.');
+          Object.defineProperty(this, 'length', {value: length});
+          Object.defineProperty(this, 'byteLength', {value: length * this.BYTES_PER_ELEMENT});
+          Object.defineProperty(this, 'buffer', {value: new ArrayBuffer(this.byteLength)});
+          Object.defineProperty(this, 'byteOffset', {value: 0});
+
+         }).apply(this, arguments);
+      }
+
+      // %TypedArray% ( typedArray )
+      if (arguments.length >= 1 &&
+          Type(arguments[0]) === 'object' &&
+          arguments[0] instanceof $TypedArray$) {
+        return (function(typedArray){
+          if (this.constructor !== typedArray.constructor) throw TypeError();
+
+          var byteLength = typedArray.length * this.BYTES_PER_ELEMENT;
+          Object.defineProperty(this, 'buffer', {value: new ArrayBuffer(byteLength)});
+          Object.defineProperty(this, 'byteLength', {value: byteLength});
+          Object.defineProperty(this, 'byteOffset', {value: 0});
+          Object.defineProperty(this, 'length', {value: typedArray.length});
+
+          for (var i = 0; i < this.length; i += 1)
+            this._setter(i, typedArray._getter(i));
+
+        }).apply(this, arguments);
+      }
+
+      // %TypedArray% ( array )
+      if (arguments.length >= 1 &&
+          Type(arguments[0]) === 'object' &&
+          !(arguments[0] instanceof $TypedArray$) &&
+          !(arguments[0] instanceof ArrayBuffer || Class(arguments[0]) === 'ArrayBuffer')) {
+        return (function(array) {
+
+          var byteLength = array.length * this.BYTES_PER_ELEMENT;
+          Object.defineProperty(this, 'buffer', {value: new ArrayBuffer(byteLength)});
+          Object.defineProperty(this, 'byteLength', {value: byteLength});
+          Object.defineProperty(this, 'byteOffset', {value: 0});
+          Object.defineProperty(this, 'length', {value: array.length});
+
+          for (var i = 0; i < this.length; i += 1) {
+            var s = array[i];
+            this._setter(i, Number(s));
+          }
+        }).apply(this, arguments);
+      }
+
+      // %TypedArray% ( buffer, byteOffset=0, length=undefined )
+      if (arguments.length >= 1 &&
+          Type(arguments[0]) === 'object' &&
+          (arguments[0] instanceof ArrayBuffer || Class(arguments[0]) === 'ArrayBuffer')) {
+        return (function(buffer, byteOffset, length) {
+
+          byteOffset = ToUint32(byteOffset);
+          if (byteOffset > buffer.byteLength)
+            throw RangeError('byteOffset out of range');
+
+          // The given byteOffset must be a multiple of the element
+          // size of the specific type, otherwise an exception is raised.
+          if (byteOffset % this.BYTES_PER_ELEMENT)
+            throw RangeError('buffer length minus the byteOffset is not a multiple of the element size.');
+
+          if (length === undefined) {
+            var byteLength = buffer.byteLength - byteOffset;
+            if (byteLength % this.BYTES_PER_ELEMENT)
+              throw RangeError('length of buffer minus byteOffset not a multiple of the element size');
+            length = byteLength / this.BYTES_PER_ELEMENT;
+
+          } else {
+            length = ToUint32(length);
+            byteLength = length * this.BYTES_PER_ELEMENT;
+          }
+
+          if ((byteOffset + byteLength) > buffer.byteLength)
+            throw RangeError('byteOffset and length reference an area beyond the end of the buffer');
+
+          Object.defineProperty(this, 'buffer', {value: buffer});
+          Object.defineProperty(this, 'byteLength', {value: byteLength});
+          Object.defineProperty(this, 'byteOffset', {value: byteOffset});
+          Object.defineProperty(this, 'length', {value: length});
+
+        }).apply(this, arguments);
+      }
+
+      // %TypedArray% ( all other argument combinations )
+      throw TypeError();
+    }
+
+    // Properties of the %TypedArray Instrinsic Object
+
+    // %TypedArray%.from ( source , mapfn=undefined, thisArg=undefined )
+    Object.defineProperty($TypedArray$, 'from', {value: function(iterable) {
+      return new this(iterable);
+    }});
+
+    // %TypedArray%.of ( ...items )
+    Object.defineProperty($TypedArray$, 'of', {value: function(/*...items*/) {
+      return new this(arguments);
+    }});
+
+    // %TypedArray%.prototype
+    var $TypedArrayPrototype$ = {};
+    $TypedArray$.prototype = $TypedArrayPrototype$;
+
+    // WebIDL: getter type (unsigned long index);
+    Object.defineProperty($TypedArray$.prototype, '_getter', {value: function(index) {
+      if (arguments.length < 1) throw SyntaxError('Not enough arguments');
+
+      index = ToUint32(index);
+      if (index >= this.length)
+        return undefined;
+
+      var bytes = [], i, o;
+      for (i = 0, o = this.byteOffset + index * this.BYTES_PER_ELEMENT;
+           i < this.BYTES_PER_ELEMENT;
+           i += 1, o += 1) {
+        bytes.push(this.buffer._bytes[o]);
+      }
+      return this._unpack(bytes);
+    }});
+
+    // NONSTANDARD: convenience alias for getter: type get(unsigned long index);
+    Object.defineProperty($TypedArray$.prototype, 'get', {value: $TypedArray$.prototype._getter});
+
+    // WebIDL: setter void (unsigned long index, type value);
+    Object.defineProperty($TypedArray$.prototype, '_setter', {value: function(index, value) {
+      if (arguments.length < 2) throw SyntaxError('Not enough arguments');
+
+      index = ToUint32(index);
+      if (index >= this.length)
+        return;
+
+      var bytes = this._pack(value), i, o;
+      for (i = 0, o = this.byteOffset + index * this.BYTES_PER_ELEMENT;
+           i < this.BYTES_PER_ELEMENT;
+           i += 1, o += 1) {
+        this.buffer._bytes[o] = bytes[i];
+      }
+    }});
+
+    // get %TypedArray%.prototype.buffer
+    // get %TypedArray%.prototype.byteLength
+    // get %TypedArray%.prototype.byteOffset
+    // -- applied directly to the object in the constructor
+
+    // %TypedArray%.prototype.constructor
+    Object.defineProperty($TypedArray$.prototype, 'constructor', {value: $TypedArray$});
+
+    // %TypedArray%.prototype.copyWithin (target, start, end = this.length )
+    Object.defineProperty($TypedArray$.prototype, 'copyWithin', {value: function(target, start) {
+      var end = arguments[2];
+
+      var o = ToObject(this);
+      var lenVal = o.length;
+      var len = ToUint32(lenVal);
+      len = max(len, 0);
+      var relativeTarget = ToInt32(target);
+      var to;
+      if (relativeTarget < 0)
+        to = max(len + relativeTarget, 0);
+      else
+        to = min(relativeTarget, len);
+      var relativeStart = ToInt32(start);
+      var from;
+      if (relativeStart < 0)
+        from = max(len + relativeStart, 0);
+      else
+        from = min(relativeStart, len);
+      var relativeEnd;
+      if (end === undefined)
+        relativeEnd = len;
+      else
+        relativeEnd = ToInt32(end);
+      var final;
+      if (relativeEnd < 0)
+        final = max(len + relativeEnd, 0);
+      else
+        final = min(relativeEnd, len);
+      var count = min(final - from, len - to);
+      var direction;
+      if (from < to && to < from + count) {
+        direction = -1;
+        from = from + count - 1;
+        to = to + count - 1;
+      } else {
+        direction = 1;
+      }
+      while (count > 0) {
+        o._setter(to, o._getter(from));
+        from = from + direction;
+        to = to + direction;
+        count = count - 1;
+      }
+      return o;
+    }});
+
+    // %TypedArray%.prototype.entries ( )
+    // -- defined in es6.js to shim browsers w/ native TypedArrays
+
+    // %TypedArray%.prototype.every ( callbackfn, thisArg = undefined )
+    Object.defineProperty($TypedArray$.prototype, 'every', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      var thisArg = arguments[1];
+      for (var i = 0; i < len; i++) {
+        if (!callbackfn.call(thisArg, t._getter(i), i, t))
+          return false;
+      }
+      return true;
+    }});
+
+    // %TypedArray%.prototype.fill (value, start = 0, end = this.length )
+    Object.defineProperty($TypedArray$.prototype, 'fill', {value: function(value) {
+      var start = arguments[1],
+          end = arguments[2];
+
+      var o = ToObject(this);
+      var lenVal = o.length;
+      var len = ToUint32(lenVal);
+      len = max(len, 0);
+      var relativeStart = ToInt32(start);
+      var k;
+      if (relativeStart < 0)
+        k = max((len + relativeStart), 0);
+      else
+        k = min(relativeStart, len);
+      var relativeEnd;
+      if (end === undefined)
+        relativeEnd = len;
+      else
+        relativeEnd = ToInt32(end);
+      var final;
+      if (relativeEnd < 0)
+        final = max((len + relativeEnd), 0);
+      else
+        final = min(relativeEnd, len);
+      while (k < final) {
+        o._setter(k, value);
+        k += 1;
+      }
+      return o;
+    }});
+
+    // %TypedArray%.prototype.filter ( callbackfn, thisArg = undefined )
+    Object.defineProperty($TypedArray$.prototype, 'filter', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      var res = [];
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++) {
+        var val = t._getter(i); // in case fun mutates this
+        if (callbackfn.call(thisp, val, i, t))
+          res.push(val);
+      }
+      return new this.constructor(res);
+    }});
+
+    // %TypedArray%.prototype.find (predicate, thisArg = undefined)
+    Object.defineProperty($TypedArray$.prototype, 'find', {value: function(predicate) {
+      var o = ToObject(this);
+      var lenValue = o.length;
+      var len = ToUint32(lenValue);
+      if (!IsCallable(predicate)) throw TypeError();
+      var t = arguments.length > 1 ? arguments[1] : undefined;
+      var k = 0;
+      while (k < len) {
+        var kValue = o._getter(k);
+        var testResult = predicate.call(t, kValue, k, o);
+        if (Boolean(testResult))
+          return kValue;
+        ++k;
+      }
+      return undefined;
+    }});
+
+    // %TypedArray%.prototype.findIndex ( predicate, thisArg = undefined )
+    Object.defineProperty($TypedArray$.prototype, 'findIndex', {value: function(predicate) {
+      var o = ToObject(this);
+      var lenValue = o.length;
+      var len = ToUint32(lenValue);
+      if (!IsCallable(predicate)) throw TypeError();
+      var t = arguments.length > 1 ? arguments[1] : undefined;
+      var k = 0;
+      while (k < len) {
+        var kValue = o._getter(k);
+        var testResult = predicate.call(t, kValue, k, o);
+        if (Boolean(testResult))
+          return k;
+        ++k;
+      }
+      return -1;
+    }});
+
+    // %TypedArray%.prototype.forEach ( callbackfn, thisArg = undefined )
+    Object.defineProperty($TypedArray$.prototype, 'forEach', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++)
+        callbackfn.call(thisp, t._getter(i), i, t);
+    }});
+
+    // %TypedArray%.prototype.indexOf (searchElement, fromIndex = 0 )
+    Object.defineProperty($TypedArray$.prototype, 'indexOf', {value: function(searchElement) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (len === 0) return -1;
+      var n = 0;
+      if (arguments.length > 0) {
+        n = Number(arguments[1]);
+        if (n !== n) {
+          n = 0;
+        } else if (n !== 0 && n !== (1 / 0) && n !== -(1 / 0)) {
+          n = (n > 0 || -1) * floor(abs(n));
+        }
+      }
+      if (n >= len) return -1;
+      var k = n >= 0 ? n : max(len - abs(n), 0);
+      for (; k < len; k++) {
+        if (t._getter(k) === searchElement) {
+          return k;
+        }
+      }
+      return -1;
+    }});
+
+    // %TypedArray%.prototype.join ( separator )
+    Object.defineProperty($TypedArray$.prototype, 'join', {value: function(separator) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      var tmp = Array(len);
+      for (var i = 0; i < len; ++i)
+        tmp[i] = t._getter(i);
+      return tmp.join(separator === undefined ? ',' : separator); // Hack for IE7
+    }});
+
+    // %TypedArray%.prototype.keys ( )
+    // -- defined in es6.js to shim browsers w/ native TypedArrays
+
+    // %TypedArray%.prototype.lastIndexOf ( searchElement, fromIndex = this.length-1 )
+    Object.defineProperty($TypedArray$.prototype, 'lastIndexOf', {value: function(searchElement) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (len === 0) return -1;
+      var n = len;
+      if (arguments.length > 1) {
+        n = Number(arguments[1]);
+        if (n !== n) {
+          n = 0;
+        } else if (n !== 0 && n !== (1 / 0) && n !== -(1 / 0)) {
+          n = (n > 0 || -1) * floor(abs(n));
+        }
+      }
+      var k = n >= 0 ? min(n, len - 1) : len - abs(n);
+      for (; k >= 0; k--) {
+        if (t._getter(k) === searchElement)
+          return k;
+      }
+      return -1;
+    }});
+
+    // get %TypedArray%.prototype.length
+    // -- applied directly to the object in the constructor
+
+    // %TypedArray%.prototype.map ( callbackfn, thisArg = undefined )
+    Object.defineProperty($TypedArray$.prototype, 'map', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      var res = []; res.length = len;
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++)
+        res[i] = callbackfn.call(thisp, t._getter(i), i, t);
+      return new this.constructor(res);
+    }});
+
+    // %TypedArray%.prototype.reduce ( callbackfn [, initialValue] )
+    Object.defineProperty($TypedArray$.prototype, 'reduce', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      // no value to return if no initial value and an empty array
+      if (len === 0 && arguments.length === 1) throw TypeError();
+      var k = 0;
+      var accumulator;
+      if (arguments.length >= 2) {
+        accumulator = arguments[1];
+      } else {
+        accumulator = t._getter(k++);
+      }
+      while (k < len) {
+        accumulator = callbackfn.call(undefined, accumulator, t._getter(k), k, t);
+        k++;
+      }
+      return accumulator;
+    }});
+
+    // %TypedArray%.prototype.reduceRight ( callbackfn [, initialValue] )
+    Object.defineProperty($TypedArray$.prototype, 'reduceRight', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      // no value to return if no initial value, empty array
+      if (len === 0 && arguments.length === 1) throw TypeError();
+      var k = len - 1;
+      var accumulator;
+      if (arguments.length >= 2) {
+        accumulator = arguments[1];
+      } else {
+        accumulator = t._getter(k--);
+      }
+      while (k >= 0) {
+        accumulator = callbackfn.call(undefined, accumulator, t._getter(k), k, t);
+        k--;
+      }
+      return accumulator;
+    }});
+
+    // %TypedArray%.prototype.reverse ( )
+    Object.defineProperty($TypedArray$.prototype, 'reverse', {value: function() {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      var half = floor(len / 2);
+      for (var i = 0, j = len - 1; i < half; ++i, --j) {
+        var tmp = t._getter(i);
+        t._setter(i, t._getter(j));
+        t._setter(j, tmp);
+      }
+      return t;
+    }});
+
+    // %TypedArray%.prototype.set(array, offset = 0 )
+    // %TypedArray%.prototype.set(typedArray, offset = 0 )
+    // WebIDL: void set(TypedArray array, optional unsigned long offset);
+    // WebIDL: void set(sequence<type> array, optional unsigned long offset);
+    Object.defineProperty($TypedArray$.prototype, 'set', {value: function(index, value) {
+      if (arguments.length < 1) throw SyntaxError('Not enough arguments');
+      var array, sequence, offset, len,
+          i, s, d,
+          byteOffset, byteLength, tmp;
+
+      if (typeof arguments[0] === 'object' && arguments[0].constructor === this.constructor) {
+        // void set(TypedArray array, optional unsigned long offset);
+        array = arguments[0];
+        offset = ToUint32(arguments[1]);
+
+        if (offset + array.length > this.length) {
+          throw RangeError('Offset plus length of array is out of range');
+        }
+
+        byteOffset = this.byteOffset + offset * this.BYTES_PER_ELEMENT;
+        byteLength = array.length * this.BYTES_PER_ELEMENT;
+
+        if (array.buffer === this.buffer) {
+          tmp = [];
+          for (i = 0, s = array.byteOffset; i < byteLength; i += 1, s += 1) {
+            tmp[i] = array.buffer._bytes[s];
+          }
+          for (i = 0, d = byteOffset; i < byteLength; i += 1, d += 1) {
+            this.buffer._bytes[d] = tmp[i];
+          }
+        } else {
+          for (i = 0, s = array.byteOffset, d = byteOffset;
+               i < byteLength; i += 1, s += 1, d += 1) {
+            this.buffer._bytes[d] = array.buffer._bytes[s];
+          }
+        }
+      } else if (typeof arguments[0] === 'object' && typeof arguments[0].length !== 'undefined') {
+        // void set(sequence<type> array, optional unsigned long offset);
+        sequence = arguments[0];
+        len = ToUint32(sequence.length);
+        offset = ToUint32(arguments[1]);
+
+        if (offset + len > this.length) {
+          throw RangeError('Offset plus length of array is out of range');
+        }
+
+        for (i = 0; i < len; i += 1) {
+          s = sequence[i];
+          this._setter(offset + i, Number(s));
+        }
+      } else {
+        throw TypeError('Unexpected argument type(s)');
+      }
+    }});
+
+    // %TypedArray%.prototype.slice ( start, end )
+    Object.defineProperty($TypedArray$.prototype, 'slice', {value: function(start, end) {
+      var o = ToObject(this);
+      var lenVal = o.length;
+      var len = ToUint32(lenVal);
+      var relativeStart = ToInt32(start);
+      var k = (relativeStart < 0) ? max(len + relativeStart, 0) : min(relativeStart, len);
+      var relativeEnd = (end === undefined) ? len : ToInt32(end);
+      var final = (relativeEnd < 0) ? max(len + relativeEnd, 0) : min(relativeEnd, len);
+      var count = final - k;
+      var c = o.constructor;
+      var a = new c(count);
+      var n = 0;
+      while (k < final) {
+        var kValue = o._getter(k);
+        a._setter(n, kValue);
+        ++k;
+        ++n;
+      }
+      return a;
+    }});
+
+    // %TypedArray%.prototype.some ( callbackfn, thisArg = undefined )
+    Object.defineProperty($TypedArray$.prototype, 'some', {value: function(callbackfn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      if (!IsCallable(callbackfn)) throw TypeError();
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++) {
+        if (callbackfn.call(thisp, t._getter(i), i, t)) {
+          return true;
+        }
+      }
+      return false;
+    }});
+
+    // %TypedArray%.prototype.sort ( comparefn )
+    Object.defineProperty($TypedArray$.prototype, 'sort', {value: function(comparefn) {
+      if (this === undefined || this === null) throw TypeError();
+      var t = Object(this);
+      var len = ToUint32(t.length);
+      var tmp = Array(len);
+      for (var i = 0; i < len; ++i)
+        tmp[i] = t._getter(i);
+      function sortCompare(x, y) {
+        if (x !== x && y !== y) return +0;
+        if (x !== x) return 1;
+        if (y !== y) return -1;
+        if (comparefn !== undefined) {
+          return comparefn(x, y);
+        }
+        if (x < y) return -1;
+        if (x > y) return 1;
+        return +0;
+      }
+      tmp.sort(sortCompare);
+      for (i = 0; i < len; ++i)
+        t._setter(i, tmp[i]);
+      return t;
+    }});
+
+    // %TypedArray%.prototype.subarray(begin = 0, end = this.length )
+    // WebIDL: TypedArray subarray(long begin, optional long end);
+    Object.defineProperty($TypedArray$.prototype, 'subarray', {value: function(start, end) {
+      function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
+
+      start = ToInt32(start);
+      end = ToInt32(end);
+
+      if (arguments.length < 1) { start = 0; }
+      if (arguments.length < 2) { end = this.length; }
+
+      if (start < 0) { start = this.length + start; }
+      if (end < 0) { end = this.length + end; }
+
+      start = clamp(start, 0, this.length);
+      end = clamp(end, 0, this.length);
+
+      var len = end - start;
+      if (len < 0) {
+        len = 0;
+      }
+
+      return new this.constructor(
+        this.buffer, this.byteOffset + start * this.BYTES_PER_ELEMENT, len);
+    }});
+
+    // %TypedArray%.prototype.toLocaleString ( )
+    // %TypedArray%.prototype.toString ( )
+    // %TypedArray%.prototype.values ( )
+    // %TypedArray%.prototype [ @@iterator ] ( )
+    // get %TypedArray%.prototype [ @@toStringTag ]
+    // -- defined in es6.js to shim browsers w/ native TypedArrays
+
+    function makeTypedArray(elementSize, pack, unpack) {
+      // Each TypedArray type requires a distinct constructor instance with
+      // identical logic, which this produces.
+      var TypedArray = function() {
+        Object.defineProperty(this, 'constructor', {value: TypedArray});
+        $TypedArray$.apply(this, arguments);
+        makeArrayAccessors(this);
+      };
+      if ('__proto__' in TypedArray) {
+        TypedArray.__proto__ = $TypedArray$;
+      } else {
+        TypedArray.from = $TypedArray$.from;
+        TypedArray.of = $TypedArray$.of;
+      }
+
+      TypedArray.BYTES_PER_ELEMENT = elementSize;
+
+      var TypedArrayPrototype = function() {};
+      TypedArrayPrototype.prototype = $TypedArrayPrototype$;
+
+      TypedArray.prototype = new TypedArrayPrototype();
+
+      Object.defineProperty(TypedArray.prototype, 'BYTES_PER_ELEMENT', {value: elementSize});
+      Object.defineProperty(TypedArray.prototype, '_pack', {value: pack});
+      Object.defineProperty(TypedArray.prototype, '_unpack', {value: unpack});
+
+      return TypedArray;
+    }
+
+    var Int8Array = makeTypedArray(1, packI8, unpackI8);
+    var Uint8Array = makeTypedArray(1, packU8, unpackU8);
+    var Uint8ClampedArray = makeTypedArray(1, packU8Clamped, unpackU8);
+    var Int16Array = makeTypedArray(2, packI16, unpackI16);
+    var Uint16Array = makeTypedArray(2, packU16, unpackU16);
+    var Int32Array = makeTypedArray(4, packI32, unpackI32);
+    var Uint32Array = makeTypedArray(4, packU32, unpackU32);
+    var Float32Array = makeTypedArray(4, packF32, unpackF32);
+    var Float64Array = makeTypedArray(8, packF64, unpackF64);
+
+    global.Int8Array = global.Int8Array || Int8Array;
+    global.Uint8Array = global.Uint8Array || Uint8Array;
+    global.Uint8ClampedArray = global.Uint8ClampedArray || Uint8ClampedArray;
+    global.Int16Array = global.Int16Array || Int16Array;
+    global.Uint16Array = global.Uint16Array || Uint16Array;
+    global.Int32Array = global.Int32Array || Int32Array;
+    global.Uint32Array = global.Uint32Array || Uint32Array;
+    global.Float32Array = global.Float32Array || Float32Array;
+    global.Float64Array = global.Float64Array || Float64Array;
+  }());
+
+  //
+  // 6 The DataView View Type
+  //
+
+  (function() {
+    function r(array, index) {
+      return IsCallable(array.get) ? array.get(index) : array[index];
+    }
+
+    var IS_BIG_ENDIAN = (function() {
+      var u16array = new Uint16Array([0x1234]),
+          u8array = new Uint8Array(u16array.buffer);
+      return r(u8array, 0) === 0x12;
+    }());
+
+    // DataView(buffer, byteOffset=0, byteLength=undefined)
+    // WebIDL: Constructor(ArrayBuffer buffer,
+    //                     optional unsigned long byteOffset,
+    //                     optional unsigned long byteLength)
+    function DataView(buffer, byteOffset, byteLength) {
+      if (!(buffer instanceof ArrayBuffer || Class(buffer) === 'ArrayBuffer')) throw TypeError();
+
+      byteOffset = ToUint32(byteOffset);
+      if (byteOffset > buffer.byteLength)
+        throw RangeError('byteOffset out of range');
+
+      if (byteLength === undefined)
+        byteLength = buffer.byteLength - byteOffset;
+      else
+        byteLength = ToUint32(byteLength);
+
+      if ((byteOffset + byteLength) > buffer.byteLength)
+        throw RangeError('byteOffset and length reference an area beyond the end of the buffer');
+
+      Object.defineProperty(this, 'buffer', {value: buffer});
+      Object.defineProperty(this, 'byteLength', {value: byteLength});
+      Object.defineProperty(this, 'byteOffset', {value: byteOffset});
+    };
+
+    // get DataView.prototype.buffer
+    // get DataView.prototype.byteLength
+    // get DataView.prototype.byteOffset
+    // -- applied directly to instances by the constructor
+
+    function makeGetter(arrayType) {
+      return function GetViewValue(byteOffset, littleEndian) {
+        byteOffset = ToUint32(byteOffset);
+
+        if (byteOffset + arrayType.BYTES_PER_ELEMENT > this.byteLength)
+          throw RangeError('Array index out of range');
+
+        byteOffset += this.byteOffset;
+
+        var uint8Array = new Uint8Array(this.buffer, byteOffset, arrayType.BYTES_PER_ELEMENT),
+            bytes = [];
+        for (var i = 0; i < arrayType.BYTES_PER_ELEMENT; i += 1)
+          bytes.push(r(uint8Array, i));
+
+        if (Boolean(littleEndian) === Boolean(IS_BIG_ENDIAN))
+          bytes.reverse();
+
+        return r(new arrayType(new Uint8Array(bytes).buffer), 0);
+      };
+    }
+
+    Object.defineProperty(DataView.prototype, 'getUint8', {value: makeGetter(Uint8Array)});
+    Object.defineProperty(DataView.prototype, 'getInt8', {value: makeGetter(Int8Array)});
+    Object.defineProperty(DataView.prototype, 'getUint16', {value: makeGetter(Uint16Array)});
+    Object.defineProperty(DataView.prototype, 'getInt16', {value: makeGetter(Int16Array)});
+    Object.defineProperty(DataView.prototype, 'getUint32', {value: makeGetter(Uint32Array)});
+    Object.defineProperty(DataView.prototype, 'getInt32', {value: makeGetter(Int32Array)});
+    Object.defineProperty(DataView.prototype, 'getFloat32', {value: makeGetter(Float32Array)});
+    Object.defineProperty(DataView.prototype, 'getFloat64', {value: makeGetter(Float64Array)});
+
+    function makeSetter(arrayType) {
+      return function SetViewValue(byteOffset, value, littleEndian) {
+        byteOffset = ToUint32(byteOffset);
+        if (byteOffset + arrayType.BYTES_PER_ELEMENT > this.byteLength)
+          throw RangeError('Array index out of range');
+
+        // Get bytes
+        var typeArray = new arrayType([value]),
+            byteArray = new Uint8Array(typeArray.buffer),
+            bytes = [], i, byteView;
+
+        for (i = 0; i < arrayType.BYTES_PER_ELEMENT; i += 1)
+          bytes.push(r(byteArray, i));
+
+        // Flip if necessary
+        if (Boolean(littleEndian) === Boolean(IS_BIG_ENDIAN))
+          bytes.reverse();
+
+        // Write them
+        byteView = new Uint8Array(this.buffer, byteOffset, arrayType.BYTES_PER_ELEMENT);
+        byteView.set(bytes);
+      };
+    }
+
+    Object.defineProperty(DataView.prototype, 'setUint8', {value: makeSetter(Uint8Array)});
+    Object.defineProperty(DataView.prototype, 'setInt8', {value: makeSetter(Int8Array)});
+    Object.defineProperty(DataView.prototype, 'setUint16', {value: makeSetter(Uint16Array)});
+    Object.defineProperty(DataView.prototype, 'setInt16', {value: makeSetter(Int16Array)});
+    Object.defineProperty(DataView.prototype, 'setUint32', {value: makeSetter(Uint32Array)});
+    Object.defineProperty(DataView.prototype, 'setInt32', {value: makeSetter(Int32Array)});
+    Object.defineProperty(DataView.prototype, 'setFloat32', {value: makeSetter(Float32Array)});
+    Object.defineProperty(DataView.prototype, 'setFloat64', {value: makeSetter(Float64Array)});
+
+    global.DataView = global.DataView || DataView;
+
+  }());
+
+}(self));
+
+    }
+
+    function patchWorker() {
+;
+var fakeworker = (function(global){
+    function extend(dest, src){
+        for (var i in src) {
+            dest[i] = src[i];
+        }
+    }
+    // >>>>>>>>>> this part is copied and modified from jQuery 1.2.6 (Copyright
+    // (c) 2008 John Resig (jquery.com))
+    var userAgent = navigator.userAgent.toLowerCase();
+    // Figure out what browser is being used
+    var browser = {
+        version: (userAgent.match(/.+(?:rv|it|ra|ie)[\/: ]([\d.]+)/) || [])[1],
+        safari: /webkit/.test(userAgent),
+        opera: /opera/.test(userAgent),
+        msie: /msie/.test(userAgent) && !/opera/.test(userAgent),
+        mozilla: /mozilla/.test(userAgent) && !/(compatible|webkit)/.test(userAgent)
+    };
+    // Determines if an XMLHttpRequest was successful or not
+    function httpSuccess(xhr){
+        try {
+            // IE error sometimes returns 1223 when it should be 204 so treat it
+            // as success, see #1450
+            return !xhr.status && location.protocol == "file:" ||
+            (xhr.status >= 200 && xhr.status < 300) ||
+            xhr.status == 304 ||
+            xhr.status == 1223 ||
+            browser.safari && xhr.status == undefined;
+        } 
+        catch (e) {
+        }
+        return false;
+    };
+    // <<<<<<<<<<<<<<<<<<<<
+    
+    function __syncXhrGet(url, fn){
+        var xhr = window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
+        // sync request
+        xhr.open("GET", url, false);
+        /*
+         xhr.onreadystatechange = function(){
+         if (xhr.readyState == 4) {
+         if (httpSuccess(xhr)) {
+         try {
+         fn(xhr);
+         }
+         catch (e) {
+         throw e;
+         }
+         }
+         else {
+         throw new Error("Could not load resource(" + url + ") result=" + xhr.status + ":" + xhr.statusText);
+         }
+         }
+         };
+         */
+        xhr.send("");
+        if (httpSuccess(xhr)) {
+            fn(xhr);
+        }
+        else {
+            throw new Error("Could not load resource(" + url + ") result=" + xhr.status + ":" + xhr.statusText);
+        }
+    }
+    
+    // >>>>>>>>>> this part is copied from parseUri 1.2.2
+    // (c) Steven Levithan <stevenlevithan.com>
+    // MIT License
+    
+    function parseUri(str){
+        var o = parseUri.options, m = o.parser[o.strictMode ? "strict" : "loose"].exec(str), uri = {}, i = 14;
+        
+        while (i--) 
+            uri[o.key[i]] = m[i] || "";
+        
+        uri[o.q.name] = {};
+        uri[o.key[12]].replace(o.q.parser, function($0, $1, $2){
+            if ($1) 
+                uri[o.q.name][$1] = $2;
+        });
+        
+        return uri;
+    };
+    
+    parseUri.options = {
+        strictMode: false,
+        key: ["source", "protocol", "authority", "userInfo", "user", "password", "host", "port", "relative", "path", "directory", "file", "query", "anchor"],
+        q: {
+            name: "queryKey",
+            parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+        },
+        parser: {
+            strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+            loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+        }
+    };
+    // <<<<<<<<<<<<<<<<<<<<
+    
+    // >>>>>>>>>> this part is copied from http://d.hatena.ne.jp/brazil/20070103/1167788352
+    function absolutePath(path){
+        var e = document.createElement('span');
+        e.innerHTML = '<a href="' + path + '" />';
+        return e.firstChild.href;
+    }
+    // <<<<<<<<<<<<<<<<<<<<
+    
+    function FakeMessageEvent(worker){
+        extend(this, Event);
+        Event.constructor.call(this);
+        this.currentTarget = worker;
+        this.srcElement = worker;
+        this.target = worker;
+        this.timestamp = new Date().getTime();
+    }
+    FakeMessageEvent.prototype = {
+        initMessageEvent: function(type, canBubble, cancelable, data, origin, lastEventId, source, ports){
+            this.initMessageEventNS("", type, canBubble, cancelable, data, origin, lastEventId, source, ports);
+        },
+        initMessageEventNS: function(namespaceURI, type, canBubble, cancelable, data, origin, lastEventId, source, ports){
+            this.namespaceURI = namespaceURI;
+            this.type = type;
+            this.canBubble = canBubble;
+            this.cancelable = cancelable;
+            this.data = data;
+            this.origin = origin;
+            this.lastEventId = lastEventId;
+            this.source = source;
+            this.ports = ports;
+        }
+    };
+    function FakeErrorEvent(worker){
+        extend(this, Event);
+        Event.constructor.call(this);
+        this.currentTarget = worker;
+        this.srcElement = worker;
+        this.target = worker;
+        this.timestamp = new Date().getTime();
+    }
+    FakeErrorEvent.prototype = {
+        initErrorEvent: function(type, canBubble, cancelable, message, filename, lineno){
+            this.initErrorEventNS("", type, canBubble, cancelable, message, filename, lineno);
+        },
+        initErrorEventNS: function(namespaceURI, type, canBubble, cancelable, message, filename, lineno){
+            this.namespaceURI = namespaceURI;
+            this.type = type;
+            this.canBubble = canBubble;
+            this.cancelable = cancelable;
+            this.message = message;
+            this.filename = filename;
+            this.lineno = lineno;
+        }
+    };
+    
+    var nativeWorker = global["Worker"];
+    var FakeWorker = function(url){
+        var self = this;
+        this._listenerNamespaces = {}; // event listeners
+        this._eventQueues = {};
+        
+        __syncXhrGet(url, function(xhr){
+            try {
+                self._workerContext = new FakeWorkerContext(url, xhr.responseText, self);
+            } 
+            catch (e) {
+                throw e;
+            }
+        });
+    };
+    FakeWorker.prototype = {
+        isFake: true,
+        addEventListener: function(type, listener, useCapture){
+            this.addEventListenerNS("", type, listener, useCapture);
+        },
+        addEventListenerNS: function(namespaceURI, type, listener, useCapture){
+            var namespace = this._listenerNamespaces[namespaceURI];
+            if (!namespace) {
+                this._listenerNamespaces[namespaceURI] = namespace = {};
+            }
+            var listeners = namespace[type];
+            if (!listeners) {
+                namespace[type] = listeners = [];
+            }
+            listeners.push(listener);
+        },
+        removeEventListener: function(type, listener, useCapture){
+            this.removeEventListener("", type, listener, useCapture);
+        },
+        removeEventListenerNS: function(namespaceURI, eventName, fn, useCapture){
+            var namespace = this._listenerNamespaces[namespaceURI];
+            if (namespace) {
+                var listeners = namespace[type];
+                if (listeners) {
+                    for (var i = 0; i < listeners.length; i++) {
+                        if (listeners[i] === listener) {
+                            delete listeners[i];
+                        }
+                    }
+                }
+            }
+        },
+        dispatchEvent: function(event){
+            if (typeof this["on" + event.type] == "function") {
+                this["on" + event.type].call(this, event);
+            }
+            var namespace = this._listenerNamespaces[event.namespaceURI];
+            if (namespace) {
+                var listeners = namespace[event.type];
+                if (listeners) {
+                    for (var i = 0; i < listeners.length; i++) {
+                        listeners[i].call(this, event);
+                    }
+                }
+            }
+            return true;
+        },
+        postMessage: function(msg){
+            var self = this;
+            var workerContext = this._workerContext;
+            if (typeof workerContext.onmessage == "function") {
+                // for testability, we don't do the "structual clone".
+                var event = new FakeMessageEvent(self);
+                event.initMessageEvent("message", false, false, msg, "", "", null, null);
+                setTimeout(function(){
+                    try {
+                        workerContext.onmessage.call(workerContext, event);
+                    } 
+                    catch (e) {
+                        var errorEvent = new FakeErrorEvent(self);
+                        var lineno = e.line || e.lineNumber;
+                        errorEvent.initErrorEvent("error", false, false, e.message, workerContext.location.filename, lineno);
+                        self.dispatchEvent(errorEvent);
+                        throw e;
+                    }
+                }, 0);
+            }
+        },
+        terminate: function(){
+            this._workerContext.close();
+        }
+    };
+    
+    function FakeWorkerLocation(url){
+        var absolute = absolutePath(url);
+        var parsed = parseUri(absolute);
+        this.href = absolute;
+        this.protocol = parsed.protocol + ":";
+        this.host = parsed.port ? parsed.host + ":" + parsed.port : parsed.host;
+        this.hostname = parsed.host;
+        this.port = parsed.port;
+        this.pathname = parsed.path;
+        this.search = parsed.query ? "?" + parsed.query : "";
+        this.hash = parsed.anchor ? "#" + parsed.anchor : "";
+        this.filename = parsed.file;
+    }
+    FakeWorkerLocation.prototype = {
+        toString: function(){
+            return this.href;
+        }
+    };
+    
+    function FakeWorkerContext(url, source, worker){
+        var postMessage = this.postMessage = function(msg){
+            var event = new FakeMessageEvent(worker);
+            event.initMessageEvent("message", false, false, msg, "", "", null, null);
+            setTimeout(function(){
+                worker.dispatchEvent(event);
+            }, 0);
+        };
+        var setTimeout = this.setTimeout = global.setTimeout;
+        var clearTimeout = this.clearTimeout = global.clearTimeout;
+        var setInterval = this.setInterval = global.setInterval;
+        var clearInterval = this.clearInterval = global.clearInterval;
+        var XMLHttpRequest = this.XMLHttpRequest = global.XMLHttpRequest;
+        var openDatabase = this.openDatabase = global.openDatabase;
+        var openDatabaseSync = this.openDatabaseSync = global.openDatabaseSync;
+        var WebSocket = this.WebSocket = global.WebSocket;
+        var EventSource = this.EventSource = global.EventSource;
+        var MessageChannel = this.MessageChannel = global.MessageChannel;
+        var Worker = this.Worker = FakeWorker;
+        //var SharedWorker = this.SharedWorker = SharedWorker;
+        
+        var location = this.location = new FakeWorkerLocation(url);
+        var close = this.close = function(){
+            this.closing = true
+            // not yet implemented
+        };
+        var navigator = this.navigator = global.navigator;
+        var self = this.self = this;
+        var importScripts = this.importScripts = function(){
+            /*
+            for (var i = 0; i < arguments.length; i++) {
+                __syncXhrGet(arguments[i], function(xhr){
+                    with (global) eval(xhr.responseText);
+                });
+            }
+            */
+           throw new Error("importScripts is not supported.");
+        }
+        //var __importScriptsSource = "(function(__global){" + __syncXhrGet.toString() + ";importScripts=" + __importScripts.toString() + "})(this);";
+        //eval(__importScriptsSource + source);
+        // execute worker
+        eval(source);
+        
+        // pick up the onmessage global handler in eval context to this context
+        try {
+            if (typeof onmessage == "function") {
+                this.onmessage = onmessage;
+            }
+        } 
+        catch (e) {
+        }
+    }
+    var ret = {
+        nativeWorker: nativeWorker,
+        install: function(){
+            global["Worker"] = FakeWorker;
+        },
+        uninstall: function(){
+            global["Worker"] = nativeWorker;
+        }
+    };
+    // auto install
+    ret.install();
+    return ret;
+})(this);
+
+    }
+    function patchXPath() {
+/*
+	javascript-xpath, an implementation of DOM Level 3 XPath for Internet Explorer 5+
+	Copyright (C) 2004 Dimitri Glazkov Modified 2006 Mehdi Hassan
+
+	This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Lesser General Public
+	License as published by the Free Software Foundation; either
+	version 2.1 of the License, or (at your option) any later version.
+
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public
+	License along with this library; if not, write to the Free Software
+
+*/
+
+var isIe = /MSIE [56789]/.test(navigator.userAgent) && (navigator.platform == "Win32");
+
+// Mozilla has support by default, we don't have an implementation for the rest
+if (isIe)
+{
+	
+	window._content = window;
+
+	var _tb_windowEvents = new Array();
+
+	window.addEventListener = function(event, handler, flag) {
+	    _tb_windowEvents[event] = handler;
+	}
+
+	function _tb_postProcess() {
+	    if (_tb_windowEvents["load"]) {
+	        _tb_windowEvents["load"]();
+    	}
+	}
+
+	var extern;
+	if (window.dialogArguments && window.dialogArguments.external) {
+	    extern = window.dialogArguments.external;
+	} else if (window.external) {
+	    extern = window.external;
+	}
+	
+	// XPathException
+	// An Error object will be thrown, this is just a handler to instantiate that object
+	var XPathException = new _XPathExceptionHandler();
+	function _XPathExceptionHandler()
+	{
+		this.INVALID_EXPRESSION_ERR = 51;
+		this.TYPE_ERR = 52;
+		this.NOT_IMPLEMENTED_ERR = -1;
+		this.RUNTIME_ERR = -2;
+		
+		this.ThrowNotImplemented = function(message)
+		{
+			ThrowError(this.NOT_IMPLEMENTED_ERR, "This functionality is not implemented.", message);
+		}
+		
+		this.ThrowInvalidExpression = function(message)
+		{
+			ThrowError(this.INVALID_EXPRESSION_ERR, "Invalid expression", message);
+		}
+		
+		this.ThrowType = function(message)
+		{
+			ThrowError(this.TYPE_ERR, "Type error", message);
+		}
+		
+		this.Throw = function(message)
+		{
+			ThrowError(this.RUNTIME_ERR, "Run-time error", message);
+		}
+		
+		function ThrowError(code, description, message)
+		{
+			var error = new Error(code, "DOM-L3-XPath : " + description + (message ? ", \"" + message  + "\"": ""));
+			error.code = code;
+			error.name = "XPathException";
+			throw error;
+		}
+	}
+	
+	// DOMException
+	// An Error object will be thrown, this is just a handler to instantiate that object
+	var DOMException = new _DOMExceptionHandler();
+	function _DOMExceptionHandler()
+	{
+		this.ThrowInvalidState = function(message)
+		{
+			ThrowError(13, "The state of the object is no longer valid", message);
+		}
+
+		function ThrowError(code, description, message)
+		{
+			var error = new Error(code, "DOM : " + description + (message ? ", \"" + message  + "\"": ""));
+			error.code = code;
+			error.name = "DOMException";
+			throw error;
+		}
+	}
+
+	// XPathEvaluator 
+	// implemented as document object methods
+	
+	// XPathExpression createExpression(String expression, XPathNSResolver resolver)
+	document.createExpression = function
+		(
+		expression,		// String
+		resolver		// XPathNSResolver
+		)
+	{
+		// returns XPathExpression object
+		return new XPathExpression(expression, resolver);
+	}
+
+	// XPathNSResolver createNSResolver(nodeResolver)
+	document.createNSResolver = function
+		(
+		nodeResolver	// Node
+		)
+	{
+		// returns XPathNSResolver
+		return new XPathNSResolver(nodeResolver);
+	}
+
+	// XPathResult evaluate(String expresison, Node contextNode, XPathNSResolver resolver, Number type, XPathResult result)
+	document.evaluate = function
+		(
+		expression,		// String
+		contextNode,	// Node
+		resolver,		// XPathNSResolver
+		type,			// Number
+		result			// XPathResult
+		)
+		// can raise XPathException, DOMException
+	{
+		// return XPathResult
+		return document.createExpression(expression, resolver).evaluate(contextNode, type, result);
+	}
+
+	// XPathExpression
+	function XPathExpression
+	(
+		expression, // String
+		resolver // XPathNSResolver
+	)
+	{
+		this.expressionString = expression;
+		this.resolver = resolver;
+
+		// XPathResult evaluate(Node contextNode, Number type, XPathResult result)
+		this.evaluate = function
+		(
+			contextNode, // Node
+			type, // Number
+			result // XPathResult		
+		)
+			// raises XPathException, DOMException
+		{
+			// return XPathResult
+			return (result && result.constructor == XPathResult ? result.initialize(this, contextNode, resolver, type) : new XPathResult(this, contextNode, resolver, type));
+		}
+		
+		this.toString = function()
+		{
+			return "[XPathExpression]";
+		}
+	}
+
+	// XPathNSResolver
+	function XPathNSResolver(node)
+	{
+		this.node = node;
+	
+		// String lookupNamespaceURI(String prefix)
+		this.lookupNamespaceURI = function
+			(
+			prefix			// String
+			)
+		{
+			XPathException.ThrowNotImplemented();
+			// return String
+			return null;
+		}
+
+		this.toString = function()
+		{
+			return "[XPathNSResolver]";
+		}
+	}
+
+	// XPathResult
+	XPathResult.ANY_TYPE = 0;
+	XPathResult.NUMBER_TYPE = 1;
+	XPathResult.STRING_TYPE = 2;
+	XPathResult.BOOLEAN_TYPE = 3;
+	XPathResult.UNORDERED_NODE_ITERATOR_TYPE = 4;
+	XPathResult.ORDERED_NODE_ITERATOR_TYPE = 5;
+	XPathResult.UNORDERED_SNAPSHOT_TYPE = 6;
+	XPathResult.ORDERED_SNAPSHOT_TYPE = 7;
+	XPathResult.ANY_UNORDERED_NODE_TYPE = 8;
+	XPathResult.FIRST_ORDERED_NODE_TYPE = 9;
+	
+	function XPathResult
+			(
+			expression,		// XPathExpression
+			contextNode,	// Node
+			resolver,		// XPathNSResolver
+			type			// Number
+			)
+	{
+		this.initialize = function(expression, contextNode, resolver, type)
+		{
+			this._domResult = null;
+			this._expression = expression;
+			this._contextNode = contextNode;
+			this._resolver = resolver;
+			if (type)
+			{
+				this.resultType = type;
+				this._isIterator = (type == XPathResult.UNORDERED_NODE_ITERATOR_TYPE || 
+					type == XPathResult.ORDERED_NODE_ITERATOR_TYPE || 
+					type == XPathResult.ANY_TYPE);
+				this._isSnapshot = (type == XPathResult.UNORDERED_SNAPSHOT_TYPE || type == XPathResult.ORDERED_SNAPSHOT_TYPE);
+				this._isNodeSet = type > XPathResult.BOOLEAN_TYPE;
+			}
+			else
+			{
+				this.resultType = XPathResult.ANY_TYPE;
+				this._isIterator = true;
+				this._isSnapshot = false;
+				this._isNodeSet = true;
+			}
+			return this;
+		}
+		
+		this.initialize(expression, contextNode, resolver, type);
+		
+		this.getInvalidIteratorState = function()
+		{
+			return documentChangeDetected() || !this._isIterator;			
+		}
+		
+		this.getSnapshotLength = function()
+			// raises XPathException
+		{
+			if (!this._isSnapshot)
+			{
+				XPathException.ThrowType("Snapshot is not an expected result type");
+			}
+			activateResult(this);
+			// return Number
+			return this._domResult.length;
+		}
+		
+		// Node iterateNext()
+		this.iterateNext = function()
+			// raises XPathException, DOMException
+		{
+			if (!this._isIterator)
+			{
+				XPathException.ThrowType("Iterator is not an expected result type");
+			}
+			activateResult(this);
+			if (documentChangeDetected())
+			{
+				DOMException.ThrowInvalidState("iterateNext");
+			}
+			// return Node
+			return getNextNode(this);
+		}
+		
+		// Node snapshotItem(Number index)
+		this.snapshotItem = function(index)
+			// raises XPathException
+		{
+			if (!this._isSnapshot)
+			{
+				XPathException.ThrowType("Snapshot is not an expected result type");
+			}
+			// return Node
+			return getItemNode(this, index); 
+		}
+		
+		this.toString = function()
+		{
+			return "[XPathResult]";
+		}
+		
+		// returns string value of the result, if result type is STRING_TYPE
+		// otherwise throws an XPathException
+		this.getStringValue = function()
+		{
+			if (this.resultType != XPathResult.STRING_TYPE)
+			{
+				XPathException.ThrowType("The expression can not be converted to return String");
+			}
+			return getNodeText(this);
+		}
+		
+		// returns number value of the result, if the result is NUMBER_TYPE
+		// otherwise throws an XPathException
+		this.getNumberValue = function()
+		{
+			if (this.resultType != XPathResult.NUMBER_TYPE)
+			{
+				XPathException.ThrowType("The expression can not be converted to return Number");
+			}
+			var number = parseInt(getNodeText(this));
+			if (isNaN(number))
+			{
+				XPathException.ThrowType("The result can not be converted to Number");
+			}
+			return number;
+		}
+		
+		// returns boolean value of the result, if the result is BOOLEAN_TYPE
+		// otherwise throws an XPathException
+		this.getBooleanValue = function()
+		{
+			if (this.resultType != XPathResult.BOOLEAN_TYPE)
+			{
+				XPathException.ThrowType("The expression can not be converted to return Boolean");
+			}
+			
+			var	
+				text = getNodeText(this);
+				bool = (text ? text.toLowerCase() : null);
+			if (bool == "false" || bool == "true")
+			{
+				return bool;
+			}
+			XPathException.ThrowType("The result can not be converted to Boolean");
+		}
+		
+		// returns single node, if the result is ANY_UNORDERED_NODE_TYPE or FIRST_ORDERED_NODE_TYPE
+		// otherwise throws an XPathException
+		this.getSingleNodeValue = function()
+		{
+			if (this.resultType != XPathResult.ANY_UNORDERED_NODE_TYPE && 
+				this.resultType != XPathResult.FIRST_ORDERED_NODE_TYPE)
+			{
+				XPathException.ThrowType("The expression can not be converted to return single Node value");
+			}
+			return getSingleNode(this);
+		}
+		
+		function documentChangeDetected()
+		{
+			return document._XPathMsxmlDocumentHelper.documentChangeDetected();
+		}
+		
+		function getNodeText(result)
+		{
+			activateResult(result);
+			return result._textResult;
+//			return ((node = getSingleNode(result)) ? (node.nodeType == 1 ? node.innerText : node.nodeValue) : null);
+		}
+		
+		function findNode(result, current)
+		{
+			switch(current.nodeType)
+			{
+				case 1: // NODE_ELEMENT
+					var id = current.attributes.getNamedItem("id");
+					if (id)
+					{
+						return document.getElementById(id.value);
+					}
+					XPathException.Throw("unable to locate element in XML tree");
+				case 2: // NODE_ATTRIBUTE
+					var id = current.selectSingleNode("..").attributes.getNamedItem("id");
+					if (id)
+					{
+						var node = document.getElementById(id.text);
+						if (node)
+						{
+							return node.attributes.getNamedItem(current.nodeName);
+						}
+					}
+					XPathException.Throw("unable to locate attribute in XML tree");
+				case 3: // NODE_TEXT
+					var id = current.selectSingleNode("..").attributes.getNamedItem("id");
+					if (id)
+					{
+						var node = document.getElementById(id.value);
+						if (node)
+						{
+							for(child in node.childNodes)
+							{
+								if (child.nodeType == 3 && child.nodeValue == current.nodeValue)
+								{
+									return child;
+								}
+							}
+						}
+					}
+					XPathException.Throw("unable to locate text in XML tree");
+			}
+			XPathException.Throw("unknown node type");
+		}
+		
+		function activateResult(result)
+		{
+			if (!result._domResult)
+			{
+				try
+				{
+					var expression = result._expression.expressionString;
+					
+					// adjust expression if contextNode is not a document
+					if (result._contextNode != document && expression.indexOf("//") != 0)
+					{
+						
+						expression = "//*[@id = '" + result._contextNode.id + "']" + 
+							(expression.indexOf("/") == 0 ? "" : "/") + expression;
+					}
+					
+					if (result._isNodeSet)
+					{
+						result._domResult = document._XPathMsxmlDocumentHelper.getDom().selectNodes(expression);
+					}
+					else
+					{
+						result._domResult = true;
+						result._textResult = document._XPathMsxmlDocumentHelper.getTextResult(expression);
+					}
+					
+				}
+				catch(error)
+				{
+					alert(error.description);
+					XPathException.ThrowInvalidExpression(error.description);
+				}
+			}
+		}
+
+		function getSingleNode(result)
+		{
+			var node = getItemNode(result, 0);
+			result._domResult = null;
+			return node;
+		}
+		
+		function getItemNode(result, index)
+		{
+			activateResult(result);
+			var current = result._domResult.item(index);
+			return (current ? findNode(result, current) : null);
+		}
+		
+		function getNextNode(result)
+		{
+			var current = result._domResult.nextNode;
+			if (current)
+			{
+				return findNode(result, current);
+			}
+			result._domResult = null;
+			return null;
+		}
+	}
+	
+	document.reloadDom = function()
+	{
+		document._XPathMsxmlDocumentHelper.reset();
+	}
+
+	document._XPathMsxmlDocumentHelper = new _XPathMsxmlDocumentHelper();
+	function _XPathMsxmlDocumentHelper()
+	{
+		this.getDom = function()
+		{
+			activateDom(this);
+			return this.dom;
+		}
+		
+		this.getXml = function()
+		{
+			activateDom(this);
+			return this.dom.xml;
+		}
+		
+		this.getTextResult = function(expression)
+		{
+			expression = expression.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "\"");
+			var xslText = "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">" +
+				"<xsl:output method=\"text\"/><xsl:template match=\"*\"><xsl:value-of select=\"" + expression + "\"/>" +
+				"</xsl:template></xsl:stylesheet>";
+			var xsl = new ActiveXObject("Msxml2.DOMDocument");
+			xsl.loadXML(xslText);
+			try
+			{
+				var result = this.getDom().transformNode(xsl);
+			}
+			catch(error)
+			{
+				alert("Error: " + error.description);
+			}
+			return result;
+		}
+		
+		this.reset = function()
+		{
+			this.dom = null;
+		}
+		
+		function onPropertyChangeEventHandler()
+		{
+			document._propertyChangeDetected = true;
+		}
+		
+		this.documentChangeDetected = function()
+		{
+			return (document.ignoreDocumentChanges ? false : this._currentElementCount != document.all.length || document._propertyChangeDetected);
+		}
+		
+		function activateDom(helper)
+		{
+			if (!helper.dom)
+			{
+				var dom = new ActiveXObject("Msxml2.DOMDocument");
+				dom.async = false;
+				dom.resolveExternals = false;
+				loadDocument(dom, helper);
+				helper.dom = dom;
+				helper._currentElementCount = document.all.length;
+				document._propertyChangeDetected = false;
+			}
+			else
+			{
+				if (helper.documentChangeDetected())
+				{
+					var dom = helper.dom;
+					dom.load("");
+					loadDocument(dom, helper);
+					helper._currentElementCount = document.all.length;
+					document._propertyChangeDetected = false;
+				}
+			}
+		}
+		
+		function loadDocument(dom, helper)
+		{
+			return loadNode(dom, dom, document.body, helper);		
+		}
+		
+		function loadNode(dom, domParentNode, node, helper)
+		{
+			if (node.nodeType == 3)
+			{			
+				domParentNode.appendChild(dom.createTextNode(node.nodeValue));
+			}
+			else
+			{
+				var domNode = dom.createElement(node.nodeName.toLowerCase());
+				if (!node.id)
+				{
+					node.id = node.uniqueID;
+				}
+				domParentNode.appendChild(domNode);
+				loadAttributes(dom, domNode, node);
+				var length = node.childNodes.length;
+				for(var i = 0; i < length; i ++ )
+				{
+					loadNode(dom, domNode, node.childNodes[i], helper);
+				}
+				node.attachEvent("onpropertychange", onPropertyChangeEventHandler);
+			}
+		}
+
+		function loadAttributes(dom, domParentNode, node)
+		{
+			for (var i = 0; i < node.attributes.length; i ++ )
+			{
+				var attribute = node.attributes[i];
+				var attributeValue = attribute.nodeValue;
+				if (attributeValue && attribute.specified)
+				{
+					var domAttribute = dom.createAttribute(attribute.nodeName);
+					domAttribute.value = attributeValue;
+					domParentNode.setAttributeNode(domAttribute);				
+				}
+			}
+		}
+	
+	}
+}
+else
+{
+	document.reloadDom = function() {}
+	XPathResult.prototype.getStringValue = function()
+	{
+		return this.stringValue;
+	}
+	
+	XPathResult.prototype.getNumberValue = function()
+	{
+		return this.numberValue;
+	}
+	
+	XPathResult.prototype.getBooleanValue = function()
+	{
+		return this.booleanValue;
+	}
+	
+	XPathResult.prototype.getSingleNodeValue = function()
+	{
+		return this.singleNodeValue;	
+	}
+	
+	XPathResult.prototype.getInvalidIteratorState = function()
+	{
+		return this.invalidIteratorState;
+	}
+	
+	XPathResult.prototype.getSnapshotLength = function()
+	{
+		return this.snapshotLength;
+	}
+	
+	XPathResult.prototype.getResultType = function()
+	{
+		return this.resultType;
+	}
+}
+    }
     if(window.browser){
         var patches =  {
+            'patchHTML5':patchHTML5,
             'patchWebSockets':patchWebSockets,
             'patchHistory':patchHistory,
             'patchWebPerformance':patchWebPerformance,
             'patchTransform':patchTransform,
             'patchPlaceholder':patchPlaceholder,
             'patchBlob':patchBlob,
+            'patchBase64':patchBase64,
+            'patchTypedArray':patchTypedArray,
+            'patchWorker':patchWorker,
             'patchConsole':patchConsole}
-        if(window.browser.version === 9){
+        if(window.browser.isIE && window.browser.version === 9){
            patches.patchCSS3 = patchCSS3
         }
         window.browser.addPatches(patches)
     }
+    patchHTML5()
     patchBlob()
 })(this,this.document)

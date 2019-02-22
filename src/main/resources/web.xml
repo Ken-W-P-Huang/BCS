@@ -101,8 +101,19 @@
         <extension>ico</extension>
         <mime-type>image/x-icon</mime-type>
     </mime-mapping>
-
-
+    <!--字体-->
+    <!--<mime-mapping>-->
+        <!--<extension>eot</extension>-->
+        <!--<mime-type>application/octet-stream</mime-type>-->
+    <!--</mime-mapping>-->
+    <!--<mime-mapping>-->
+        <!--<extension>otf</extension>-->
+        <!--<mime-type>application/octet-stream</mime-type>-->
+    <!--</mime-mapping>-->
+    <!--<servlet-mapping>-->
+        <!--<servlet-name>default</servlet-name>-->
+        <!--<url-pattern>*.woff2,*.otf,*.eot,*.ttf</url-pattern>-->
+    <!--</servlet-mapping>-->
 
 
 

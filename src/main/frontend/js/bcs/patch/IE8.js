@@ -5,22 +5,21 @@
     function patchCanvas() {
         // import 'flashcanvas.js'
     }
-    function patchVideo(window) {
+    function patchMedia() {
+        // import 'jquery.js'
+        // import 'mediaelement-and-player.js'
+    }
+
+    function patchPNG() {
         // import ''
     }
-    function patchAudio(window) {
-        // import ''
+    function patchGeoLocation() {
+        // import 'geo.js'
     }
-    function patchPNG(window) {
-        // import ''
-    }
-    function patchGeoLocation(window) {
-        // import ''
-    }
-    function patchES5(window) {
+    function patchES5() {
         // import "es5-shim.js"
     }
-    function patchJSON(window) {
+    function patchJSON() {
         // import 'json.js'
     }
 
@@ -45,8 +44,9 @@
     if(window.browser){
         window.browser.addPatches({
             'patchCanvas':patchCanvas,
-            'patchVideo':patchVideo,
-            'patchAudio':patchAudio,
+            // 'patchVideo':patchVideo,
+            // 'patchAudio':patchAudio,
+            'patchMedia':patchMedia,
             'patchPNG':patchPNG,
             'patchGeoLocation':patchGeoLocation,
             'patchCSS3':patchCSS3

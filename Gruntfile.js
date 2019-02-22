@@ -159,7 +159,8 @@ module.exports = function (grunt) {
                 files: {
                     // '<%= frontend %>/js/dist/BCS.js': ['<%= concat.BCSConcat.dest %>']
                     '<%= webapp %>/js/BCS.js': ['<%= concat.BCSConcat.dest %>'],
-                    '<%= frontend %>/js/lib/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js']
+                    '<%= frontend %>/js/lib/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js'],
+                    '<%= frontend %>/js/lib/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js']
                 }
             }
         },

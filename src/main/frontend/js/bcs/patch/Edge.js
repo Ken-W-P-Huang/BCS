@@ -1,7 +1,7 @@
 /**
  * Created by kenhuang on 2019/1/28.
  */
-(function (window) {
+(function (window,document) {
     var available = false
     if(Object.defineProperty){
         try{
@@ -28,12 +28,10 @@
             // import 'es6-collections.js'
         }
     }
-    function patchBeacon() {
+    function patchSendBeacon() {
+        // import 'sendbeacon.es5.js'
+    }
 
-    }
-    function patchHTML5() {
-        // import 'html5shiv-printshiv.js'
-    }
     function patchFormData() {
         if(available){ // jshint ignore:line
             // import 'FormData.es5.js'
@@ -230,15 +228,18 @@
         }
 
     }
+    function patchIndexedDB() {
+        // import 'localforage.js'
+    }
     if(window.browser){
         window.browser.addPatches({
             'patchPromise':patchPromise,
             'patchFetch':patchFetch,
             'patchES6':patchES6,
-            'patchHTML5':patchHTML5,
             'patchFormData':patchFormData,
-            'patchBeacon':patchBeacon})
+            'patchIndexedDB':patchIndexedDB,
+            'patchSendBeacon':patchSendBeacon})
     }
     patchES6Collections()
     patchFormData()
-})(this)
+})(this,this.document)

@@ -5,21 +5,140 @@
     if(typeof  window.fetch === "function"){
         return
     }
-    var support = {
-        searchParams: 'URLSearchParams' in window,
-        iterable: 'Symbol' in window && 'iterator' in window,
-        blob: 'FileReader' in window && 'Blob' in window && (function () {
-            try {
-                new Blob()
-                return true
-            } catch (e) {
-                return false
-            }
-        })(),
-        formData: 'FormData' in window,
-        arrayBuffer: 'ArrayBuffer' in window
+    function ArrayMap() {
+        var map
+
     }
 
+    function URLSearchParams(init) {
+        var index, key, value, pairs, i, length,map ={}
+        this.append = function append(name, value) {
+            appendTo(map, name, value)
+        }
+
+        this.delete = function del(name) {
+            delete map[name]
+        };
+
+        this.get = function get(name) {
+            return name in map ? map[name][0] : null
+        };
+
+        this.getAll = function getAll(name) {
+            return name in map ? map[name].slice(0) : []
+        };
+
+        this.has = function has(name) {
+            return name in map
+        };
+
+        this.set = function set(name, value) {
+            map[name] = ['' + value]
+        };
+
+        this.forEach = function forEach(callback, thisArg) {
+            Object.getOwnPropertyNames(map).forEach(function(name) {
+                dict[name].forEach(function(value) {
+                    callback.call(thisArg, value, name, this)
+                }, this)
+            }, this);
+        };
+
+        /*
+         this.toBody = function() {
+         return new Blob(
+         [this.toString()],
+         {type: 'application/x-www-form-urlencoded'}
+         );
+         };
+         this.toJSON = function toJSON() {
+         return {}
+         };
+         */
+
+
+
+        this.toString = function toString() {
+            var query = [], i, key, name, value;
+            for (key in map) {
+                if(map.hasOwnProperty(key)){
+                    name = encode(key);
+                    for (i = 0,value = map[key]; i < value.length; i++) {
+                        query.push(name + '=' + encode(value[i]))
+                    }
+                }
+            }
+            return query.join('&')
+        }
+
+        if (!init) {
+            return
+        }
+        if (typeof init === 'string') {
+            if (init.charAt(0) === '?') {
+                init = init.slice(1)
+            }
+            for (pairs = init.split('&'), i = 0, length = pairs.length; i < length; i++) {
+                value = pairs[i];
+                index = value.indexOf('=');
+                if (-1 < index) {
+                    appendTo(map, decode(value.slice(0, index)), decode(value.slice(index + 1)))
+                } else if (value.length){
+                    appendTo(map, decode(value), '')
+                }
+            }
+        } else {
+            if (Array.isArray(init)) {
+                for (i = 0, length = init.length; i < length; i++) {
+                    value = init[i]
+                    appendTo(map, value[0], value[1])
+                }
+            } else if (init.forEach) {
+                init.forEach(function (value, key) {
+                    appendTo(this, key, value)
+                }, map)
+            } else {
+                for (key in init) {
+                    if(init.hasOwnProperty(key)){
+                        appendTo(map, key, init[key])
+                    }
+                }
+            }
+        }
+    }
+    {
+        var find = /[!'\(\)~]|%20|%00/g, plus = /\+/g,
+            replace = {
+                '!': '%21',
+                "'": '%27',
+                '(': '%28',
+                ')': '%29',
+                '~': '%7E',
+                '%20': '+',
+                '%00': '\x00'
+            },
+            replacer = function (match) {
+                return replace[match];
+            },
+            secret = '__URLSearchParams__:' + Math.random()
+        function appendTo(map, name, value) {
+            var res = Array.isArray(value) ? value.join(',') : value;
+            if (name in map)
+                map[name].push(res)
+            else
+                map[name] = [res]
+        }
+
+        function decode(str) {
+            return decodeURIComponent(str.replace(plus, ' '))
+        }
+
+        function encode(str) {
+            return encodeURIComponent(str).replace(find, replacer)
+        }
+
+
+    }
     function Headers(init) {
         var map = {}
         this.append = function (name, value) {
@@ -114,7 +233,7 @@
             return '[object Headers]'
         }
 
-        if (support.iterable) {
+        if ('Symbol' in window && 'iterator' in window) {
             Headers.prototype[Symbol.iterator] = Headers.prototype.entries
         }
         Headers.normalizeValue = function(value) {
@@ -173,13 +292,13 @@
                 bodyType = BodyType.TEXT
             } else if (body && typeof body === 'object') {
                 bodyType = BodyType.JSON
-            } else if (support.searchParams && (body instanceof window.URLSearchParams)) {
+            } else if (window.URLSearchParams && (body instanceof window.URLSearchParams)) {
                 bodyType = BodyType.SEARCH_PARAMS
-            } else if (support.blob && (body instanceof Blob)) {
+            } else if (window.Blob && (body instanceof Blob)) {
                 bodyType = BodyType.BLOB
-            } else if (support.formData && (body instanceof FormData)) {
+            } else if (window.FormData && (body instanceof FormData)) {
                 bodyType = BodyType.FORM_DATA
-            } else if (support.arrayBuffer && ArrayBuffer.prototype.isPrototypeOf(body)) {
+            } else if (window.ArrayBuffer && (body instanceof ArrayBuffer)) {
                 bodyType = BodyType.ARRAY_BUFFER
             }else{
                 throw new TypeError('unsupported BodyInit type')
@@ -665,19 +784,7 @@
         }
 })(this)
 
-// Promise.race([
-//     fetch(URL),
-//     new Promise(function(resolve,reject){
-//         setTimeout(function () {
-//             xhr.abort()
-//             reject(new TypeError('Network request timeout'))
-//         },2000)
-//     })])
-//     .then(function () {
-//
-//     })['catch'](function () {
-//
-// })
+
 
 
 

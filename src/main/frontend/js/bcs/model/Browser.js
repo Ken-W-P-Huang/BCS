@@ -314,8 +314,9 @@ if (typeof window === 'undefined') {
         'STORAGE': 'patchStorage',
         /* IE8 */
         // 'CANVAS':'patchCanvas',
-        'VIDEO': 'patchVideo',
-        'AUDIO': 'patchAudio',
+        // 'VIDEO': 'patchVideo',
+        // 'AUDIO': 'patchAudio',
+        'MEDIA':'patchMedia',
         'PNG': 'patchPNG',
         'GEO_LOCATION': 'patchGeoLocation',
         'CSS3': 'patchCSS3',
@@ -327,18 +328,27 @@ if (typeof window === 'undefined') {
         'PLACEHOLDER': 'patchPlaceholder',
         'CONSOLE': 'patchConsole',
         'BLOB':'patchBlob',
+        'BASE64':'patchBase64',
+        'TYPED_ARRAY':'patchTypedArray',
+        'Worker':'patchWorker',
         /* IE10 */
         'LOCATION_ORIGIN': 'patchLocationOrigin',
+        /* IE11 */
+        'GET_USER_MEDIA': 'patchGetUserMedia',
+        'CLASS_LIST': 'patchClassList',
+        'CURRENT_SCRIPT':'patchCurrentScript',
         /* Edge */
         'PROMISE': 'patchPromise',
         'FETCH': 'patchFetch',
         'ES6':'patchES6',
         'HTML5': 'patchHTML5',
-        'BEACON': 'patchBeacon',
+        'SEND_BEACON': 'patchSendBeacon',
         'FORM_DATA':'patchFormData',
+        'INDEXED_DB':'patchIndexedDB',
         /* Common */
         'FETCH_JSONP':'patchFetchJSONP',
-        'FILE_SAVER':'patchFileSaver'
+        'FILE_SAVER':'patchFileSaver',
+        'MATHML':'patchMathML',
     }
     Object.prototype.shallowCopy.call(window,module.exports)
 }
