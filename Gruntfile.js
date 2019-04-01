@@ -29,7 +29,7 @@ module.exports = function (grunt) {
                 "latedef": false,       //Require variables/functions to be defined before being used
                 "newcap": false,        //Require capitalization of all constructor functions
                 "noarg": true,          //Prohibit use of `arguments.caller` and `arguments.callee`
-                "noempty": true,        //Prohibit use of empty blocks
+                "noempty": true,        //Prohibit use of empty block福龙开发区英明路13号s
                 "nonbsp": true,         //Prohibit "non-breaking whitespace" characters.
                 "nonew": false,         //Prohibit use of constructors for side-effects
                 "plusplus": false,      //Prohibit use of `++` and `--`
@@ -59,7 +59,7 @@ module.exports = function (grunt) {
                 "lastsemic": false,
                 "laxbreak": true,      //Tolerate possibly unsafe line breakings
                 "laxcomma": false,      //Tolerate comma-first style coding
-                "loopfunc": false,      //Tolerate functions being defined in loops
+                "loopfunc": true,      //Tolerate functions being defined in loops
                 "multistr": false,      //Tolerate multi-line strings
                 "noyield": false,       //Tolerate generator functions with no yield statement
                 "notypeof": false,      //Tolerate invalid typeof operator values
@@ -107,10 +107,11 @@ module.exports = function (grunt) {
  **********************************************************************************************************************/
         includes: {
             js:{
+                //将polyfill合并成IE*.js
                 options: {
                     flatten: true,
                     includePath: '<%= frontend %>/js/lib',
-                    includeRegexp: /^\s*\/\/\s*import\s+['"]?([^'"]+)['"]?\s*$/,
+                    includeRegexp: /^\s*\/\/\s*import\s+['"]?([^'"]+\.js)['"]?\s*$/,
                     // banner: '<!-- Site built using grunt includes! -->\n'
                 },
                 cwd: '<%= frontend %>/js/bcs/patch',
@@ -124,6 +125,7 @@ module.exports = function (grunt) {
  **********************************************************************************************************************/
         concat: {
             BCSConcat:{
+                //合并BCS的相关js文件
                 options: {
                     stripBanners: true,
                     separator: ';\n',
@@ -135,7 +137,8 @@ module.exports = function (grunt) {
                     },
                 },
                 src:['<%= frontend %>/js/bcs/model/Browser.js',
-                    '<%= frontend %>/js/bcs/**/*.js','!<%= frontend %>/js/bcs/patch/**/*.js'],
+                    '<%= frontend %>/js/bcs/**/*.js',
+                    '!<%= frontend %>/js/bcs/patch/**/*.js'],
                 dest:'<%= tmp %>/js/BCS.js'
             },
         },
@@ -150,6 +153,12 @@ module.exports = function (grunt) {
                 sourceMap: false,
                 presets: ["es2015"],
                 plugins: [
+                    ["babel-plugin-transform-runtime", {
+                        "helpers": false,
+                        "polyfill": false,
+                        "regenerator": false,
+                        "moduleName": "babel-runtime"
+                    }],
                     ["babel-plugin-transform-es3-property-literals"],
                     ["babel-plugin-transform-es3-member-expression-literals"],
                     ['babel-plugin-transform-es2015-modules-umd', { "loose": true }],
@@ -158,9 +167,10 @@ module.exports = function (grunt) {
             dist: {
                 files: {
                     // '<%= frontend %>/js/dist/BCS.js': ['<%= concat.BCSConcat.dest %>']
-                    '<%= webapp %>/js/BCS.js': ['<%= concat.BCSConcat.dest %>'],
                     '<%= frontend %>/js/lib/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js'],
-                    '<%= frontend %>/js/lib/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js']
+                    '<%= frontend %>/js/lib/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js'],
+                    '<%= webapp %>/js/BCS.js': ['<%= concat.BCSConcat.dest %>'],
+                    // '<%= frontend %>/js/lib/dialog-polyfill.es5.js': ['<%= frontend %>/js/lib/dialog-polyfill.js'],
                 }
             }
         },
@@ -189,6 +199,21 @@ module.exports = function (grunt) {
             },
         },
 /***********************************************************************************************************************
+ * 复制swf
+ **********************************************************************************************************************/
+        copy: {
+            swf: {
+                files: [
+                    // includes files within path
+                    {expand: true,
+                        cwd: '<%= frontend %>/swf/',
+                        src: ['**/*.swf'],
+                        dest: '<%= webapp %>/swf/',
+                        filter: 'isFile'},
+                ],
+            },
+        },
+/***********************************************************************************************************************
  * watch
  **********************************************************************************************************************/
         watch: {
@@ -197,6 +222,15 @@ module.exports = function (grunt) {
                 tasks: ['jshint','babel','includes','concat',],
                 options: {
                     livereload: true,
+                    atBegin:true
+                }
+            },
+            swf:{
+                files:['<%= frontend %>/swf/**/*.swf'],
+                tasks: ['copy'],
+                options: {
+                    livereload: true,
+                    atBegin:true
                 }
             }
         }
@@ -207,6 +241,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-babel')
     grunt.loadNpmTasks('grunt-contrib-uglify')
     grunt.loadNpmTasks('grunt-contrib-watch')
+    grunt.loadNpmTasks('grunt-contrib-copy')
     grunt.registerInitTask('default',
-        ['includes','babel','jshint','concat','uglify','watch'])
+        ['includes','babel','jshint','concat','uglify','watch','copy'])
 };

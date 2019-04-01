@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!--<script src="../css/es5-shim.js"></script>-->
+    <script>
+        window.onload = function(){
+            var a = document.getElementById('app')
+            a.addEventListener = function(eventType, funcHandle, useCapture) {
+                var element = this, eventStoreType = ''
+                if (eventType === "input") {
+                    eventType = "propertychange"
+                }
+                if (typeof funcHandle !== "function") {
+                    return
+                }
+                // some compatibility deal
+                var eventHandle = function(event) {
+                    event = event || window.event || {}
+
+                    if (!event.target) {
+                        event.target = event.srcElement
+                    }
+                    if (!event.preventDefault) {
+                        event.preventDefault = function() {
+                            event.returnValue = false
+                        }
+                    }
+
+                    if (eventType === "propertychange") {
+                        if (event.propertyName !== "value" || element.r_oldvalue === element.value) {
+                            return
+                        }
+                        element.r_oldvalue = element.value
+                    }
+                    return funcHandle.call(element, event || {})
+                }
+                eventHandle.initFuncHandle = funcHandle
+
+                // event bind
+                element.attachEvent("on" + eventType, eventHandle)
+
+                // event store
+                if (element["event" + eventType]) {
+                    element["event" + eventType].push(eventHandle)
+                } else {
+                    element["event" + eventType] = [eventHandle]
+                }
+            }
+            a.addEventListener('click',function () {
+                alert('hello')
+            })
+        }
+
+    </script>
+</head>
+<body>
+<div id="app" style="background-color: #2C7C91;width: 100px;height: 50px"></div>
+</body>
+</html>

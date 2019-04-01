@@ -24,10 +24,11 @@
     <mvc:view-controller path="/index*" view-name="index"/>
     <mvc:view-controller path="/" view-name="index"/>
     <mvc:annotation-driven/>
-    <mvc:resources mapping=".html" location="/WEB-INF/html"/>
+    <mvc:resources mapping="/html/**" location="/WEB-INF/html/"/>
     <mvc:default-servlet-handler />
     <mvc:resources mapping="/js/**" location="/WEB-INF/js/"/>
     <mvc:resources mapping="/css/**" location="/WEB-INF/css/"/>
+    <mvc:resources mapping="/swf/**" location="/WEB-INF/swf/"/>
     <mvc:resources mapping="/media/**" location="/WEB-INF/media/"/>
     <mvc:resources mapping="/localization/**" location="/WEB-INF/js/localization/"/>
     <mvc:resources mapping="/jax/**" location="/WEB-INF/js/jax/"/>

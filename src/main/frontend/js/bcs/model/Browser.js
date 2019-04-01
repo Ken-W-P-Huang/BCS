@@ -1,16 +1,10 @@
 /**
  * Created by kenhuang on 2019/1/25.
  */
-/**
- *
- *
- * Blob:https://github.com/eligrey/Blob.js
- *
- */
 
-
-import Extensions from './Extensions'
 import {BCSViewController} from '../controller/BCSViewController'
+import {BCSView} from '../view/BCSView'
+import {Extensions} from './Extensions'
 
 function File(fullPath) {
     'use strict'
@@ -28,7 +22,12 @@ function File(fullPath) {
 }
 File.getCurrentJsFile = function () {
     var scripts = document.getElementsByTagName("script")
-    return new File(scripts[scripts.length - 1].getAttribute("src"))
+    var script = scripts[scripts.length - 1]
+    if (document.documentMode >= 8 ) {
+        return new File(script.src)
+    }else{
+        return new File(script.getAttribute("src",4))
+    }
 }
 File.importScript = function (scriptPath) {
     document.write('<script type="text/javascript" src="'+scriptPath+'"><\/script>') // jshint ignore:line
@@ -43,7 +42,11 @@ File.importCss = function (cssPath) {
  * 2.根据需要启用补丁
  * @constructor
  */
+var browser = new Browser(window)
 function Browser(window) {
+    if(browser){
+        throw new TypeError(this.getClass() + ' could be instantiated only once!')
+    }
     var patchMap = {}
     var i,splitItems,info = {}
     var regexps = {
@@ -52,7 +55,8 @@ function Browser(window) {
     }
     var userAgent = window.navigator.userAgent
     var itemsWithParentheses = userAgent.match(regexps.withParentheses)
-    new Extensions(window).apply()
+    var extensions = new Extensions(window)
+    extensions.apply()
     /* 解析括号的内容 */
     for(i = 0;i < itemsWithParentheses.length;i++){
         resolveWithinParentheses(itemsWithParentheses[i])
@@ -83,6 +87,7 @@ function Browser(window) {
             }
         }
     }
+
     function resolveWithinParentheses (item) {
         if(item.indexOf('KHTML, like Gecko') !== -1){
             info.KHTML = true
@@ -216,6 +221,7 @@ function Browser(window) {
  * 公共方法
  **********************************************************************************************************************/
     if(this.isMobile){
+        extensions.applyMobile()
         this.enableRem = function (factor) {
             var cssNode = document.createElement('style')
             var width = document.documentElement.clientWidth / factor
@@ -250,16 +256,22 @@ function Browser(window) {
         var controller
         if(typeof controllerClass === 'function'){
             document.ready(function () {
+                if(this.isMobile){
+                    document.addEventListener('touchstart',function (event) {
+                        event = event || window.event
+                        event.preventDefault()
+                    })
+                    document.body.style.cssText = "height:100%;overflow:hidden;"
+                    document.getElementsByTagName('html')[0].style.cssText = "height:100%;overflow:hidden;"
+                }
                 controller = new controllerClass(element)
                 window.rootViewController = controller
-                controller.getReady()
                 if(!element){
                     /* 将rootViewController的view的layer作为body的唯一满屏元素 */
-                    document.body.appendChild(controller.view.layer)
+                    document.body.appendChild(controller.view.getLayer())
                 }
-                /* 让所有的ViewController都能找得到window */
-                BCSViewController.prototype.window = window
-            })
+                 BCSView.prototype.window = new BCSView(document.body,{position:'relative'})
+            }.bind(this))
             //http://www.w3school.com.cn/tags/html_ref_eventattributes.asp
             // https://developer.mozilla.org/zh-CN/docs/Web/API/WindowEventHandlers
             window.onload = function () {
@@ -268,15 +280,22 @@ function Browser(window) {
             window.onpageshow = function () {
                 controller.viewDidAppear()
             }
+
             window.onpagehide = function () {
                 controller.viewWillDisappear()
             }
 
             window.onbeforeunload = function () {
-                controller.viewWillUnload()
+                if (controller ) {
+                    controller.viewWillUnload()
+                }
+
             }
+
             window.onunload = function () {
-                controller.viewDidUnload()
+                if (controller ) {
+                    controller.viewDidUnload()
+                }
             }
         }else{
             throw new window.InvalidParameterException('The parameter of runWith in Browser class is not a function')
@@ -299,7 +318,9 @@ function Browser(window) {
             if(patch && typeof patch ==='function'){
                 patch.call(window,window,window.document)
             }else{
-                console.log('No patch called '+arguments[i] +' is found!')
+                if (window.console ) {
+                    console.log('No patch called '+arguments[i] +' is found!')
+                }
             }
         }
     }
@@ -308,18 +329,24 @@ function Browser(window) {
 if (typeof window === 'undefined') {
     throw new Error('This script could only be used in frontend!')
 }else{
-    window.browser = new Browser(window)
+    window.browser = browser
     window.PatchEnum = {
         /* IE7 */
         'STORAGE': 'patchStorage',
+        'DETAILS':'patchDetails',
+        // 'PNG':'patchPNG',
         /* IE8 */
-        // 'CANVAS':'patchCanvas',
+        'CANVAS':'patchCanvas',
         // 'VIDEO': 'patchVideo',
         // 'AUDIO': 'patchAudio',
         'MEDIA':'patchMedia',
-        'PNG': 'patchPNG',
         'GEO_LOCATION': 'patchGeoLocation',
-        'CSS3': 'patchCSS3',
+        'DOM_IMPLEMENTATION':'patchDOMImplementation',
+        'BACKGROUND_BORDER':'patchBackgroundBorder',
+        'VIEW_PORT_UNITS':'patchViewportUnits',
+        'CSS_OBJECT_FIT':'patchCSSObjectFit',
+        'MEDIA_QUERIES':'patchMediaQueries',
+        'HTML_SELECT_ELEMENT':'patchHTMLSelectElement',
         /* IE9 */
         'WEB_SOCKETS': 'patchWebSockets',
         'HISTORY': 'patchHistory',
@@ -330,27 +357,57 @@ if (typeof window === 'undefined') {
         'BLOB':'patchBlob',
         'BASE64':'patchBase64',
         'TYPED_ARRAY':'patchTypedArray',
-        'Worker':'patchWorker',
+        'WORKER':'patchWorker',
+        // 'HTML5':'patchHTML5',
+        'PAGE_VISIBILITY':'patchPageVisibility',
+        'REQUEST_ANIMATION_FRAME':'patchRequestAnimationFrame',
+        'PROGRESS':'patchProgress',
+        'RANGE_SELECTION':'patchRangeSelection',
+        'CSS3_FILTER':'patchCSS3Filter',
         /* IE10 */
-        'LOCATION_ORIGIN': 'patchLocationOrigin',
+        'RESOURCE_HINTS':'patchResourceHints',
+        'DIALOG':'patchDialog',
+        'DATA_SET':'patchDataset',
+        'POINTER_EVENTS':'patchPointerEvents',
         /* IE11 */
         'GET_USER_MEDIA': 'patchGetUserMedia',
         'CLASS_LIST': 'patchClassList',
         'CURRENT_SCRIPT':'patchCurrentScript',
+        'IE_TOUCH':'patchIETouch',
+        'POINTER_ACCURACY':'patchPointerAccuracy',
+        'CSS_SUPPORTS':'patchCSSSupports',
+        'FLEXIBILITY':'patchFlexibility',
+        'CAPTIONATOR':'patchCaptionator',
         /* Edge */
         'PROMISE': 'patchPromise',
         'FETCH': 'patchFetch',
         'ES6':'patchES6',
-        'HTML5': 'patchHTML5',
         'SEND_BEACON': 'patchSendBeacon',
         'FORM_DATA':'patchFormData',
         'INDEXED_DB':'patchIndexedDB',
-        /* Common */
-        'FETCH_JSONP':'patchFetchJSONP',
+        'METER':'patchMeter',
+        'OL_REVERSE':'patchOlReverse',
         'FILE_SAVER':'patchFileSaver',
         'MATHML':'patchMathML',
+        'ARIAAccessibility':'patchARIAAccessibility',
+        'PICTURE':'patchPicture',
+        'IMG_SRCSET':'patchImgSrcset',
+        'EVENT_SOURCE':'patchEventSource',
+        'FULL_SCREEN':'patchFullScreen',
+        'FONT_FACE':'patchFontFace',
+        // 'CSS_REGION':'patchCssRegion',
+        // 'CSS_GRID':'patchCssGrid',
+        'APNG':'patchAPNG',
+        'DATA_LIST':'patchDatalist',
+        'SET_IMMEDIATE':'patchSetImmediate',
+        /* Common */
+        'FETCH_JSONP':'patchFetchJSONP',
+        'RAPHAEL':'patchRaphael',
+        'OVER_THROW':'patchOverthrow',
+        'CANGO3D':'patchCango3D',
+        'EASYXDM':'patchEasyXDM',
+        'STYLE_SCOPED':'patchStyleScoped'
     }
-    Object.prototype.shallowCopy.call(window,module.exports)
 }
 
 

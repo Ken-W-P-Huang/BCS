@@ -1,0 +1,83 @@
+{
+  "name": "flexibility",
+  "version": "2.0.1",
+  "description": "A JavaScript polyfill for Flexbox",
+  "main": "lib/index.js",
+  "repository": "jonathantneal/flexibility",
+  "keywords": [
+    "flex",
+    "display",
+    "direction",
+    "wrap",
+    "flow",
+    "justify",
+    "content",
+    "align",
+    "items",
+    "content",
+    "order",
+    "grow",
+    "shrink",
+    "basis",
+    "self",
+    "auto",
+    "start",
+    "end",
+    "center",
+    "baseline",
+    "stretch",
+    "space",
+    "between",
+    "around",
+    "polyfill",
+    "ie",
+    "internet",
+    "explorer",
+    "layout"
+  ],
+  "files": [
+    "LICENSE.md",
+    "flexibility.js",
+    "lib"
+  ],
+  "author": "Jonathan Neal <jonathantneal@hotmail.com> (http://jonathantneal.com)",
+  "license": "MIT",
+  "bugs": "https://github.com/jonathantneal/flexibility/issues",
+  "homepage": "https://github.com/jonathantneal/flexibility#readme",
+  "watch": {
+    "compile-w-map": {
+      "patterns": [
+        "lib",
+        "test"
+      ],
+      "extensions": "js",
+      "quiet": "true"
+    }
+  },
+  "scripts": {
+    "compile": "browserify lib/index.js --standalone flexibility --outfile flexibility.js",
+    "compile-w-map": "browserify lib/index.js --debug --standalone flexibility --outfile flexibility.js",
+    "compress": "uglifyjs flexibility.js --compress --mangle --output flexibility.js",
+    "compress-w-map": "uglifyjs flexibility.js --compress --mangle --source-map flexibility.js.map --output flexibility.js",
+    "build": "npm run compile && npm run compress",
+    "eslint": "eslint ./lib/",
+    "prepublish": "npm run build",
+    "test": "npm run eslint",
+    "watch": "npm-watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "ava": "^0.25.0",
+    "browserify": "^16.2.2",
+    "eslint": "^5.2.0",
+    "eslint-config-dev": "^2.0.0",
+    "npm-watch": "^0.3.0",
+    "uglify-js": "^3.4.6"
+  },
+  "engines": {
+    "node": ">=0.12.0"
+  },
+  "eslintConfig": {
+    "extends": "dev"
+  }
+}

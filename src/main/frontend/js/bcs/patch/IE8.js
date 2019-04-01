@@ -3,28 +3,41 @@
  */
 (function (window,document) {
     function patchCanvas() {
+        window.FlashCanvasOptions = {swfPath:location.protocol+'//'+location.host+'/swf/'}
         // import 'flashcanvas.js'
     }
-    function patchMedia() {
+
+    function patchVideoAudio() {
         // import 'jquery.js'
         // import 'mediaelement-and-player.js'
     }
 
-    function patchPNG() {
-        // import ''
-    }
     function patchGeoLocation() {
         // import 'geo.js'
     }
+
     function patchES5() {
         // import "es5-shim.js"
     }
+
     function patchJSON() {
         // import 'json.js'
     }
 
-    function patchCSS3() {
+    function patchBackgroundBorder() {
         // import 'PIE_IE678_uncompressed.js'
+    }
+
+    function patchDOMImplementation() {
+        // import 'DOMImplementation.prototype.createDocument.js'
+    }
+
+    function patchDom2() {
+        // import 'ie8.max.js'
+    }
+
+    function patchHTMLSelectElement() {
+        // import 'HTMLSelectElement.js'
     }
 
     function patchXMLHttpRequest() {
@@ -41,21 +54,48 @@
         window.XMLHttpRequest.DONE = 4
     }
 
-    if(window.browser){
-        window.browser.addPatches({
-            'patchCanvas':patchCanvas,
-            // 'patchVideo':patchVideo,
-            // 'patchAudio':patchAudio,
-            'patchMedia':patchMedia,
-            'patchPNG':patchPNG,
-            'patchGeoLocation':patchGeoLocation,
-            'patchCSS3':patchCSS3
-        })
+    function patchDetails() {
+        // import "Element.details.ie8.js"
     }
-    patchJSON(window)
-    patchES5(window)
+
+    function patchViewportUnits() {
+        // import "tokenizer.js"
+        // import "vminpoly.js"
+        // import "parser.js"
+    }
+
+    function patchCSSObjectFit() {
+        // import 'object-fit-polyfill.js'
+    }
+
+    function patchMediaQueries() {
+        // import 'respond.src.js'
+    }
+
+    if(window.browser){
+        var patches = {
+            'patchCanvas':patchCanvas,
+            'patchVideoAudio':patchVideoAudio,
+            'patchGeoLocation':patchGeoLocation,
+            'patchDOMImplementation':patchDOMImplementation,
+            'patchBackgroundBorder':patchBackgroundBorder,
+            'patchViewportUnits':patchViewportUnits,
+            'patchCSSObjectFit':patchCSSObjectFit,
+            'patchMediaQueries':patchMediaQueries,
+            'patchHTMLSelectElement':patchHTMLSelectElement
+        }
+        if(window.browser.isIE && window.browser.version === 8){
+            patches.patchDetails  = patchDetails
+        }
+        window.browser.addPatches(patches)
+        document.head = document.head || document.getElementsByTagName('head')[0]
+    }
+    patchJSON()
+    patchES5()
+
     patchXMLHttpRequest()
-    /* canvas必须在当前js中执行，跨脚本无效，原因未知 */
-    patchCanvas()
+    if(window.browser.isIE && window.browser.version === 8){
+        patchDom2()
+    }
 })(this,this.document)
 

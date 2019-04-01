@@ -2,11 +2,15 @@
  * Created by kenhuang on 2019/1/25.
  */
 /**
- * 无需暴露
+ * 按照队列的顺序进行响应。可以重复添加，多次响应。
  * @constructor
  */
-function NotificationCenter() {
-    var observerListMap = {}
+var singleton = new NotificationCenter()
+export function NotificationCenter() {
+    if(singleton){
+        throw new TypeError(this.getClass() + ' could be instantiated only once!')
+    }
+    var observerList = []
     /**
      *
      * @param observer 观察者
@@ -15,92 +19,59 @@ function NotificationCenter() {
      * @param object   发送者，null表示接收所有发送者发送的消息
      */
     this.addObserver = function (observer, selector,name,object) {
+        Function.requireArgumentNumber(arguments,3)
         name = name || null
         object = object || null
         if(typeof observer !== "object" || typeof selector !== "function" ||
             (typeof name !== "string" && name !== null) ||
             (typeof object !== "object" && object !== null) ){
-            throw new Error('Invalid parameters.')
+            throw new TypeError('Invalid parameters.')
         }
-        if(!observerListMap[name]){
-            observerListMap[name] = []
-        }
-        /* 防止重复添加 */
-        for(var o in this.observerListMap[name] ){
-            if(o.observer === observer  && o.object === object){
-                for(var s in o.selectors){
-                    if(s === selector){
-                        return
-                    }
-                }
-                o.selectors.push(selector)
-                return
-            }
-        }
-        observerListMap[name].push({
+        observerList.push({
             observer:observer,
-            selectors:[selector],
-            object:object})
+            selectors:selector,
+            name:name,
+            object:object
+        })
     }
-    this.post = function (name,object,userInfo) {
-        function send(observerList,notification) {
-            if(observerList){
-                for(var i = 0;i<observerList.length;i++){
-                    if(observerList[i].object === object || observerList[i].object === null){
-                        try{
-                            observerList[i].selectors(notification)
-                        }catch (e){
 
+    this.post = function (name,object,userInfo) {
+        Function.requireArgumentNumber(arguments,1)
+        object = object || null
+        if(typeof name === 'string'){
+            if(observerList){
+                for(var i = 0;i < observerList.length;i++){
+                    if((observerList[i].name === name || observerList[i].name === null) &&
+                        (observerList[i].object === object || observerList[i].object === null)){
+                        try{
+                            observerList[i].selectors({
+                                name:name,
+                                object:object,
+                                userInfo:userInfo
+                            })
+                        }catch (e){
+                            e.printStackTrace()
                         }
                     }
 
                 }
             }
-        }
-        object = object || null
-        if(typeof name === 'string'){
-            var notification = {
-                name:name,
-                object:object,
-                userInfo:userInfo
-            }
-            send(observerListMap[name],notification)
-            send(observerListMap[null],notification)
+        }else{
+            throw new TypeError('Variable \'name\' must be string type')
         }
     }
-    this.removeObserver = function (observer,name,object) {
-        function remove(observerList,observer,object) {
-            for(var i = 0; i < observerList.length; i++) {
-                if(observerList[i].observer === observer && observerList[i].object === object) {
-                    if(i === 0) {
-                        observerList.shift()
-                        return
-                    } else if(i === length-1) {
-                        observerList.pop()
-                        return
-                    } else {
-                        observerList.splice(i,1)
-                        return
-                    }
-                }
-            }
-        }
-        var observerList
-        object = object || null
-        if(name){
-            /* 删除指定属性的指定观察者 */
-            observerList =  observerListMap[name]
-            if(observerList){
-                remove(observerList,observer,object)
-            }
-        }else{
-            /* 删除所有属性的指定观察者 */
-            for(observerList in this.observerListMap){
-                if(this.observerListMap.hasOwnProperty(observerList)){
-                    remove(observerList,observer,object)
-                }
 
-            }
+    this.removeObserver = function (observer,name,object) {
+        Function.requireArgumentNumber(arguments,1)
+        for(var i = observerList.length - 1; i >= 0 ; i--) {
+           if((!name || name === observerList[i]) && (!object || object === observerList[i])){
+               observerList.splice(i,1)
+           }
         }
     }
 }
+NotificationCenter['default'] = singleton
+
+
+
+

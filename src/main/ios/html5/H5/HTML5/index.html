@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Title</title>
+</head>
+<body>
+    <div style="width: 100px;height: 100px;background-color: #2aabd2" id="app"></div>
+    <script type="text/javascript" src='./mobile-detect.js'></script>
+    <script type="text/javascript">
+        //window.webkit.messageHandlers.nativeBridge.postMessage(message);
+        
+        alert(window.navigator.userAgent)
+        var md = new MobileDetect(window.navigator.userAgent);
+        alert( md.mobile() );          // 'Sony'
+        alert( md.phone() );           // 'Sony'
+        alert( md.tablet() );          // null
+        alert( md.userAgent() );       // 'Safari'
+        alert( md.os() );              // 'AndroidOS'
+        alert( md.is('iPhone') );      // false
+        alert( md.is('bot') );         // false
+        alert( md.version('Webkit') );         // 534.3
+        alert( md.versionStr('Build') );       // '4.1.A.0.562'
+        alert( md.match('playstation|xbox') ); // false
+        
+        window.onload = function () {
+            function A() {
+                this.callMobile = function (a,b,c) {
+
+                }
+                this.calledByMobile = function (a) {
+                    alert(a)
+                    return 100
+                }
+            }
+            var b = 500
+             a = new A()
+            var div = document.getElementById('app')
+            div.addEventListener('touchstart',function (event) {
+               // alert('ss')
+                if(nativeBridge){
+                    nativeBridge.sayHello('a')
+                    alert(nativeBridge.sayHello1(1,'a',{number:1,s:'a'}))
+                }else{
+                    alert('not exist')
+                }
+            })
+        }
+    </script>
+</body>
+</html>

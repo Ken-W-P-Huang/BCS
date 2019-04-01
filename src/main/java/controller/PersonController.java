@@ -68,6 +68,11 @@ public class PersonController {
         System.out.println("video");
         return "video";
     }
+    @RequestMapping(value = "/script")
+    public String script(){
+        System.out.println("script");
+        return "script";
+    }
 
 }
 class Detail{

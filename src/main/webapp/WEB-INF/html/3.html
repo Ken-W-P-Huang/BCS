@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width = device-width,initial-scale=1,user-scalable=no">
+    <title>Title</title>
+</head>
+<body>
+<div id='app' class='A' style="background-color:rgba(0, 0, 0, 0.9);position: absolute;height: 50%;width: 50%;">
+    <h1 class='H' style="position: absolute;color: #fff;display: block;">
+        This is a heading
+    </h1>
+</div>
+
+<!--<div class='B' style="position: absolute;height: 100%;width: 100%;background: gray;"></div>-->
+</body>
+<script>
+    window.onload = function () {
+        var app = document.getElementById('app')
+        var a = document.createElement('div')
+        a.style.cssText = 'height: 50%;width: 50%;background-color:yellow;position: absolute;'
+        app.appendChild(a)
+        function test(event) {
+            console.log(event.type)
+        }
+        a.addEventListener('touchstart',test)
+        a.addEventListener('touchmove',test)
+        a.addEventListener('touchend',test)
+        a.addEventListener('touchcancel',test)
+    }
+
+
+
+</script>
+</html>

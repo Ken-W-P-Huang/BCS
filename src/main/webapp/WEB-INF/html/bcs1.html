@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/normalize.css">
+    <script type="text/javascript" src="../js/BCS.js"></script>
+</head>
+<body>
+
+</body>
+<script>
+    browser.applyPatches(PatchEnum.FETCH)
+    function ViewController() {
+        BCSViewController.call(this)
+        var pageInfo = this.loadPageInfo('http://192.168.18.230:8080/person/data',function (error) {
+            alert(error)
+        },HttpMethodEnum.GET)
+        var label1 = new BCSLabel({
+            top:'150px',
+            width:'200px',
+            height:'100px',
+            left:'100px',
+            color:'white',
+            backgroundColor:'blue'
+        })
+        this.view.addSubView(label1)
+        label1.setText(JSON.stringify(pageInfo))
+    }
+    ViewController.extend(BCSViewController)
+    browser.runWith(ViewController)
+</script>
+</html>

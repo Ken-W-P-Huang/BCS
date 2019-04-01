@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        Function.requireArgumentNumber = function(args, expected) {
+            if (args.length < expected) {
+                throw new TypeError(expected +' argument required, but only '+ args.length+' present.')
+            }
+        }
+        Object.prototype.isMemberOf = function(Clazz){
+            if(typeof Clazz === 'function'){
+                if(this.__proto__){ // jshint ignore:line
+                    return this.__proto__ === Clazz.prototype // jshint ignore:line
+                }
+                return this.constructor === Clazz
+            }else{
+                throw new TypeError('Clazz\'s value is not valid Class')
+            }
+        }
+        Function.prototype.extend = function(superClass,publicObject,staticObject) {
+            if(typeof this  === 'function'){
+                if(typeof superClass === 'function' ){
+                    var Super = function(){}
+                    Super.prototype = superClass.prototype
+                    this.prototype = new Super()
+                    this.prototype.constructor = this
+                }
+                if(typeof publicObject === 'object'){
+                    this.prototype.shallowCopy(publicObject)
+                }
+                if(typeof staticObject === 'object'){
+                    this.shallowCopy(staticObject)
+                }
+            }
+        }
+        Object.prototype.isKindOf = function(Clazz){
+            if(typeof Clazz === 'function'){
+                Function.requireArgumentNumber(arguments,1)
+                return this instanceof  Clazz
+            }else{
+                throw new TypeError('Clazz\'s value is not valid Class')
+            }
+        }
+        var map = new Map()
+        var isConstructor = false
+        function transformValue(value) {
+            if (typeof value === 'object') {
+                if (value.isKindOf(Symbol)) {
+                    throw new TypeError('Cannot convert a Symbol value to a string')
+                }else{
+                    return value.toString()
+                }
+            }else if(value === undefined){
+                return ''
+            }else{
+                return String(value)
+            }
+        }
+        window.Symbol = function Symbol(value) {
+            if (isConstructor) {
+                var timestamp = String(+new Date())
+                value = transformValue(value)
+                this.toString = function () {
+                    if (value ) {
+                        return 'Symbol('+value +')@'+ timestamp
+                    }
+                    return 'Symbol()@'+timestamp
+                }
+                isConstructor = false
+            }else{
+                if ( this.constructor === Symbol) {
+                    throw new TypeError('Symbol is not a constructor')
+                }
+                isConstructor = true
+                return new Symbol(value)
+            }
+        }
+
+        {
+            Symbol.for = function (key) {
+                var symbol
+                if (key === undefined ) {
+                    key = 'undefined'
+                }else{
+                    key = transformValue(key)
+                }
+                if (map.has(key) ) {
+                    return map.get(key)
+                }
+                symbol = Symbol(key)
+                map.set(key,symbol)
+                return symbol
+            }
+            Symbol.keyFor = function (symbol) {
+                if (!symbol.isMemberOf(Symbol)) {
+                    throw new TypeError(typeof symbol + ' is not a symbol')
+                }
+                var entry,entries = map.entries()
+                while(!(entry = entries.next()).done){
+                    if (entry.value[1] === symbol ) {
+                        return entry.value[0]
+                    }
+                }
+                return undefined
+            }
+
+            // Symbol.iterator = Symbol('Symbol.iterator')
+        }
+        var a = Symbol()
+        b = {}
+        b[a]=10
+         a = Symbol.for('abc')
+        var c = Symbol.for('abc')
+        if ( a === c) {
+            Symbol.keyFor(a)
+        }
+        function A() {
+            var a = 10
+            this.setA = function (aa) {
+                a = aa
+            }
+            this.getA = function () {
+                return a
+            }
+        }
+        function B() {
+            var a = new A()
+            this.setA = a.setA
+            this.getA = a.getA
+        }
+        var b = new B()
+        b.setA(500)
+        b.getA()
+
+        function C() {
+            var m = new Map()
+            this.set = m.set
+            this.get = m.get
+        }
+        var c = new C()
+        c.set(10,10)
+        c.get(10)
+    </script>
+</head>
+<body>
+
+</body>
+</html>

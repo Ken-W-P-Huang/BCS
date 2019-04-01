@@ -1,0 +1,54 @@
+{
+  "name": "BC-S",
+  "version": "1.0.0",
+  "description": "During the period of learning java web development,I'm always thinking B/S architecture looks like C/S more and more. If B/S application could be developed as C/S, then the separation of frontend and backend without node.js will come  true! BC/S is short for Browser Client/Server which I call this architecture(No doubt,it's actually C/S). This project is just a tiny demo of BC/S concept.",
+  "main": "Gruntfile.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ken-W-P-Huang/BC-S.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ken-W-P-Huang/BC-S/issues"
+  },
+  "homepage": "https://github.com/Ken-W-P-Huang/BC-S#readme",
+  "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "autoprefixer": "^9.4.9",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-es3-member-expression-literals": "^6.22.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "^8.0.0",
+    "cssnano": "^4.1.10",
+    "grunt": "^1.0.3",
+    "grunt-babel": "^6.0.0",
+    "grunt-browserify": "^5.3.0",
+    "grunt-contrib-clean": "^2.0.0",
+    "grunt-contrib-compass": "^1.1.1",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-csslint": "^2.0.0",
+    "grunt-contrib-cssmin": "^3.0.0",
+    "grunt-contrib-htmlmin": "^3.0.0",
+    "grunt-contrib-imagemin": "^3.1.0",
+    "grunt-contrib-jshint": "^2.0.0",
+    "grunt-contrib-less": "^2.0.0",
+    "grunt-contrib-stylus": "^1.2.0",
+    "grunt-contrib-uglify": "^4.0.0",
+    "grunt-contrib-watch": "^1.1.0",
+    "grunt-htmlhint": "^0.9.13",
+    "grunt-includes": "^1.1.0",
+    "grunt-postcss": "^0.9.0",
+    "json": "^9.0.6",
+    "pixrem": "^5.0.0"
+  },
+  "dependencies": {
+    "babel-plugin-transform-es3-property-literals": "^6.22.0"
+  }
+}

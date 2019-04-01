@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script type="text/javascript" src="../js/BCS.js"></script>
+<script type="text/javascript" >
+    window.onload = function () {
+        var app = document.querySelector('#app')
+        if(app){
+           var lis =  app.querySelectorAll('li')
+            lis.forEach(function (li) {
+                li.addEventListener('click',function () {
+                    alert(this)
+                })
+            })
+        }else{
+            alert('null app')
+        }
+    }
+    (function () {
+        var map = new Map()
+        window.A = function () {
+            var data = {
+                a:10,
+                b:20
+            }
+            map.set(this,data)
+        }
+        A.prototype.getA = function () {
+            var data = map.get(this)
+            return data.a
+        }
+        A.prototype.setA = function (a) {
+            var data = map.get(this)
+            data.a = a
+        }
+        A.prototype.getB = function () {
+            var data = map.get(this)
+            return data.b
+        }
+    })()
+</script>
+<body>
+<div id="app">
+    <ul>
+        <li>1</li>
+        <li>2</li>
+        <li>3</li>
+        <li>4</li>
+    </ul>
+</div>
+</body>
+</html>

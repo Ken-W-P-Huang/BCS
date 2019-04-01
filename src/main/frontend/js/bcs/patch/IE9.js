@@ -31,24 +31,28 @@
             }
         }
     }
+    // Known issue: If an element is created using the overridden createElement method this element returns a document fragment as its parentNode, but should be normally null. If a script relies on this behavior, shivMethodsshould be set to false. Note: jQuery 1.7+ has implemented his own HTML5 DOM creation fix for Internet Explorer 6-8. If all your scripts (including Third party scripts) are using jQuery's manipulation and DOM creation methods, you might want to set this option to false.
     function patchHTML5() {
         // import 'html5shiv-printshiv.js'
+        window.html5.shivMethods = false
     }
-    function patchWebSockets() {
-        // import 'web_socket.js'
-        // import 'swfobject.js'
 
+    function patchWebSockets() {
+        var WEB_SOCKET_SWF_LOCATION = "./swf/WebSocketMain.swf"
+        // import 'swfobject.js'
+        // import 'web_socket.js'
     }
+
     function patchHistory() {
-        // import ''
+        // import 'history.html4.js'
+        // import 'history.js'
+        // import 'history.adapter.native.js'
     }
 
     function patchCSS3() {
         // import 'PIE_IE9_uncompressed.js'
     }
-    function patchCSS3Filter() {
 
-    }
     function patchTransform() {
         // import 'EventHelpers.js'
         // import 'cssQuery-p.js'
@@ -77,6 +81,7 @@
     function patchBase64() {
         // import 'base64.js'
     }
+
     function patchTypedArray() {
         // import 'typedarray.js'
     }
@@ -87,9 +92,37 @@
     function patchXPath() {
         // import 'xpath.js'
     }
+    function patchPageVisibility() {
+        // import 'visibly.js'
+    }
+
+    function patchOfflineEvents() {
+        // import 'offline-events.js'
+    }
+    function patchRequestAnimationFrame() {
+        // import 'raf.js'
+    }
+    function patchProgress() {
+        // import 'raf.js'
+    }
+    function patchRangeSelection() {
+        // import 'rangy-classapplier.js'
+        // import 'rangy-core.js'
+        // import 'rangy-highlighter.js'
+        // import 'rangy-selectionsaverestore.js'
+        // import 'rangy-serializer.js'
+    }
+
+    function patchCSS3Filter(path,isSkipStylesheets) {
+        var polyfilter_scriptpath = path || './js/'
+        var polyfilter_skip_stylesheets = isSkipStylesheets || true
+        // import 'cssParser.js'
+        // import 'css-filters-polyfill.js'
+    }
+
     if(window.browser){
         var patches =  {
-            'patchHTML5':patchHTML5,
+            // 'patchHTML5':patchHTML5,
             'patchWebSockets':patchWebSockets,
             'patchHistory':patchHistory,
             'patchWebPerformance':patchWebPerformance,
@@ -99,7 +132,13 @@
             'patchBase64':patchBase64,
             'patchTypedArray':patchTypedArray,
             'patchWorker':patchWorker,
-            'patchConsole':patchConsole}
+            'patchConsole':patchConsole,
+            'patchPageVisibility':patchPageVisibility,
+            'patchRequestAnimationFrame':patchRequestAnimationFrame,
+            'patchProgress':patchProgress,
+            'patchRangeSelection':patchRangeSelection,
+            'patchCSS3Filter':patchCSS3Filter
+        }
         if(window.browser.isIE && window.browser.version === 9){
            patches.patchCSS3 = patchCSS3
         }
@@ -107,4 +146,5 @@
     }
     patchHTML5()
     patchBlob()
+    patchConsole()
 })(this,this.document)

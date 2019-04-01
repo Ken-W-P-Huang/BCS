@@ -1,0 +1,72 @@
+<section>
+	<h3>justify-content: space-around</h3>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 150px; justify-content: space-around;">
+		<span class="item" class="item">a1</span>
+		<span class="item" class="item">a2</span>
+		<span class="item" class="item">a3</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 120px; justify-content: space-around;">
+		<span class="item" class="item" data-style="height: 30px;">a1; height: 30px</span>
+		<span class="item" class="item" data-style="height: 30px;">a2; height: 30px</span>
+		<span class="item" class="item" data-style="height: 30px;">a3; height: 30px</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 120px; justify-content: space-around;">
+		<span class="item" class="item" data-style="flex-basis: 30px;">a1; flex-basis: 30px</span>
+		<span class="item" class="item" data-style="flex-basis: 30px;">a2; flex-basis: 30px</span>
+		<span class="item" class="item" data-style="flex-basis: 30px;">a3; flex-basis: 30px</span>
+	</div>
+</section>
+
+<section>
+	<h3>flex-grow: 1</h3>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 200px;">
+		<span class="item">a1</span>
+		<span class="item" data-style="flex-grow: 1;">a2; flex-grow: 1</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 200px;">
+		<span class="item" data-style="flex-grow: 1">a1; flex-grow: 1</span>
+		<span class="item" data-style="flex-grow: 1">a2; flex-grow: 1</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 200px;">
+		<span class="item" data-style="flex-grow: 1">a1; flex-grow: 1</span>
+		<span class="item" data-style="flex-grow: 3">a2; flex-grow: 3</span>
+		<span class="item" data-style="flex-grow: 1">a3; flex-grow: 1</span>
+	</div>
+</section>
+
+<section>
+	<h3>margin: auto</h3>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 100px; justify-content: flex-start;">
+		<span class="item" data-style="margin-top: auto; margin-bottom: auto;">a1; margin: 0 auto</span>
+		<span class="item" data-style="margin-top: auto; margin-bottom: auto;">a2; margin: 0 auto</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 100px; justify-content: flex-start;">
+		<span class="item" data-style="margin-top: auto; margin-bottom: auto;">a1; margin: 0 auto</span>
+		<span class="item">a2; margin: 0</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 100px; justify-content: flex-start;">
+		<span class="item">a1; margin: 0</span>
+		<span class="item" data-style="margin-top: auto; margin-bottom: auto;">a2; margin: 0 auto</span>
+	</div>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 100px; justify-content: flex-start; flex-wrap: wrap;">
+		<span class="item" data-style="height: 40px; width: 150px; margin-top: auto; margin-bottom: auto; margin-left: auto; margin-right: auto;">a1; margin: 0 auto</span>
+		<span class="item" data-style="height: 40px; width: 150px; margin-top: auto; margin-bottom: auto; margin-left: auto; margin-right: auto;">a2; margin: 0 auto</span>
+		<span class="item" data-style="height: 40px; width: 150px; margin-top: auto; margin-bottom: auto; margin-left: auto; margin-right: auto;">a3; margin: 0 auto</span>
+	</div>
+</section>
+
+<section>
+	<h3>align-items: flex-end; justify-content: flex-end</h3>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 80px; align-items: flex-end; justify-content: flex-end;">
+		<span class="item">a1</span>
+		<span class="item">a2</span>
+	</div>
+</section>
+
+<section>
+	<h3>order: 1</h3>
+	<div class="wrap" data-style="display: flex; flex-direction: column; width: 600px; height: 100px;">
+		<span class="item" data-style="order: 1;">a1; order: 1</span>
+		<span class="item">a2; order: 0</span>
+	</div>
+</section>

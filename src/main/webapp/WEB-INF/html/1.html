@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        var a = new URLSearchParams({5:5})//遍历数组
+        a.append(3,3)
+        a.append(2,1)
+        a.append(2,11)
+        a.append(5,11)
+        a.forEach(function(value,key){console.log(key+':'+value)})
+        a.toString()
+        var a= new URLSearchParams("a=&10=&10=%3Fxx%3A%24%23%23")
+        a.forEach(function(value,key){console.log(typeof value);console.log(typeof key);console.log(key+':'+value)})
+    </script>
+</head>
+<body>
+
+</body>
+</html>
