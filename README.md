@@ -292,13 +292,14 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
   iOS有两种观察者模式的实现，一个是KVO，另一个是NotificationCenter.default。和iOS类似的js版KVO使用defineProperty实现，其使用范围和
   Vue一样，区别是KVO是单向的，而Vue是双向的。KVO只支持公有直接属性（不支持私有属性和path）。 不支持defineProperty的浏览器如IE8及以下可
   以使用NotificationCenter.default，没有深入研究pubsub，但应该就是pubsub机制，只不过为符合swift语法，才写成这个样子。  
+  ``` javascript  
   function Model(){  
     var map = new ListMap()   
     //启用KVO功能
     //enableKVO是在Object.prototype中的扩展，故请放弃使用jQuery的想法，也没有使用jQuery必要！  
     this.enableKVO(map) 
   }  
-    
+  ```  
   3. BCSView和iOS UIView  
   UIView是iOS整个UIKit框架的基石。UIView有个layer属性。BCS仿照UI框架，BCSView同样有layer属性，而这个layer属性就是html元素。开发者可
   以通过调用BCSView的API操作layer，也可以直接获取layer。BCSView的layer的默认css样式含有position = 'absolute'。 据说这种样式可以让
