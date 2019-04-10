@@ -150,14 +150,14 @@ function BCSView1(style,elementType) {
 document.getElementById API,而Android有findViewById....那么如何在浏览器实现前后端分离呢？单页面应用完全可以做到前后端分离，有问题的
 是多页面应用。能否在单页面应用的基础上，将json数据传递给新打开的页面呢？答案是肯定的。可以用来在页面间传递数据的有localStorage，
 sessionStorage,window.name。其中localStorage是全局的不合适；sessionStorage在Chrome打开新页面的瞬间有bug（不知道算不算），而且IE6
-的sessionStorage使用window.name进行兼容，故只能使用window.name。浏览器打开新页面的API为window.open(url,windowname....)。    
-  1. 过程如下：    
-  旧页面获取到JSON数据后调用BCSViewController.prototype.openWindow方法，将json数据传递给新页面    
+的sessionStorage使用window.name进行兼容，故只能使用window.name。浏览器打开新页面的API为window.open(url,windowname....)。过程如下：    
+  - 旧页面获取到JSON数据后调用BCSViewController.prototype.openWindow方法，将json数据传递给新页面    
   （这里的新页面可以是在本窗口打开的新页面也可以是在新窗口中打开的新页面）的window.name    
-  新页面打开后调用loadPageInfo方法，从window.name获取JSON数据。
-  有没有可能发生会话上的问题？能否通过浏览器cookie相关API解决？    
-  2. 实现代码如下：    
-  旧页面获取到JSON数据后调用 
+  - 新页面打开后调用loadPageInfo方法，从window.name获取JSON数据。  
+  有没有可能发生会话上的问题？能否通过浏览器cookie相关API解决？  
+      
+实现代码如下：    
+  - 旧页面获取到JSON数据后调用 
   ``` javascript 
   BCSViewController.prototype.openWindow = function (pageInfo,windowName,newWindow) {  
            Function.requireArgumentNumber(arguments,2)  
@@ -194,7 +194,7 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
           }  
       }  
   ```  
-  新页面中调用 
+  - 新页面中调用 
   ``` javascript  
   BCSViewController.prototype.loadPageInfo = function (dataURL,errorCallback,method,data) {  
           var pageinfo,key = BCSViewController.key  
@@ -245,6 +245,7 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
   优点：  
   1. 在浏览器端实现前后端分离  
   2. 将页面动态数据的渲染放在浏览器端，降低服务器的运算负担。（没有实际测试过，只是觉得生成JSON数据的开销总归比渲染页面的开销小）  
+  
   缺点：  
   每个页面多一次请求。  
    
