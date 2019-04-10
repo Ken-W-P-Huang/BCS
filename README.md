@@ -341,7 +341,6 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
     已经实现语法和swift类似的手势识别器，以及NavigationController的基本功能（bar上的按钮没实现...）详见例子
     BC-S/src/main/webapp/WEB-INF/html/controller.html。其中test.js的代码不是标准的MVVM设计模式，请勿吐槽。在山寨手势识别时发现iOS
  各个手势识别器的识别机制并不是很一致。猜测iOS的不同识别器的实现代码是不同人写的。我只想尽量贴近iOS，并无改进想法。
- 示例：src/main/webapp/WEB-INF/html/controller.html
    
  5. 调试  
     使用Firefox Version46 3DView调试DOM，可以获得和Xcode类似的体验，不过很差。  
