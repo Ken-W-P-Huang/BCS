@@ -252,7 +252,8 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
    
 # 以iOS开发思想编写前端应用  
   1. MVVM  
-    ![MVVM](https://upload-images.jianshu.io/upload_images/3238517-48101429f177b86f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)  
+    ![MVC](https://user-gold-cdn.xitu.io/2019/4/10/16a06ba2224761b1?w=600&h=330&f=png&s=51195)  
+![MVVM](https://user-gold-cdn.xitu.io/2019/4/11/16a09a546fe5cad9?w=895&h=350&f=webp&s=11022)  
 &nbsp;&nbsp;&nbsp;&nbsp;这是iOS很经典的MVVM设计模式图，可以应用到Android，理论上也可以应用到html应用。可能写惯了React或者Vue的朋友会
   鄙视它。本人学了点React和Vue的皮毛，依然还是觉得iOS的MVVM比较好（上文的前后端分离的方式可能会让人觉得Vue不错），个人看法，拒绝在这个问题
   上打口水战，就是这么专制。哈哈。尤其想吐槽的是React Redux和VueX。这两个玩意儿无非是用来存放model数据，却因为html应用一直在使用函数编程
