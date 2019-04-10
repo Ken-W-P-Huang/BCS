@@ -322,7 +322,7 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
           }  
       }
   ```      
-      cssObject的内容和React类似： 
+  cssObject的内容和React类似： 
   ``` javascript       
       var cssObject =  {  
                   bottom:'0px',  
