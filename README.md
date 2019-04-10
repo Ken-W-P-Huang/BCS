@@ -248,6 +248,7 @@ sessionStorage,window.name。其中localStorage是全局的不合适；sessionSt
   
   缺点：  
   每个页面多一次请求。  
+  示例：src/main/webapp/WEB-INF/html/bcs1.html
    
 # 以iOS开发思想编写前端应用  
   1. MVVM  
