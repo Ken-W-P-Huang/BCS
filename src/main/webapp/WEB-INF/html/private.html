@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript">
+        Object.prototype.enablePrivateProperty = function (Class,propertiesMap) {
+            var superGetPrivate, superSetPrivate,superInitProperties
+            for (var key in propertiesMap) {
+                if (this.hasOwnProperty(key) ) {
+                    throw new Error('Duplicate key ' + key + '.')
+                }
+            }
+            if ('setPrivate' in this ) {
+                superGetPrivate = this.getPrivate
+                superSetPrivate = this.setPrivate
+                superInitProperties = this.superInitProperties
+            }
+            this.setPrivate = function(key,value){
+                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
+                    propertiesMap[key] = value
+                }else if(typeof superSetPrivate === 'function'){
+                    superSetPrivate(key,value)
+                }else{
+                    throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+                }
+            }
+            this.getPrivate = function(key){
+                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
+                    return propertiesMap[key]
+                }else if(typeof superSetPrivate === 'function'){
+                    return superGet(key)
+                }else{
+                    throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+                }
+            }
+            this.initProperties = function (map) {
+                if (Class === this.constructor ) {
+                    for (var key in map) {
+                        if (map.hasOwnProperty(key) ) {
+                            if (propertiesMap.hasOwnProperty(key) ) {
+                                throw new Error('Class ' + this.getClass() + ' has already had a private property named \''
+                                    + key + '\'.')
+                            }else{
+                                propertiesMap[key] = map[key]
+                            }
+                        }
+                    }
+                }else if(typeof superInitProperties === 'function'){
+                    superInitProperties(map)
+                }else{
+                    throw new Error('Class ' + Class + ' and  constructor' + this.constructor + ' mismatch.')
+                }
+            }
+        }
+        Function.prototype.extend = function(superClass) {
+            var Super = function(){}
+            Super.prototype = superClass.prototype
+            this.prototype = new Super()
+            this.prototype.constructor = this
+        }
+        function Super() {
+            var map = {'a':10,'super':20}
+            this.enablePrivateProperty(Super,map)
+        }
+        function Sub() {
+            Super.apply(this)
+            var map = {'a':12}
+            this.enablePrivateProperty(Sub,map)
+        }
+        Sub.extend(Super)
+        var s = new Super()
+        var sub = new Sub()
+
+        console.log(s.getPrivate('a'))
+        console.log(s.getPrivate('super'))
+        console.log(sub.getPrivate('a'))
+        console.log(sub.getPrivate('super'))
+
+    </script>
+</head>
+<body>
+
+</body>
+</html>

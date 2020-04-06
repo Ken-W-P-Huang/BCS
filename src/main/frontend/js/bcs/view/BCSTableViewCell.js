@@ -2,10 +2,124 @@
  * Created by kenhuang on 2019/2/16.
  */
 import BCSView from './BCSView'
-export function BCSTableViewCell() {
-    BCSView.call()
+
+var BCSTableViewCellStyleEnum = {
+    Default:1,
+    value1:2,
+    value2:3,
+    subtitle:4
 }
 
-{
-    BCSTableViewCell.extend(BCSView)
+var BCSTableViewCellSelectionStyleEnum = {
+    none:1,
+    blue:2,
+    gray:3,
+    Default:4
+}
+var BCSTableViewCellFocusStyleEnum = {
+    Default:1,
+    custom:2
+}
+
+var BCSTableViewCellEditingStyleEnum = {
+    none:1,
+    delete:2,
+    insert:3
+}
+
+var BCSTableViewCellAccessoryTypeEnum = {
+    none:1,
+    disclosureIndicator:2,
+    detailDisclosureButton:3,
+    checkmark:4,
+    detailButton:5
+}
+
+var BCSTableViewCellDragStateEnum = {
+    none:1,
+    lifting:2,
+    dragging:3
+}
+
+
+
+export function BCSTableViewCell(style,element) {
+    BCSView.call(this,style,element)
+    // this.setPrivate('imageView',)
+    // this.setPrivate('textLabel',)
+    // this.setPrivate('detailTextLabel',)
+    // this.setPrivate('contentView',)
+    // this.setPrivate('reuseIdentifier',)
+    // // default is UITableViewCellEditingStyleNone. This is set by UITableView using the delegate's value for cells who customize their appearance accordingly.
+    // this.setPrivate('editingStyle',)
+    // this.setPrivate('showingDeleteConfirmation',)
+    var propertiesMap = {
+
+    }
+    this.initProperties(propertiesMap)
+    this.backgroundView = null
+    this.selectedBackgroundView = null
+    this.multipleSelectionBackgroundView = null
+    this.selectionStyle = BCSTableViewCellSelectionStyleEnum.Default
+    this.isSelected = false
+    this.isHighlighted = false
+    this.showsReorderControl = false
+    this.shouldIndentWhileEditing = true
+    this.accessoryType = BCSTableViewCellAccessoryTypeEnum.none
+    this.accessoryView = null
+    this.editingAccessoryType = BCSTableViewCellEditingStyleEnum.none
+    this.editingAccessoryView = null
+    this.indentationLevel = 0
+    this.indentationWidth = 10.0
+    this.separatorInset = null
+    this.isEditing = false
+    this.focusStyle = BCSTableViewCellFocusStyleEnum.Default
+    this.userInteractionEnabledWhileDragging = false
+}
+
+BCSTableViewCell.extend(BCSView)
+var prototype = BCSTableViewCell.prototype
+prototype.getImageView = function(){
+    return this.getPrivate('imageView')
+}
+prototype.getTextLabel = function(){
+    return this.getPrivate('textLabel')
+}
+prototype.getDetailTextLabel = function(){
+    return this.getPrivate('detailTextLabel')
+}
+prototype.getContentView = function(){
+    return this.getPrivate('contentView')
+}
+prototype.getReuseIdentifier = function(){
+    return this.getPrivate('reuseIdentifier')
+}
+prototype.getEditingStyle = function(){
+    return this.getPrivate('editingStyle')
+}
+prototype.getShowingDeleteConfirmation = function(){
+    return this.getPrivate('showingDeleteConfirmation')
+}
+prototype.prepareForReuse = function () {
+    
+}
+prototype.setSelected = function (selected,animated) {
+    
+}
+prototype.setHighlighted = function (highlighted,animated) {
+    
+}
+prototype.setEditing = function (editing,animated) {
+    
+}
+
+prototype.willTransition = function (state) {
+    
+}
+prototype.didTransition = function (state) {
+
+}
+
+prototype.dragStateDidChange = function (dragState) {
+
 }

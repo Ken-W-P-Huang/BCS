@@ -21,6 +21,7 @@ class ViewController: UIViewController {
     var SwipegestureRecognizer6:UISwipeGestureRecognizer!
     var LongPressgestureRecognizer7:UILongPressGestureRecognizer!
     var pangestureRecognizer8:UIPanGestureRecognizer!
+    var rotation:UIRotationGestureRecognizer!
     override func viewDidLoad() {
         super.viewDidLoad()
         gestureRecognizer = GestureRecognizer(target: self, action: #selector(ViewController.sayHello))
@@ -32,6 +33,7 @@ class ViewController: UIViewController {
         SwipegestureRecognizer6 = SwipeGestureRecognizer(target: self, action: #selector(ViewController.swipe))
         LongPressgestureRecognizer7 = LongPressGestureRecognizer(target: self, action: #selector(ViewController.longPress))
         pangestureRecognizer8 = PanGestureRecognizer(target: self, action: #selector(ViewController.pan))
+        rotation = RotateGestureRecognizer(target: self, action: #selector(ViewController.pan))
         gestureRecognizer.name = "gestureRecognizer"
         gestureRecognizer1.name = "gestureRecognizer1"
         gestureRecognizer2.name = "gestureRecognizer2"
@@ -41,6 +43,7 @@ class ViewController: UIViewController {
         SwipegestureRecognizer6.name = "Swipe"
         LongPressgestureRecognizer7.name = "LongPress"
         pangestureRecognizer8.name = "pan"
+        rotation.name = "rotation"
         gestureRecognizer.location(in: gestureRecognizer.view)
         
 //        let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(ViewController.sayHello))
@@ -51,7 +54,7 @@ class ViewController: UIViewController {
 //        UINavigationController
 //         var a = UIButton(type: UIButtonType)
 //        self.view
-        button = UIView(frame:CGRect(x: 50, y: 50, width: 300, height: 300) ) //UIScreen.main.bounds
+        button = UIView(frame:CGRect(x: 50, y: 50, width: 350, height: 500) ) //UIScreen.main.bounds
         button.backgroundColor = UIColor.red
         self.view.addSubview(button)
         gestureRecognizer1.numberOfTapsRequired = 1
@@ -76,7 +79,7 @@ class ViewController: UIViewController {
         gestureRecognizer4.numberOfTouchesRequired = 2
 //        button.addGestureRecognizer(gestureRecognizer4)
 
-        button.addGestureRecognizer(pinchgestureRecognizer5)
+//        button.addGestureRecognizer(pinchgestureRecognizer5)
         SwipegestureRecognizer6.numberOfTouchesRequired = 2
 //        SwipegestureRecognizer6.direction = UISwipeGestureRecognizerDirection.up
         SwipegestureRecognizer6.delegate = self
@@ -87,15 +90,19 @@ class ViewController: UIViewController {
           LongPressgestureRecognizer7.delegate = self
 //        button.addGestureRecognizer(LongPressgestureRecognizer7)
         LongPressgestureRecognizer7.allowableMovement = 200
-//        pangestureRecognizer8.delegate = self
-//        button.addGestureRecognizer(pangestureRecognizer8)
+        pangestureRecognizer8.delegate = self
+        pangestureRecognizer8.minimumNumberOfTouches = 2
+        pangestureRecognizer8.maximumNumberOfTouches = 3
+
+        button.addGestureRecognizer(pangestureRecognizer8) 
 //        gestureRecognizer.delegate = self
 //        gestureRecognizer1.delegate = self
 //        gestureRecognizer2.delegate = self
 
 
 //        gestureRecognizer6.delegate = self
-      
+      rotation.delegate = self
+//        button.addGestureRecognizer(rotation)
         aButton = UIButton(frame: CGRect(x: 0, y: 200, width: 40, height: 40))
         aButton.backgroundColor = UIColor.green
         self.view.addSubview(aButton)
@@ -106,10 +113,13 @@ class ViewController: UIViewController {
         
     }
     override func viewWillDisappear(_ animated: Bool) {
-        
     }
     override func viewDidDisappear(_ animated: Bool) {
         
+    }
+    @objc func rotation(a:UIGestureRecognizer){
+        print("rotation:\(a.numberOfTouches)")
+        printResult()
     }
     @objc func click()  {
         var controller = ViewController1()
@@ -124,7 +134,7 @@ class ViewController: UIViewController {
             
         }
         
-        
+    
     }
     func printResult()  {
         var a = DateFormatter()
@@ -136,10 +146,16 @@ class ViewController: UIViewController {
         print(gestureRecognizer3.state.rawValue)
         print(gestureRecognizer4.state.rawValue)
         print("pinch:\(pinchgestureRecognizer5.state.rawValue):\(pinchgestureRecognizer5.scale):\(pinchgestureRecognizer5.velocity)")
+        print("rotation:\(rotation.state.rawValue):\(rotation.rotation):\(rotation.velocity)")
         print("Swipe:\(SwipegestureRecognizer6.state.rawValue)")
         print("longPress:\(LongPressgestureRecognizer7.state.rawValue)")
-          print("pan:\(pangestureRecognizer8.state.rawValue)")
-        print("_____________________________________________________")
+        print("pan:\(pangestureRecognizer8.state.rawValue):\(pangestureRecognizer8.translation(in: pangestureRecognizer8.view?.window)):\(pangestureRecognizer8.translation(in: pangestureRecognizer8.view)):\(pangestureRecognizer8.translation(in: self.view)):\(pangestureRecognizer8.translation(in: self.aButton)):\(pangestureRecognizer8.velocity(in: pangestureRecognizer8.view?.window)):\(pangestureRecognizer8.velocity(in: pangestureRecognizer8.view))")
+        if pangestureRecognizer8.translation(in: pangestureRecognizer8.view).x > 5 {
+            pangestureRecognizer8.setTranslation(CGPoint(x: 0, y: 0), in: self.aButton)
+            print("\(pangestureRecognizer8.translation(in: self.aButton)):\(pangestureRecognizer8.velocity(in: pangestureRecognizer8.view?.window))")
+        }
+        print("_______214.0, 234.0 _____________________________________________")
+        
     }
     @objc func sayHello(a:UIGestureRecognizer)  {
         print("UIGestureRecognizer:\(a.numberOfTouches)")
@@ -179,6 +195,7 @@ class ViewController: UIViewController {
     }
     
     @objc func pan(a:UIGestureRecognizer)  {
+        
         print("pan:\(a.numberOfTouches)")
         printResult()
     }

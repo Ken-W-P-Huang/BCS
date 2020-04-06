@@ -13,7 +13,11 @@ class ViewController1: UIViewController {
     override func viewDidLoad() {
         button = UIButton(frame: CGRect(x: 100, y: 100, width: 40, height: 40))
         button.backgroundColor = UIColor.red
-        
+        var scrollView = UIScrollView(frame: CGRect(x: 100, y: 200, width: 100, height: 100))
+        self.view.addSubview(scrollView)
+        scrollView.backgroundColor = UIColor.gray
+        scrollView.bounces = true
+        scrollView.isScrollEnabled = true
     }
     override func viewWillAppear(_ animated: Bool) {
         

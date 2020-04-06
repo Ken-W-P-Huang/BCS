@@ -4471,7 +4471,7 @@ module.exports = (function(window, document) { "use strict";
 							if(!(properties[p] in cssCascade.computationUnsafeProperties) && properties[p][0]!='-') {
 								var style = getComputedStyle(node1).getPropertyValue(properties[p]);
 								var defaultStyle = cssCascade.getDefaultStyleForTag(node1.tagName).getPropertyValue(properties[p]);
-								if(style != defaultStyle) node2.style.setProperty(properties[p], style)
+								if(style != defaultStyle) node2.style.setValueForKey(properties[p], style)
 								continue;
 							}
 							
@@ -4480,7 +4480,7 @@ module.exports = (function(window, document) { "use strict";
 							if(cssValue && cssValue.length) {
 								
 								// if we have a specified value, let's use it
-								node2.style.setProperty(properties[p], cssValue.toCSSString());
+								node2.style.setValueForKey(properties[p], cssValue.toCSSString());
 								
 							} else if(isRoot && node1.parentNode && properties[p][0] != '-') {
 								
@@ -4493,12 +4493,12 @@ module.exports = (function(window, document) { "use strict";
 								// if the property is computation-safe, use the computed value
 								if((properties[p]=="font-size") || (!(properties[p] in cssCascade.computationUnsafeProperties) && properties[p][0]!='-')) {
 									var style = getComputedStyle(node1).getPropertyValue(properties[p]);
-									node2.style.setProperty(properties[p], style);
+									node2.style.setValueForKey(properties[p], style);
 									//var parentStyle = style; try { parentStyle = getComputedStyle(node1.parentNode).getPropertyValue(properties[p]) } catch(ex){}
 									//var defaultStyle = cssCascade.getDefaultStyleForTag(node1.tagName).getPropertyValue(properties[p]);
 									
 									//if(style === parentStyle) {
-									//  node2.style.setProperty(properties[p], style)
+									//  node2.style.setValueForKey(properties[p], style)
 									//}
 									continue;
 								}
@@ -4508,7 +4508,7 @@ module.exports = (function(window, document) { "use strict";
 								if(cssValue && cssValue.length) {
 									
 									// if we have a specified value, let's use it
-									node2.style.setProperty(properties[p], cssValue.toCSSString());
+									node2.style.setValueForKey(properties[p], cssValue.toCSSString());
 									
 								}
 								

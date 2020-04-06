@@ -23,7 +23,7 @@ class PanGestureRecognizer:UIPanGestureRecognizer{
                 print("touches self.location:\(self.location(ofTouch: i, in: self.view))")
             }
             print("self.location:\(self.location(in: self.view))")
-            print("____________________________________")
+            print("____________________________________\(event.timestamp)")
         }
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
             super.touchesBegan(touches, with: event)
@@ -57,8 +57,9 @@ class PanGestureRecognizer:UIPanGestureRecognizer{
                         number = i
                         break
                     }
+//                    \(self.location(ofTouch: number, in: self.view)):
                 }
-                print("\(self.location(ofTouch: number, in: self.view)):touch ignored:\(self.location(in: self.view)):\(self.name):\(touch):\(self.numberOfTouches)")
+                print("touch ignored:\(self.location(in: self.view)):\(self.name):\(touch):\(self.numberOfTouches)")
                 
             }else{
                 print("touch ignored:\(self.location(in: self.view)):\(self.name):\(touch):\(self.numberOfTouches)")

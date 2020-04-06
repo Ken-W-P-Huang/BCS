@@ -70,6 +70,15 @@ function ViewController(){
     this.swipe = function () {
         console.log('swipe')
     }
+    this.pinch = function (gestureRecognizer) {
+        console.log('pinch:'+gestureRecognizer.getScale()+":"+gestureRecognizer.getVelocity())
+    }
+    this.rotate = function (gestureRecognizer) {
+        console.log('rotate:'+gestureRecognizer.getRotation()+":"+gestureRecognizer.getVelocity())
+    }
+    this.pan = function (gestureRecognizer) {
+        console.log('pan:'+JSON.stringify(gestureRecognizer.translation())+":"+JSON.stringify(gestureRecognizer.velocity()))
+    }
     var gestureRecognizer1 = new BCSTapGestureRecognizer(this,this.tap1)
     gestureRecognizer1.numberOfTapsRequired = 1
     gestureRecognizer1.name = 'tap1'
@@ -86,10 +95,17 @@ function ViewController(){
     // label1.addGestureRecognizer(gestureRecognizer1)
     // label1.addGestureRecognizer(gestureRecognizer2)
     // label1.addGestureRecognizer(gestureRecognizer3)
-    var swipeGestureRecognizer = new BCSSwipeGestureRecognizer(this,this.swipe)
-    swipeGestureRecognizer.numberOfTouchesRequired = 2
-    swipeGestureRecognizer.direction = BCSSwipeGestureRecognizerDirectionEnum.UP
-    label1.addGestureRecognizer(swipeGestureRecognizer)
+    // var swipeGestureRecognizer = new BCSSwipeGestureRecognizer(this,this.swipe)
+    // swipeGestureRecognizer.numberOfTouchesRequired = 2
+    // swipeGestureRecognizer.direction = BCSSwipeGestureRecognizerDirectionEnum.UP
+    // label1.addGestureRecognizer(swipeGestureRecognizer)
+    // var pinchGestureRecognizer = new BCSPinchGestureRecognizer(this,this.pinch)
+    // label1.addGestureRecognizer(pinchGestureRecognizer)
+    // var rotateGestureRecognizer = new BCSRotationGestureRecognizer(this,this.rotate)
+    // label1.addGestureRecognizer(rotateGestureRecognizer)
+    var panGestureRecognizer = new BCSPanGestureRecognizer(this,this.pan)
+    panGestureRecognizer.minimumNumberOfTouches = 2
+    label1.addGestureRecognizer(panGestureRecognizer)
 }
 ViewController.extend(BCSViewController)
 

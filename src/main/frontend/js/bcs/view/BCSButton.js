@@ -4,27 +4,24 @@
 import {BCSView,BCSView1} from './BCSView'
 import BCSLabel from './BCSLabel'
 import BCSImageView from './BCSImageView'
+import {BCSBarButtonItem} from "./BCSBarButtonItem";
+import {BCSControl} from "./BCSControl";
 
 export function BCSButton(style) {
-    BCSView1.call(this,style,'button')
+    BCSControl.call(this,style)
     var titleLabel = new BCSLabel()
     var imageView = new BCSImageView()
+    this.setPrivate('titleLabel',titleLabel)
+    this.setPrivate('imageView',imageView)
     this.addSubView(titleLabel)
     this.addSubView(imageView)
-
-    this.getTitleLabel = function () {
-        return titleLabel
-    }
-    this.getImageView = function () {
-        return imageView
-    }
 }
-{
-    BCSButton.extend(BCSView)
-    BCSButton.prototype.addTarget = function (target,action,controlEvents) {
-        
-    }
-    BCSButton.prototype.removeTarget = function (target,action,controlEvents) {
 
-    }
+BCSButton.extend(BCSControl)
+var prototype = BCSButton.prototype
+prototype.getTitleLabel = function () {
+    return this.getPrivate('titleLabel')
+}
+prototype.getImageView = function () {
+    return this.getPrivate('imageView')
 }

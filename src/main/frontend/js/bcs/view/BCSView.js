@@ -1,31 +1,19 @@
 /**
  * Created by kenhuang on 2019/1/10.
  */
-import BCSButton from './BCSButton'
 import {BCSGestureRecognizerStateEnum,BCSGestureRecognizer,defaults} from './BCSGestureRecognizer'
 import {EventTypeEnum,SetMap} from '../model/Extensions'
-// import BCSData from './BCSData'
-// 兼容IE6-8暂不使用以下方式
-// Object.defineProperty(this,'layer',{
-//     getter:function () {
-//         return layer
-//     }
-// })
-export function BCSView(element, style) {
-    // if (this.constructor !== BCSView){
-    //     return new BCSView(element, style)
-    // }
-    Function.requireArgumentNumber(1)
-    var key = Symbol()
-    this.getKey = function () {
-        return key
+var componentName = 'view'
+export function BCSView(style,element) {
+    if (! element) {
+        element = document.createElement('div')
     }
-    viewMap[key] = {
+    var propertiesMap = {
         layer : element,
         subViews : generateSubViews(element),
-        gestureRecognizers : new Set(),
-        isListenersAdded : false
+        gestureRecognizers:[]
     }
+    this.enablePrivateProperty(propertiesMap)
     if(typeof style === 'object'){
         if(!style.hasOwnProperty('position')){
             style.position = 'absolute'
@@ -35,22 +23,21 @@ export function BCSView(element, style) {
     }
     this.setStyle(style)
     /* 方便调试 */
-    element.setAttribute('view',this.getClass())
+    element.setAttribute(componentName,this.getClass())
 }
 
-export function BCSView1(style,elementType) {
-    elementType = elementType || 'div'
-    var element = document.createElement(elementType)
-    if(this.constructor === BCSView1){
-        /*通过new BCSView1构建*/
-        return new BCSView(element,style)
-    }else{
-        BCSView.call(this,element,style)
-    }
-}
-
-var viewMap = {}
 var prototype = BCSView.prototype
+prototype.getLayer = function () {
+    return this.getPrivate('layer')
+}
+prototype.getSubViews = function () {
+    return this.getPrivate('subViews')
+}
+
+prototype.getGestureRecognizers = function () {
+    return this.getPrivate('gestureRecognizers')
+}
+
 function generateSubViews(layer) {
     var subViews = []
     if(layer.children.length > 0){
@@ -82,20 +69,34 @@ function addListeners(view) {
         for(i = 0; i <gestureRecognizers.length ; i++) {
             recognizer = gestureRecognizers[i]
             if ( recognizer.isEnabled ) {
+                touches = []
+                delegate = recognizer.delegate
                 if (event.type ===  EventTypeEnum.TOUCH_START) {
-                    recognizer.state = BCSGestureRecognizerStateEnum.POSSIBLE
+                    if(delegate && delegate.shouldReceiveTouch ){
+                        for(j = 0; j < event.changedTouches.length; j++) {
+                            if (delegate.shouldReceiveTouch(recognizer,event.changedTouches[j]) ) {
+                                touches.push(event.changedTouches[j])
+                            }
+                        }
+                    }else{
+                        for(j = 0; j < event.changedTouches.length; j++) {
+                            touches.push(event.changedTouches[j])
+                        }
+                    }
                 }else if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
                     continue
+                }else{
+                    for(j = 0; j < event.changedTouches.length; j++) {
+                        if (recognizer.hasAvailableTouch(event.changedTouches[j]) ) {
+                            touches.push(event.changedTouches[j])
+                        }
+                    }
+                    if (touches.length === 0 ) {
+                        continue
+                    }
                 }
-                touches = event.changedTouches
-                delegate = recognizer.delegate
                 switch(event.type){
                     case EventTypeEnum.TOUCH_START:
-                        if(delegate && delegate.shouldReceiveTouch ){
-                            touches = event.changedTouches.filter(function (touch) {
-                                return delegate.shouldReceiveTouch(recognizer,touch)
-                            })
-                        }
                         recognizer.touchesBegan(touches,event)
                         for( j = i+1 ; j < gestureRecognizers.length ; j++) {
                             if (recognizer.shouldRequireFailureOf(gestureRecognizers[j]) ) {
@@ -160,30 +161,28 @@ prototype.addSubView = function (view) {
     subViews.push(view)
 }
 
-prototype.getLayer = function () {
-    return viewMap[this.getKey()].layer
-}
-prototype.getSubViews = function () {
-    return viewMap[this.getKey()].subViews
-}
 
-prototype.getGestureRecognizers = function () {
-    return Array.from(viewMap[this.getKey()].gestureRecognizers)
-}
 
 prototype.addGestureRecognizer = function (gestureRecognizer) {
-    var data = viewMap[this.getKey()]
-    data.gestureRecognizers.add(gestureRecognizer)
-    gestureRecognizer.setView(this)
-    if (!data.isListenersAdded) {
+    this.removeGestureRecognizer(gestureRecognizer)
+    gestureRecognizer.setPrivate('view',this)
+    this.getGestureRecognizers().push(gestureRecognizer)
+    //todo
+    if (!this.get('isListenersAdded')) {
         addListeners(this)
-        data.isListenersAdded = true
+        this.set('isListenersAdded',true)
     }
 }
 
 prototype.removeGestureRecognizer = function (gestureRecognizer) {
-    viewMap[this.getKey()].gestureRecognizers.delete(gestureRecognizer)
-    gestureRecognizer.setView(null)
+    var  gestureRecognizerList = this.getGestureRecognizers()
+    gestureRecognizer.setPrivate('view',null)
+    for (var i = 0;i < gestureRecognizerList.length ; i++){
+        if (gestureRecognizerList[i] === gestureRecognizer ) {
+            gestureRecognizerList.splice(i,1)
+            // break 防止有更多的同一个gestureRecognizer
+        }
+    }
 }
 
 prototype.gestureRecognizerShouldBegin = function (gestureRecognizer) {
@@ -279,32 +278,30 @@ prototype.setHTML = function (htmlText) {
 }
 
 BCSView.findViewById = function (id) {
-    var element = document.getElementById(id),
-        component =  element.getAttribute('component')
-    if(component){
+    var element = document.getElementById(id)
+    if (element) {
         /* 已经自行使用component='xxx'指定类型 */
-        return new window[component](element)
-    }else{
-        switch (element.tagName){
-            //todo
-            case 'button':{
-                return new BCSButton()
-            }
-            default :{
-                return new BCSView(element)
-            }
+        var Class =  window[element.getAttribute(componentName)]
+        if(!Class){
+            /*根据标签名创建相应类型的View*/
+            Class = window['BCS' + element.tagName.toFirstUpperCase()]
         }
+        if (Class) {
+            return new Class(null,element)
+        } else {
+            if (element.tagName !== 'div') {
+                console.log(id + ' is initialized as BCSView.')
+            }
+            return new BCSView(null,element)
+        }
+    }else{
+        return null
     }
 }
-prototype.deinit = function () {
-    Object.prototype.deinit.call(this)
-    try{
-        delete viewMap[this.getKey()]
-    }catch(e){
-        viewMap[this.getKey()] = undefined
-    }
-}
-
+/**
+ * 手势识别器已经识别出手势，执行状态已经改变的手势识别器进行识别。
+ * @param stateChangedRecognizers
+ */
 prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
     var gestureRecognizers = this.getGestureRecognizers()
     if (stateChangedRecognizers.length > 0 ) {
@@ -369,9 +366,7 @@ prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
         })
     }
 }
-//BCSView恰好是BCS.js最后一个类
+//BCSView恰好是BCS.js最后一个类,在此手动将module.exports复制到window上以便外部代码访问
 Object.prototype.shallowCopy.call(window,module.exports)
-
-
 
 

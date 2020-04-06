@@ -66,7 +66,19 @@
                     <view key="view" contentMode="scaleToFill" id="Pnm-WS-tha">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="v4y-Qw-hz3">
+                                <rect key="frame" x="0.0" y="32" width="375" height="667"/>
+                                <color key="backgroundColor" cocoaTouchSystemColor="darkTextColor"/>
+                            </scrollView>
+                        </subviews>
                         <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="v4y-Qw-hz3" firstAttribute="height" secondItem="Pnm-WS-tha" secondAttribute="height" id="Do5-za-i8M"/>
+                            <constraint firstItem="v4y-Qw-hz3" firstAttribute="centerY" secondItem="d85-Ne-QLd" secondAttribute="centerY" id="K8V-rm-yzZ"/>
+                            <constraint firstItem="v4y-Qw-hz3" firstAttribute="width" secondItem="Pnm-WS-tha" secondAttribute="width" id="i8m-j8-rL6"/>
+                            <constraint firstItem="v4y-Qw-hz3" firstAttribute="centerX" secondItem="d85-Ne-QLd" secondAttribute="centerX" id="xys-sC-W2N"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="d85-Ne-QLd"/>
                     </view>
                 </viewController>

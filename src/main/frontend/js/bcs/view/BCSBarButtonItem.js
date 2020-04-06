@@ -2,6 +2,7 @@
  * Created by kenhuang on 2019/2/16.
  */
 import {BCSView} from './BCSView'
+import {BCSTableViewCell} from "./BCSTableViewCell";
 
 export function BCSBarItem() {
     this.isEnabled = true
@@ -28,3 +29,4 @@ export function BCSBarButtonItem(element) {
 
 }
 BCSBarButtonItem.extend(BCSView)
+var prototype = BCSBarButtonItem.prototype

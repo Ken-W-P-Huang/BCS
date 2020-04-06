@@ -3113,8 +3113,8 @@ module.exports = (function(window, document) { "use strict";
 				priority:  style.getPropertyPriority(property),
 				property:  property
 			};
-			style.setProperty(property, "", ""); // reset [0]
-			style.setProperty(property, "" + value, "important");
+			style.setValueForKey(property, "", ""); // reset [0]
+			style.setValueForKey(property, "" + value, "important");
 		}
 		
 		return propertyBackup;
@@ -3138,12 +3138,12 @@ module.exports = (function(window, document) { "use strict";
 			var style = runtimeStyleOf(element);
 			
 			// reset [0]
-			style.setProperty(backup.property, "", "");
+			style.setValueForKey(backup.property, "", "");
 			
 			// restore
 			if(backup.value) {
-				style.setProperty(backup.property, backup.value, "");
-				style.setProperty(backup.property, backup.value, backup.priority);
+				style.setValueForKey(backup.property, backup.value, "");
+				style.setValueForKey(backup.property, backup.value, backup.priority);
 			}
 			
 		}
@@ -6144,16 +6144,16 @@ module.exports = (function(window, document) { "use strict";
 		
 		generateMSGridStyle: function() {
 			
-			this.element.style.setProperty("display","-ms-grid");
-			this.element.style.setProperty("-ms-grid-rows",this.ySizes.join(' '));
-			this.element.style.setProperty("-ms-grid-columns",this.xSizes.join(' '));
+			this.element.style.setValueForKey("display","-ms-grid");
+			this.element.style.setValueForKey("-ms-grid-rows",this.ySizes.join(' '));
+			this.element.style.setValueForKey("-ms-grid-columns",this.xSizes.join(' '));
 			
 			for(var i=this.items.length; i--;) { var item = this.items[i]; 
 				
-				item.element.style.setProperty("-ms-grid-row", item.yStart+1);
-				item.element.style.setProperty("-ms-grid-column", item.xStart+1);
-				item.element.style.setProperty("-ms-grid-row-span", item.yEnd-item.yStart);
-				item.element.style.setProperty("-ms-grid-column-span", item.xEnd-item.xStart);
+				item.element.style.setValueForKey("-ms-grid-row", item.yStart+1);
+				item.element.style.setValueForKey("-ms-grid-column", item.xStart+1);
+				item.element.style.setValueForKey("-ms-grid-row-span", item.yEnd-item.yStart);
+				item.element.style.setValueForKey("-ms-grid-column-span", item.xEnd-item.xStart);
 				
 			}
 			

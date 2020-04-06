@@ -4,6 +4,6 @@
 import {BCSView} from './BCSView'
 
 export function BCSTextView(element) {
-    BCSView.call(this,element)
+    BCSView.call(this,element,'textarea')
 }
 BCSTextView.extend(BCSView)

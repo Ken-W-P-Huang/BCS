@@ -574,7 +574,7 @@ Animator.prototype = {
 				value += "px";
 			else if (this.unit)
 				value += this.unit;
-			this.target.style.setProperty(attributeName, value, "");
+			this.target.style.setValueForKey(attributeName, value, "");
 		} else {
 			if (this.unit)
 				value += this.unit;

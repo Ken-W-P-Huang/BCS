@@ -491,7 +491,7 @@
 			var direction =
 				inputStyles.getPropertyValue('direction') === 'rtl' ? 'right' : 'left';
 
-			datalistSelect.style.setProperty(
+			datalistSelect.style.setValueForKey(
 				'margin-' + direction,
 				'-' +
 					(rects[0].width +

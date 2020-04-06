@@ -257,8 +257,26 @@ function Browser(window) {
         if(typeof controllerClass === 'function'){
             document.ready(function () {
                 if(this.isMobile){
-                    document.addEventListener('touchstart',function (event) {
-                        event = event || window.event
+                    // 阻止safari双击放大
+                    // document.addEventListener('touchstart',function (event) {
+                    //     if (event.touches.length > 1) {
+                    //         event.preventDefault()
+                    //     }
+                    // })
+
+                    document.addEventListener('touchmove', function (event) {
+                        if (event.scale !== 1) { event.preventDefault() }
+                    }, false)
+                    var lastTouchEnd = 0
+                    document.addEventListener('touchend', function(event) {
+                        var now = (new Date()).getTime();
+                        if (now - lastTouchEnd <= 300) {
+                            event.preventDefault()
+                        }
+                        lastTouchEnd = now
+                    }, false)
+                    // 阻止safari双指放大
+                    document.addEventListener('gesturestart', function(event) {
                         event.preventDefault()
                     })
                     document.body.style.cssText = "height:100%;overflow:hidden;"
@@ -284,14 +302,11 @@ function Browser(window) {
             window.onpagehide = function () {
                 controller.viewWillDisappear()
             }
-
             window.onbeforeunload = function () {
                 if (controller ) {
                     controller.viewWillUnload()
                 }
-
             }
-
             window.onunload = function () {
                 if (controller ) {
                     controller.viewDidUnload()
@@ -409,6 +424,5 @@ if (typeof window === 'undefined') {
         'STYLE_SCOPED':'patchStyleScoped'
     }
 }
-
 
 

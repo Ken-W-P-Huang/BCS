@@ -55,7 +55,7 @@ function Extensions(window) {
             return this
         }
 
-        Object.prototype.deinit = function () {
+        Object.prototype.deinit = function (observedObject) {
             if ('delegate' in this) {
                 this.delegate = undefined
             }
@@ -63,8 +63,155 @@ function Extensions(window) {
                 this.dataSource = undefined
             }
             NotificationCenter.default.removeObserver(this)
+            if (observedObject) {
+                observedObject.removeObserver(this)
+            }
+
         }
 
+        Object.prototype.isMemberOf = function(Class){
+            if(typeof Class === 'function'){
+                if(this.__proto__){ // jshint ignore:line
+                    return this.__proto__ === Class.prototype // jshint ignore:line
+                }
+                return this.constructor === Class
+            }else{
+                throw new TypeError('Class '+Class+'\'s value is not valid Class')
+            }
+        }
+
+        Object.prototype.isKindOf = function(Class){
+            if(typeof Class === 'function'){
+                Function.requireArgumentNumber(arguments,1)
+                return this instanceof  Class
+            }else{
+                throw new TypeError('Class '+Class+'\'s value is not valid Class')
+            }
+        }
+        Object.isPlainObject =function(object){
+            throw new TypeError('waiting to implement!')
+        }
+
+        var toString = Object.prototype.toString
+        Object.prototype.toString = function () {
+            if(this.getClass){
+                return '[object '+this.getClass()+']'
+            }else{
+                return toString.call(this)
+            }
+        }
+
+        /**
+         * 不能向对象添加额外的私有属性，故不能使用KVC添加额外的属性。如果有添加属性需要，可以使用对象自身的扩展功能。
+         *  @param Class 类对象
+         * @param propertiesMap
+         */
+        Object.prototype.enablePrivateProperty = function (Class,propertiesMap) {
+            var superGetPrivate, superSetPrivate,superInitProperties
+            for (var key in propertiesMap) {
+                if (this.hasOwnProperty(key) ) {
+                    throw new Error('Duplicate key ' + key + '.')
+                }
+            }
+            if ('setPrivate' in this ) {
+                superGetPrivate = this.getPrivate
+                superSetPrivate = this.setPrivate
+                superInitProperties = this.superInitProperties
+            }
+            this.setPrivate = function(key,value){
+                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
+                    propertiesMap[key] = value
+                }else if(typeof superSetPrivate === 'function'){
+                    superSetPrivate(key,value)
+                }else{
+                    throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+                }
+            }
+            this.getPrivate = function(key){
+                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
+                    return propertiesMap[key]
+                }else if(typeof superSetPrivate === 'function'){
+                    return superGetPrivate(key)
+                }else{
+                    throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+                }
+            }
+            this.initProperties = function (map) {
+                if (Class === this.constructor ) {
+                    for (var key in map) {
+                        if (map.hasOwnProperty(key) ) {
+                            if (propertiesMap.hasOwnProperty(key) ) {
+                                throw new Error('Class ' + this.getClass() + ' has already had a private property named \''
+                                    + key + '\'.')
+                            }else{
+                                propertiesMap[key] = map[key]
+                            }
+                        }
+                    }
+                }else if(typeof superInitProperties === 'function'){
+                    superInitProperties(map)
+                }else{
+                    throw new Error('Class ' + Class + ' and  constructor' + this.constructor + ' mismatch.')
+                }
+            }
+        }
+
+        Object.prototype .setValueForKey = function(key,value){
+            if (this.hasOwnProperty(key) ){
+                this[key] = value
+                return
+            }
+            if (this.setPrivate) {
+                this.setPrivate(key,value)
+            } else{
+                throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+            }
+        }
+
+        Object.prototype.setValuesForKeys = function(keyValueMap){
+            for (var key in keyValueMap) {
+                if (keyValueMap.hasOwnProperty(key) ) {
+                    this.setValueForKey(key,keyValueMap[key])
+                }
+            }
+        }
+        Object.prototype .valueForKey = function(key){
+            if (this.hasOwnProperty(key) ){
+                return this[key]
+            }
+            if (this.get ) {
+                return this.get(key)
+            }
+            throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+        }
+        function resolveKeyPath(object,keyPath){
+            var keys = keyPath.split('.')
+            for(var i = 0; i < keys.length -1 ; i++) {
+                object = object.valueForKey(keys[i])
+                if (typeof object !== "object") {
+                    throw new Error('KeyPath '+ keyPath +' is invalid for class ' + this.getClass() +'.')
+                }
+            }
+            return {
+                object:object,
+                key:keys[keys.length - 1]
+            }
+        }
+        Object.prototype.setValueForKeyPath = function (keyPath,value) {
+            var result = resolveKeyPath(this,keyPath)
+            result.object.setValueForKey(result.key,value)
+        }
+        Object.prototype.valueForKeyPath = function (keyPath) {
+            var result = resolveKeyPath(this,keyPath)
+            return result.object.valueForKey(result.key)
+        }
+        window.NSKeyValueObservingOptions = {
+            new:0,
+            old:1,
+            initial:4,
+            prior:8
+
+        }
         function remove(observerListMap,key,observerList,observer) {
             for(var i = 0; i < observerList.length; i++) {
                 if(observerList[i] === observer) {
@@ -84,42 +231,52 @@ function Extensions(window) {
         }
         /**
          * 观察者模式,KVO仅限IE9及以上的直接属性。IE9以下全部使用NotificationCenter。
-         * 在构造方法中使用，observerListMap为私有属性。
-         * ListMap的每一个List的第0个元素为key对应当前值。故Observer从List第1个元素开始
+         * 在构造方法中使用，observerListMap为私有属性,用于存放被监视的属性值。
+         * observerListMap的每一个List的第0个元素为key对应当前值。故Observer从List第1个元素开始
          * swift允许重复添加observer，即多次添加时会多次触发。每次删除只删除一次添加。
          * 与swift不同的是这里是先添加先触发，swift是后添加先触发
+         * @param privatePropertiesMap
          * @param observerListMap
          */
-        Object.prototype.enableKVO = function (observerListMap) {
+        Object.prototype.enableKVO = function (privatePropertiesMap,observerListMap) {
             Function.requireArgumentNumber(arguments,1)
             if(observerListMap.isKindOf(window.ListMap)){
-                this.addObserver = function (observer,key) {
+                this.addObserver = function (observer,keyPath,options,context) {
                     Function.requireArgumentNumber(arguments,2)
                     function setter(newValue) {
-                        var observerList = observerListMap.getAll(key)
+                        var observerList = observerListMap.getAll(keyPath)
                         var oldValue =  observerList[0]
                         observerList[0] = newValue
                         for (var i = 1; i < observerList.length; i++) {
-                            if (typeof observerList[i].observeValueForKey === 'function') {
-                                observerList[i].observeValueForKey(this, key, oldValue, newValue)
+                            if (typeof observerList[i].observer.observeValue === 'function') {
+                                observerList[i].observer.observeValue(this, keyPath, this,{
+                                    old:oldValue,
+                                    new:newValue
+                                }, context)
                             }
                         }
                     }
                     function getter(key) {
                         return observerListMap.get(key)[0]
                     }
-                    if(!(observer instanceof Object)) {
+                    if (!(observer instanceof Object)) {
                         throw new TypeError('Observer must be object type.')
-                    }else if(!key || typeof key !== 'string' ){
+                    } else if (!keyPath || typeof keyPath !== 'string' ) {
                         throw new TypeError('Key must be string type.')
-                    }else if(!this.hasOwnProperty(key)){
-                        throw new TypeError(this.getClass()+' doesn\'t have such property \''+key+'\'.')
                     }
-                    if(!observerListMap.has(key)){
-                        observerListMap.append(key,this[key])
+                    if(!observerListMap.has(keyPath)){
+                        /* 得到上一层的对象以及最后一层的key */
+                        var result = resolveKeyPath(this,keyPath),
+                            object = this
+                        /* 该属性可能是私有属性的直接属性，会被resolveKeyPath漏掉 */
+                        if (result.object === this && privatePropertiesMap.hasOwnProperty(result.key)) {
+                            object = privatePropertiesMap
+                        }
+                        /* 保存原有的值到observerListMap[keyPath][0]*/
+                        observerListMap.append(keyPath,object[keyPath])
                         /* 此时已经应用ES5补丁 */
                         if (Object.defineProperty) {
-                            Object.defineProperty(this, key, {
+                            Object.defineProperty(object, keyPath, {
                                 set:setter,
                                 get:getter
                             })
@@ -131,27 +288,17 @@ function Extensions(window) {
                         //     Object.prototype.__defineSetter__.call(this, key, setter);
                         // }
                     }
-                    // else{
-                    //     var isAppended = false
-                    //     var observerList = observerListMap.getAll(key)
-                    //     for(var i = 1;i<observerList.length;i++){
-                    //         if(value === observer){
-                    //             isAppended = true
-                    //         }
-                    //         break
-                    //     }
-                    //     if(!isAppended){
-                    //
-                    //     }
-                    // }
-                    observerListMap.append(key,observer)
+                    observerListMap.append(keyPath,{
+                        observer:observer,
+                        context:context
+                    })
                 }
-
-                this.removeObserver = function (observer,key) {
-                    if(key){
+                this.removeObserver = function (observer,keyPath,context) {
+                    //todo 是否在移除最后一个观察者后将值还原回去
+                    if(keyPath){
                         /* 删除指定属性的指定观察者 */
-                        var observerList =  observerListMap.getAll(key)
-                        remove(observerListMap,key,observerList,observer)
+                        var observerList =  observerListMap.getAll(keyPath)
+                        remove(observerListMap,keyPath,observerList,observer)
                     }else{
                         /* 删除所有属性的指定观察者 */
                         observerListMap.forEach(function (observerList,key) {
@@ -162,40 +309,6 @@ function Extensions(window) {
             }else{
                 throw new TypeError('observerListMap is not ListMap type')
             }
-
-        }
-
-        Object.prototype.isMemberOf = function(Clazz){
-            if(typeof Clazz === 'function'){
-                if(this.__proto__){ // jshint ignore:line
-                    return this.__proto__ === Clazz.prototype // jshint ignore:line
-                }
-                return this.constructor === Clazz
-            }else{
-                throw new TypeError('Clazz\'s value is not valid Class')
-            }
-        }
-
-        Object.prototype.isKindOf = function(Clazz){
-            if(typeof Clazz === 'function'){
-                Function.requireArgumentNumber(arguments,1)
-                return this instanceof  Clazz
-            }else{
-                throw new TypeError('Clazz\'s value is not valid Class')
-            }
-        }
-        Object.isPlainObject =function(object){
-            throw new TypeError('waiting to implement!')
-        }
-
-        var toString = Object.prototype.toString
-        Object.prototype.toString = function () {
-            if(this.getClass){
-                return '[object '+this.getClass()+']'
-            }else{
-                return toString.call(this)
-            }
-
         }
     }
 
@@ -203,24 +316,16 @@ function Extensions(window) {
         /**
          * 用于寄生组合继承,方法名不能为extends，会在IE下报错！
          * @param publicObject  公共方法（如果含有属性不报错）
-         * @param superClass 父类构造函数
+         * @param superClFunction.prototype.extendass 父类构造函数
          * @param staticObject 静态属性和方法
          */
-        Function.prototype.extend = function(superClass,publicObject,staticObject) {
-            if(typeof this  === 'function'){
-                if(typeof superClass === 'function' ){
-                    var Super = function(){}
-                    Super.prototype = superClass.prototype
-                    this.prototype = new Super()
-                    this.prototype.constructor = this
-                }
-                if(typeof publicObject === 'object'){
-                    this.prototype.shallowCopy(publicObject)
-                }
-                if(typeof staticObject === 'object'){
-                    this.shallowCopy(staticObject)
-                }
-            }
+        Function.prototype.extend = function(superClass) {
+            Function.requireArgumentType(superClass,'function')
+            Function.requireArgumentType(this,'function')
+            var Super = function(){}
+            Super.prototype = superClass.prototype
+            this.prototype = new Super()
+            this.prototype.constructor = this
         }
         /**
          * 有无法处理的情况，慎用
@@ -501,6 +606,20 @@ function Extensions(window) {
         }
     }
 
+    function transformValue(value) {
+        if (typeof value === 'object') {
+            if (value.isKindOf(Symbol)) {
+                throw new TypeError('Cannot convert a Symbol value to a string')
+            }else{
+                return value.toString()
+            }
+        }else if(value === undefined){
+            return ''
+        }else{
+            return String(value)
+        }
+    }
+
     function extendCollections() {
         /* jshint ignore:start */
         function Iterator(array) {
@@ -516,19 +635,6 @@ function Extensions(window) {
         if (!window.Map && !window.Set) {
             var map = new Map()
             var isConstructor = false
-            function transformValue(value) {
-                if (typeof value === 'object') {
-                    if (value.isKindOf(Symbol)) {
-                        throw new TypeError('Cannot convert a Symbol value to a string')
-                    }else{
-                        return value.toString()
-                    }
-                }else if(value === undefined){
-                    return ''
-                }else{
-                    return String(value)
-                }
-            }
             window.Symbol = function Symbol(value) {
                 if (isConstructor) {
                     var timestamp = String(+new Date())
@@ -1022,10 +1128,3 @@ function Extensions(window) {
         }
     }
 }
-
-
-
-
-
-
-

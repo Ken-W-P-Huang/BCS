@@ -8,10 +8,61 @@ module.exports = function (grunt) {
         frontend:'src/main/frontend',
         tmp:'build/tmp',
         webapp:'src/main/webapp/WEB-INF',
+        jslib:'<%= webapp %>/js/lib',
+        csslib:'<%= webapp %>/css/lib',
+        banner:'/*!<%= pkg.name %> - <%= pkg.version %>-<%=grunt.template.today("yyyy-mm-dd") %> */\n',
 /***********************************************************************************************************************
- * js语法检查
- * http://jshint.com/docs/
+ * 公共部分
  **********************************************************************************************************************/
+/*包含*/
+        includes: {
+            jspatch:{
+                //将polyfill合并成IE*.js
+                options: {
+                    flatten: true,
+                    includePath: '<%= frontend %>/js/lib',
+                    includeRegexp: /^\s*\/\/\s*import\s+['"]?([^'"]+\.js)['"]?\s*$/
+                },
+                cwd: '<%= frontend %>/js/patch',
+                src: ['**/*.js'],
+                dest: '<%= jslib %>'
+            }
+        },
+/*css/js内容合并*/
+        concat: {
+            bcsjs:{
+                //合并BCS的相关js文件
+                options: {
+                    stripBanners: true,
+                    separator: ';\n',
+                    // banner: '<%= banner %>',
+                    process: function(src, filepath) {
+                        return '// Source: ' + filepath + '\n' +
+                            src.replace(/(^|\n)[ \t]*?import.*?from[ \t]*?['"].*?['"].*?/g, '\n');
+                    },
+                },
+                src:['<%= frontend %>/js/bcs/model/Browser.js',
+                    '<%= frontend %>/js/bcs/**/*.js'],
+                dest:'<%= tmp %>/js/BCS.js'
+            },
+            css:{
+                options: {
+                    stripBanners: true,
+                    separator: '\n',
+                    banner: '<%= banner %>',
+                },
+                src:['<%= frontend %>/css/*.css',
+                    // '!<%= frontend %>/css/mediaelementplayer.css',
+                    // '!<%= frontend %>/css/normalize.css'
+                ],
+                dest:'<%= csslib %>/patch.css'
+            },
+        },
+/***********************************************************************************************************************
+ * js
+ **********************************************************************************************************************/
+/*语法检查*/
+// http://jshint.com/docs
 /* jshint ignore:start */
 // Code here will be ignored by JSHint.
 /* jshint ignore:end */
@@ -102,52 +153,10 @@ module.exports = function (grunt) {
             },
             build: ['<%= frontend %>/js/bcs/**/*.js']
         },
-/***********************************************************************************************************************
- * 包含
- **********************************************************************************************************************/
-        includes: {
-            js:{
-                //将polyfill合并成IE*.js
-                options: {
-                    flatten: true,
-                    includePath: '<%= frontend %>/js/lib',
-                    includeRegexp: /^\s*\/\/\s*import\s+['"]?([^'"]+\.js)['"]?\s*$/,
-                    // banner: '<!-- Site built using grunt includes! -->\n'
-                },
-                cwd: '<%= frontend %>/js/bcs/patch',
-                src: ['**/*.js'],
-                // dest: '<%= frontend %>/js/dist'
-                dest: '<%= webapp %>/js'
-            }
-        },
-/***********************************************************************************************************************
- * css/js内容合并
- **********************************************************************************************************************/
-        concat: {
-            BCSConcat:{
-                //合并BCS的相关js文件
-                options: {
-                    stripBanners: true,
-                    separator: ';\n',
-                    // banner: '/*!<%= pkg.name %> - <%= pkg.version %>-' + '<%=grunt.template.today("yyyy-mm-dd") %> \n */'
-                    process: function(src, filepath) {
-                        return '// Source: ' + filepath + '\n' +
-                            src.replace(/(^|\n)[ \t]*?import.*?from[ \t]*?['"].*?['"].*?/g, '\n');
-
-                    },
-                },
-                src:['<%= frontend %>/js/bcs/model/Browser.js',
-                    '<%= frontend %>/js/bcs/**/*.js',
-                    '!<%= frontend %>/js/bcs/patch/**/*.js'],
-                dest:'<%= tmp %>/js/BCS.js'
-            },
-        },
-/***********************************************************************************************************************
- * js 将ES6代码转为ES5代码
- * babel-plugin-transform-es3-member-expression-literals
- * babel-plugin-transform-es3-property-literals
- * @babel/preset-react
- **********************************************************************************************************************/
+// js 将ES6代码转为ES5代码
+// babel-plugin-transform-es3-member-expression-literals
+// babel-plugin-transform-es3-property-literals
+// @babel/preset-react
         babel: {
             options: {
                 sourceMap: false,
@@ -167,36 +176,88 @@ module.exports = function (grunt) {
             dist: {
                 files: {
                     // '<%= frontend %>/js/dist/BCS.js': ['<%= concat.BCSConcat.dest %>']
-                    '<%= frontend %>/js/lib/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js'],
-                    '<%= frontend %>/js/lib/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js'],
-                    '<%= webapp %>/js/BCS.js': ['<%= concat.BCSConcat.dest %>'],
+                    '<%= jslib %>/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js'],
+                    '<%= jslib %>/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js'],
+                    '<%= jslib %>/BCS.js': ['<%= concat.bcsjs.dest %>']
                     // '<%= frontend %>/js/lib/dialog-polyfill.es5.js': ['<%= frontend %>/js/lib/dialog-polyfill.js'],
                 }
             }
         },
-/***********************************************************************************************************************
- * 压缩js
- **********************************************************************************************************************/
+/*压缩*/
         uglify: {
             options: {
                 stripBanners: true,
                 mangle: {},
-                ie8: true
-                // banner: '/*!<%= pkg.name %> - <%= pkg.version %>-' + '<%=grunt.template.today("yyyy-mm-dd") %> */\n'
+                ie8: true,
+                banner: '<%= banner %>'
             },
-            build: {
+            bcsjs: {
                 files: [{
                     expand: true,
-                    cwd: '<%= frontend %>/js/dist',
-                    src: ['**/*.js'],
+                    cwd: '<%= jslib %>',
+                    src: ['BCS.js'],
                     dest: '<%= webapp %>/js'
-                },{
-                    expand: true,
-                    cwd: '<%= frontend %>/js/lib',
-                    src: ['**/*.htc'],
-                    dest: '<%= webapp %>/js'
-                },]
+                }]
             },
+            jspatch:{
+                files: [{
+                    expand: true,
+                    cwd: '<%= jslib %>',
+                    src: ['**/IE*.js'],
+                    dest: '<%= webapp %>/js'
+                }]
+            }
+
+        },
+/***********************************************************************************************************************
+ * css
+ **********************************************************************************************************************/
+/*https://github.com/CSSLint/csslint/wiki/Rules*/
+        csslint:{
+            options:{
+                "box-model": false,
+                "adjoining-classes": false,
+                "box-sizing": false,
+                "compatible-vendor-prefixes": false,
+                "gradients": false,
+                "text-indent": false,
+                "fallback-colors": false,
+                "star-property-hack": false,
+                "underscore-property-hack": false,
+                "bulletproof-font-face": false,
+                "font-faces": false,
+                "import": false,
+                "regex-selectors": false,
+                "universal-selector": false,
+                "unqualified-attributes": false,
+                "overqualified-elements": false,
+                "duplicate-background-images": false,
+                "floats": false,
+                "font-sizes": false,
+                "ids": false,
+                "important": false,
+                "outline-none": false,
+                "qualified-headings": false,
+                "unique-headings": false,
+                "order-alphabetical":false,
+                "known-properties":false,
+                "empty-rules":false,
+                "display-property-grouping":false
+
+            },
+            build:['<%= csslib %>/patch.css']
+
+        },
+ //压缩css
+        cssmin:{
+            options:{
+                stripBanners:true, //合并时允许输出头部信息
+                banner:'<%= banner %>'
+            },
+            build:{
+                src:'<%= csslib %>/patch.css',//压缩是要压缩合并了的
+                dest:'<%= webapp %>/css/patch.min.css' //dest 是目的地输出
+            }
         },
 /***********************************************************************************************************************
  * 复制swf
@@ -210,29 +271,101 @@ module.exports = function (grunt) {
                         src: ['**/*.swf'],
                         dest: '<%= webapp %>/swf/',
                         filter: 'isFile'},
-                ],
+                ]
             },
+            htc:{
+                files: [
+                    // includes files within path
+                    {expand: true,
+                        cwd: '<%= frontend %>/js/lib/',
+                        src: ['**/*.htc'],
+                        dest: '<%= webapp %>/htc/',
+                        filter: 'isFile'}
+                ]
+            }
+        },
+/***********************************************************************************************************************
+ * git
+ **********************************************************************************************************************/
+        gitadd: {
+            bcs: {
+                options: {
+                    force: false
+                },
+                files: {
+                    src: ['**.*']
+                }
+            }
+        },
+        gitcommit: {
+            bcs: {
+                options: {
+                    message: 'Add'
+                },
+                files: {
+                    src: ['**.*']
+                }
+            }
+        },
+        // gitremote: {
+        //     bcs: {
+        //         options: {
+        //             add: { name: 'origin', url: 'https://github.com/Ken-W-P-Huang/BC-S.git' }
+        //         }
+        //     }
+        // },
+        gitpush: {
+            bcs: {
+                options: {
+                    remote:'origin',
+                    branch:'master'
+                }
+            }
         },
 /***********************************************************************************************************************
  * watch
  **********************************************************************************************************************/
         watch: {
             js:{
-                files: ['<%= frontend %>/**/*.js'],
-                tasks: ['jshint','babel','includes','concat',],
+                files: ['<%= frontend %>/js/bcs/**/*.js'],
+                tasks: ['concat:bcsjs','jshint','babel','uglify:bcsjs'],
                 options: {
                     livereload: true,
                     atBegin:true
                 }
             },
-            swf:{
-                files:['<%= frontend %>/swf/**/*.swf'],
-                tasks: ['copy'],
-                options: {
-                    livereload: true,
-                    atBegin:true
-                }
-            }
+            // jspatch:{
+            //     files: ['<%= frontend %>/js/patch/**/*.js'],
+            //         tasks: ['includes:jspatch','uglify:jspatch'],
+            //         options: {
+            //         livereload: true,
+            //             atBegin:true
+            //     }
+            // },
+            // css:{
+            //     files: ['<%= frontend %>/css/**/*.css'],
+            //     tasks: ['concat:css','csslint','cssmin'],
+            //     options: {
+            //         livereload: true,
+            //         atBegin:true
+            //     }
+            // },
+            // htc:{
+            //     files: ['<%= frontend %>/js/bcs/lib/**/*.htc'],
+            //     tasks: ['copy:htc'],
+            //     options: {
+            //         livereload: true,
+            //         atBegin:true
+            //     }
+            // },
+            // swf:{
+            //     files:['<%= frontend %>/swf/**/*.swf'],
+            //     tasks: ['copy:swf'],
+            //     options: {
+            //         livereload: true,
+            //         atBegin:true
+            //     }
+            // }
         }
     })
     grunt.loadNpmTasks('grunt-includes')
@@ -242,6 +375,10 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify')
     grunt.loadNpmTasks('grunt-contrib-watch')
     grunt.loadNpmTasks('grunt-contrib-copy')
+    grunt.loadNpmTasks('grunt-contrib-csslint')
+    grunt.loadNpmTasks('grunt-contrib-cssmin')
+    grunt.loadNpmTasks('grunt-git')
     grunt.registerInitTask('default',
-        ['includes','babel','jshint','concat','uglify','watch','copy'])
+        ['includes','babel','jshint','concat','uglify','watch','copy','git'])
+    grunt.registerTask('push',['gitadd','gitcommit','gitpush'])
 };

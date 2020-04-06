@@ -4,16 +4,16 @@
 import {BCSView,BCSView1} from './BCSView'
 
 export function BCSLabel(style) {
-    BCSView1.call(this,style)
-    var element = this.getLayer()
-    this.setText = function (text) {
-        if ('innerText' in element ) {
-            element.innerText = text
-        }else{
-            element.textContent = text
-        }
-    }
+    BCSView1.call(this,style,'label')
 }
-{
-    BCSLabel.extend(BCSView)
+
+BCSLabel.extend(BCSView)
+var prototype = BCSLabel.prototype
+prototype.setText = function (text) {
+    var element = this.getLayer()
+    if ('innerText' in element ) {
+        element.innerText = text
+    }else{
+        element.textContent = text
+    }
 }

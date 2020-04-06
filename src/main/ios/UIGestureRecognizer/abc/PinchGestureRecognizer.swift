@@ -15,7 +15,7 @@ class PinchGestureRecognizer:UIPinchGestureRecognizer{
         func printTouch(_ name:String,_ touches: Set<UITouch>,_  event: UIEvent)  {
             var a = DateFormatter()
             a.dateFormat = ("yyyyMMdd HHmmss:SSS")
-            print("\(a.string(from: Date()))____________________________________")
+            print("\(a.string(from: Date()))____________________________________\(event.timestamp)")
             print("\(name):\(self.location(in: self.view)):\(self.name):\(self.state.rawValue):\(self.numberOfTouches)")
             print("touches:\(touches)")
             print("allTouches:\(event.allTouches)")

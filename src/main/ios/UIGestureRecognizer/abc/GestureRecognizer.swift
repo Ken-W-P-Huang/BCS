@@ -83,7 +83,6 @@ class GestureRecognizer:UIGestureRecognizer{
             super.reset()
             var a = DateFormatter()
             a.dateFormat = ("yyyyMMdd HHmmss:SSS")
-            
             print("reset:\(self.name):\(self.numberOfTouches):\(a.string(from: Date()))")
         }
 }

@@ -26,7 +26,7 @@
           shapeDefs.circle & ellipse had 'm' z coord missing               ARC
   28Jun15 Cleanup all the application of transforms in render
           Use functional programming version of the svgParser              ARC
-  04Jan14 Don't set Cango3D.ctx values in setPropertyDefault, redundant
+  04Jan14 Don't set Cango3D.ctx values in setValueForKeyDefault, redundant
           Fix scoping errors to keep JSLint happy                          ARC
   13Mar16 Tidy up the Drag3D code not being used (this.parent)             ARC
   27Nov16 Cleaned up render recursion                                      ARC
@@ -2538,7 +2538,7 @@
     this.lorgTfm = new TransformMatrix();   // text only, used for lorg effects
     // enable obj.transform.rotate etc. API
     this.transform = new StaticTfm(this);
-    // properties set by setProperty. If undefined render uses Cango3D default
+    // properties set by setValueForKey. If undefined render uses Cango3D default
     this.strokeColor = null;                // used for PATHs and TEXT or wireframe SHAPE
     this.fillColor = null;                  // used to fill SHAPEs
     this.backColor = null;                  //  "    "   "    "
@@ -2609,7 +2609,7 @@
       // check that this is opt's own property, not inherited from prototype
       if (opt.hasOwnProperty(prop))
       {
-        this.setProperty(prop, opt[prop]);
+        this.setValueForKey(prop, opt[prop]);
       }
     }
   }
@@ -2778,7 +2778,7 @@
     this.dragNdrop = null;
   };
 
-  Obj3D.prototype.setProperty = function(propertyName, value)
+  Obj3D.prototype.setValueForKey = function(propertyName, value)
   {
     var color;
 
@@ -3358,7 +3358,7 @@
     this.setFOV(this.fov);              // reset the viewpoint distance in world coords
   };
 
-  Cango3D.prototype.setPropertyDefault = function(propertyName, value)
+  Cango3D.prototype.setValueForKeyDefault = function(propertyName, value)
   {
     var newCol;
 

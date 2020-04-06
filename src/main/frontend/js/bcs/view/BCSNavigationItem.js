@@ -4,6 +4,7 @@
 import {BCSView} from './BCSView'
 import {BCSBarButtonItem} from './BCSBarButtonItem'
 import {BCSSearchController} from '../controller/BCSSearchController'
+import {BCSNavigationBar} from "./BCSNavigationBar";
 
 export var LargeTitleDisplayModeEnum = {
     automatic:1,
@@ -32,16 +33,15 @@ export function BCSNavigationItem(element) {
     }
 
 }
-{
-    BCSNavigationItem.extend(BCSView)
-    BCSNavigationItem.prototype.setHidesBackButton = function (hidesBackButton,animated) {
-        
-    }
+BCSNavigationItem.extend(BCSView)
+var prototype = BCSNavigationItem.prototype
+prototype.setHidesBackButton = function (hidesBackButton,animated) {
 
-    BCSNavigationItem.prototype.setLeftBarButtonItems = function (hidesBackButton,animated) {
+}
 
-    }
-    BCSNavigationItem.prototype.setRightBarButtonItems = function (hidesBackButton,animated) {
+prototype.setLeftBarButtonItems = function (hidesBackButton,animated) {
 
-    }
+}
+prototype.setRightBarButtonItems = function (hidesBackButton,animated) {
+
 }
