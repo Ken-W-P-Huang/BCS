@@ -14,6 +14,8 @@
     "use strict";
 
     exports.__esModule = true;
+    exports.BCSView = BCSView;
+    exports.BCSControl = BCSControl;
     exports.BCSCollectionViewController = BCSCollectionViewController;
     exports.BCSNavigationController = BCSNavigationController;
     exports.BCSPageViewController = BCSPageViewController;
@@ -28,7 +30,6 @@
     exports.BCSButton = BCSButton;
     exports.BCSCollectionView = BCSCollectionView;
     exports.BCSCollectionViewCell = BCSCollectionViewCell;
-    exports.BCSControl = BCSControl;
     exports.BCSDatePicker = BCSDatePicker;
     exports.BCSImageView = BCSImageView;
     exports.BCSLabel = BCSLabel;
@@ -57,7 +58,7 @@
     exports.BCSTextField = BCSTextField;
     exports.BCSTextView = BCSTextView;
     exports.BCSToolbar = BCSToolbar;
-    exports.BCSView = BCSView;
+    exports.BCSWindow = BCSWindow;
     exports.BCSGestureRecognizer = BCSGestureRecognizer;
     exports.BCSLongPressGestureRecognizer = BCSLongPressGestureRecognizer;
     exports.BCSPanGestureRecognizer = BCSPanGestureRecognizer;
@@ -72,14 +73,13 @@
         return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
     };
 
+    /*!BC/S - 1.0.0-2020-04-16 */
     // Source: src/main/frontend/js/bcs/model/Browser.js
     /**
      * Created by kenhuang on 2019/1/25.
      */
 
     function File(fullPath) {
-        'use strict';
-
         var name, path;
         var arr = fullPath.split("/");
         name = arr[arr.length - 1];
@@ -321,11 +321,12 @@
          * @param controllerClass
          * @param element
          */
-        this.runWith = function (controllerClass, element) {
+        this.runWith = function (controllerClass) {
             var document = window.document;
             var controller;
             if (typeof controllerClass === 'function') {
                 document.ready(function () {
+                    BCSView.prototype.window = new BCSWindow();
                     if (this.isMobile) {
                         // 阻止safari双击放大
                         // document.addEventListener('touchstart',function (event) {
@@ -354,13 +355,8 @@
                         document.body.style.cssText = "height:100%;overflow:hidden;";
                         document.getElementsByTagName('html')[0].style.cssText = "height:100%;overflow:hidden;";
                     }
-                    controller = new controllerClass(element);
-                    window.rootViewController = controller;
-                    if (!element) {
-                        /* 将rootViewController的view的layer作为body的唯一满屏元素 */
-                        document.body.appendChild(controller.view.getLayer());
-                    }
-                    BCSView.prototype.window = new BCSView(document.body, { position: 'relative' });
+                    controller = new controllerClass();
+                    BCSView.prototype.window.setRootViewController(controller);
                 }.bind(this));
                 //http://www.w3school.com.cn/tags/html_ref_eventattributes.asp
                 // https://developer.mozilla.org/zh-CN/docs/Web/API/WindowEventHandlers
@@ -498,13 +494,461 @@
     }
 
     ;
+    // Source: src/main/frontend/js/bcs/view/BCSView.js
+    /**
+     * Created by kenhuang on 2019/1/10.
+     */
+
+    var componentName = 'view';
+    var ElementViewEnum = {
+        'DIV': BCSView
+    };
+    var IgnoreTagEnum = {
+        'HEAD': 'head',
+        'SCRIPT': 'script'
+    };
+    BCSView["import"] = function (tagName, viewConstructor) {
+        ElementViewEnum[tagName] = viewConstructor;
+    };
+    function BCSView(style) {
+        var propertiesMap = {
+            layer: document.createElement('div'),
+            subViews: [],
+            gestureRecognizers: [],
+            isListenersAdded: false
+        };
+        this.enableProtectedProperty(propertiesMap);
+        var element = this.getProtected('layer');
+        if (style && (typeof style === "undefined" ? "undefined" : _typeof(style)) === 'object') {
+            if (!style.hasOwnProperty('position')) {
+                style.position = 'absolute';
+            }
+        } else {
+            style = { position: 'absolute' };
+        }
+        this.setStyle(style);
+        /* 方便调试 */
+        element.setAttribute(componentName, this.getClass());
+    }
+
+    var prototype = BCSView.prototype;
+    prototype.getLayer = function () {
+        return this.getProtected('layer');
+    };
+
+    prototype.setAttribute = function (name, value) {
+        this.getProtected('layer').setAttribute(name, value);
+    };
+
+    prototype.getSubViews = function () {
+        return this.getProtected('subViews');
+    };
+
+    prototype.getGestureRecognizers = function () {
+        return this.getProtected('gestureRecognizers');
+    };
+
+    /**
+     * 1.这里假设调用者倾向于在同一个view添加不同的手势识别器，而非添加多个相同手势识别器
+     * 2.和iOS不同，event和event.touches对象每次都不同,靠touch.identifier进行区分
+     * 3.没有必要在这里使用定时器，例如可能出现两个tap手势识别器，它们要求的tap次数不同，如a.numberOfTouchesRequired = 1,
+     * b.numberOfTouchesRequired = 2,当用户想使用a时，此时需要两个定时器，一个750ms，一个1500ms。
+     * @param view
+     */
+    function addListeners(view) {
+        var delegate, touches, recognizer, stateChangedRecognizers, i, j, gestureRecognizers;
+        var handleEvent = function handleEvent(event) {
+            gestureRecognizers = view.getGestureRecognizers();
+            stateChangedRecognizers = [];
+            /*使用手势识别器识别event*/
+            for (i = 0; i < gestureRecognizers.length; i++) {
+                recognizer = gestureRecognizers[i];
+                if (recognizer.isEnabled) {
+                    touches = [];
+                    delegate = recognizer.delegate;
+                    if (event.type === EventTypeEnum.TOUCH_START) {
+                        if (delegate && delegate.shouldReceiveTouch) {
+                            for (j = 0; j < event.changedTouches.length; j++) {
+                                if (delegate.shouldReceiveTouch(recognizer, event.changedTouches[j])) {
+                                    touches.push(event.changedTouches[j]);
+                                }
+                            }
+                        } else {
+                            for (j = 0; j < event.changedTouches.length; j++) {
+                                touches.push(event.changedTouches[j]);
+                            }
+                        }
+                    } else if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
+                        continue;
+                    } else {
+                        for (j = 0; j < event.changedTouches.length; j++) {
+                            if (recognizer.hasAvailableTouch(event.changedTouches[j])) {
+                                touches.push(event.changedTouches[j]);
+                            }
+                        }
+                        if (touches.length === 0) {
+                            continue;
+                        }
+                    }
+                    switch (event.type) {
+                        case EventTypeEnum.TOUCH_START:
+                            recognizer.touchesBegan(touches, event);
+                            for (j = i + 1; j < gestureRecognizers.length; j++) {
+                                if (recognizer.shouldRequireFailureOf(gestureRecognizers[j])) {
+                                    gestureRecognizers[j].addDependent(recognizer);
+                                } else if (delegate && delegate.shouldRequireFailureOf && delegate.shouldRequireFailureOf(recognizer, gestureRecognizers[j])) {
+                                    gestureRecognizers[j].addDependent(recognizer);
+                                } else if (recognizer.shouldBeRequiredToFailBy(gestureRecognizers[j])) {
+                                    recognizer.addDependent(gestureRecognizers[j]);
+                                } else if (delegate && delegate.shouldBeRequiredToFailBy && delegate.shouldBeRequiredToFailBy(recognizer, gestureRecognizers[j])) {
+                                    recognizer.addDependent(gestureRecognizers[j]);
+                                }
+                            }
+                            break;
+                        case EventTypeEnum.TOUCH_MOVE:
+                            recognizer.touchesMoved(touches, event);
+                            break;
+                        case EventTypeEnum.TOUCH_END:
+                            recognizer.touchesEnded(touches, event);
+                            if (recognizer.state === BCSGestureRecognizerStateEnum.POSSIBLE) {
+                                recognizer.removeAvailableTouches(touches);
+                            }
+                            break;
+                        case EventTypeEnum.TOUCH_CANCEL:
+                            recognizer.touchesCancelled(touches, event);
+                            break;
+                        default:
+                        //pc或其他
+                    }
+                    console.log(new Date(), new Date().getMilliseconds(), event.type, recognizer.name, "state:", recognizer.state, recognizer.getNumberOfTouches(), event.touches, event.targetTouches, event.changedTouches);
+                    if (recognizer.state >= BCSGestureRecognizerStateEnum.BEGAN) {
+                        stateChangedRecognizers.push(recognizer);
+                    }
+                }
+            }
+            view.executeStateChangedRecognizers(stateChangedRecognizers);
+        };
+        EventTypeEnum.values.forEach(function (eventName) {
+            view.getLayer().addEventListener(eventName, handleEvent);
+        });
+    }
+    prototype.addSubView = function (view) {
+        var subViews = this.getProtected('subViews');
+        this.removeSubView(view);
+        this.getLayer().appendChild(view.getLayer());
+        subViews.push(view);
+    };
+
+    prototype.addGestureRecognizer = function (gestureRecognizer) {
+        this.removeGestureRecognizer(gestureRecognizer);
+        gestureRecognizer.setProtected('view', this);
+        this.getGestureRecognizers().push(gestureRecognizer);
+        //todo 判断监听器是否已添加
+        if (!this.getProtected('isListenersAdded')) {
+            addListeners(this);
+            this.setProtected('isListenersAdded', true);
+        }
+    };
+
+    prototype.removeGestureRecognizer = function (gestureRecognizer) {
+        var gestureRecognizerList = this.getGestureRecognizers();
+        gestureRecognizer.setProtected('view', null);
+        for (var i = 0; i < gestureRecognizerList.length; i++) {
+            if (gestureRecognizerList[i] === gestureRecognizer) {
+                gestureRecognizerList.splice(i, 1);
+                // break 防止有更多的同一个gestureRecognizer
+            }
+        }
+    };
+
+    prototype.gestureRecognizerShouldBegin = function (gestureRecognizer) {
+        return true;
+    };
+
+    prototype.removeSubView = function (subView) {
+        var subViews = this.getProtected('subViews');
+        for (var i = 0; i < subViews.length; i++) {
+            if (subViews[i] === subView) {
+                subViews.splice(i, 1);
+                this.getLayer().removeChild(subView.getLayer());
+                return;
+            }
+        }
+    };
+
+    prototype.setStyle = function (cssObject) {
+        var attribute,
+            background,
+            backgroundAttributes,
+            cssText = '',
+            element = this.getLayer();
+        if (window.cssSandpaper) {
+            ['transform', 'opacity', 'boxShadow', 'textShadow'].forEach(function (attributeName) {
+                if (cssObject.hasOwnProperty(attributeName)) {
+                    attribute = cssObject[attributeName];
+                    delete cssObject[attributeName];
+                    window.cssSandpaper['set' + attributeName.toFirstUpperCase()](element, attribute);
+                }
+            }.bind(this));
+            background = cssObject.backgroundImage || cssObject.background;
+            if (background) {
+                ['rgba', 'hsla'].forEach(function (name) {
+                    backgroundAttributes = new RegExp(name + '\\s*?\\((.*?)\\)').exec(background);
+                    if (backgroundAttributes) {
+                        window.cssSandpaper['set' + name.toUpperCase() + 'Background'](this.getLayer(), backgroundAttributes[1]);
+                    }
+                }.bind(this));
+                backgroundAttributes = /(-(webkit|o|moz)-)?(repeating-radial|repeating-linear|radial|linear)-gradient\s*?\((.*)\)/.exec(background);
+                if (backgroundAttributes) {
+                    window.cssSandpaper.setGradient(element, "-sand-gradient(" + backgroundAttributes[3] + "," + backgroundAttributes[4] + ")");
+                }
+            }
+
+            if (cssObject.hasOwnProperty('color')) {
+                var arr = /hsl\((.*?)\)/.exec(cssObject.color);
+                if (arr) {
+                    window.cssSandpaper.setHSLColor(element, 'color', arr[1]);
+                }
+            }
+        }
+
+        if (window.PIE && (cssObject.borderRadius || cssObject.borderImage || cssObject.backgroundAttachment || cssObject.background && cssObject.background.indexOf('url') !== -1 || cssObject.backgroundSize || cssObject.backgroundRepeat || cssObject.backgroundOrigin || cssObject.backgroundClip || element.nodeName === 'IMG')) {
+            window.PIE.attach(element);
+        }
+
+        for (var name in cssObject) {
+            if (cssObject.hasOwnProperty(name)) {
+                cssText += name.replace(/([A-Z])/g, function (match) {
+                    return '-' + match.toLowerCase();
+                }) + ":" + cssObject[name] + ';';
+            }
+        }
+
+        if (typeof element.style.cssText !== 'undefined') {
+            element.style.cssText += ';' + cssText;
+        } else {
+            element.setAttribute('style', cssText);
+        }
+    };
+    //todo  100%的情况
+    prototype.getStyle = function (propertyName) {
+        if (typeof propertyName === 'string') {
+            return Number(window.getComputedStyle(this.getLayer())[propertyName].replace('px', ''));
+        }
+        return window.getComputedStyle(this.getLayer());
+    };
+
+    prototype.setHTML = function (htmlText) {
+        var element = this.getLayer();
+        if (htmlText === undefined) {
+            element.innerHTML = '';
+        } else if (typeof htmlText === "string") {
+            element.innerHTML = htmlText;
+        }
+    };
+
+    BCSView.findViewById = function (id) {
+        var element = document.getElementById(id);
+        return element.view;
+    };
+    /**
+     * 手势识别器已经识别出手势，执行状态已经改变的手势识别器。
+     * @param stateChangedRecognizers
+     */
+    prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
+        var gestureRecognizers = this.getGestureRecognizers();
+        if (stateChangedRecognizers.length > 0) {
+            /* 判断识别器是否进行识别 */
+            for (var i = 0; i < stateChangedRecognizers.length; i++) {
+                switch (gestureRecognizers[i].state) {
+                    case BCSGestureRecognizerStateEnum.CHANGED:
+                    case BCSGestureRecognizerStateEnum.BEGAN:
+                    case BCSGestureRecognizerStateEnum.ENDED:
+                        for (var j = 0; j < gestureRecognizers.length; j++) {
+                            if (stateChangedRecognizers[j].state !== BCSGestureRecognizerStateEnum.FAILED && stateChangedRecognizers[i] !== stateChangedRecognizers[j] && stateChangedRecognizers[j].state !== BCSGestureRecognizerStateEnum.CANCELLED) {
+                                if (stateChangedRecognizers[i].hasDependent(gestureRecognizers[j])) {
+                                    stateChangedRecognizers[j].state = BCSGestureRecognizerStateEnum.FAILED;
+                                    stateChangedRecognizers.push(stateChangedRecognizers[j]);
+                                    console.log(stateChangedRecognizers[j].name + "is ");
+                                    continue;
+                                }
+                                if (!stateChangedRecognizers[i].canPrevent(gestureRecognizers[j]) || !gestureRecognizers[j].canBePrevented(stateChangedRecognizers[i])) {
+                                    continue;
+                                }
+                                if (!(stateChangedRecognizers[i].delegate && stateChangedRecognizers[i].delegate.shouldRecognizeSimultaneouslyWith && stateChangedRecognizers[i].delegate.shouldRecognizeSimultaneouslyWith(stateChangedRecognizers[i], gestureRecognizers[j])) && !(gestureRecognizers[j].delegate && gestureRecognizers[j].delegate.shouldRecognizeSimultaneouslyWith && gestureRecognizers[j].delegate.shouldRecognizeSimultaneouslyWith(gestureRecognizers[j], stateChangedRecognizers[i]))) {
+                                    gestureRecognizers[j].state = BCSGestureRecognizerStateEnum.FAILED;
+                                    console.log(stateChangedRecognizers[j].name + "is ");
+                                    stateChangedRecognizers.push(stateChangedRecognizers[j]);
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                }
+            }
+            /*执行或者ignore touches*/
+            stateChangedRecognizers.forEach(function (recognizer) {
+                switch (recognizer.state) {
+                    case BCSGestureRecognizerStateEnum.BEGAN:
+                    case BCSGestureRecognizerStateEnum.CHANGED:
+                        recognizer.executeActions();
+                        break;
+                    case BCSGestureRecognizerStateEnum.ENDED:
+                        recognizer.executeActions();
+                        recognizer.ignoreAvailableTouches();
+                        recognizer.reset();
+                        break;
+                    case BCSGestureRecognizerStateEnum.FAILED:
+                    case BCSGestureRecognizerStateEnum.CANCELLED:
+                        recognizer.ignoreAvailableTouches();
+                        recognizer.reset();
+                        break;
+                    default:
+                }
+            });
+
+            // stateChangedRecognizers.forEach(function (recognizer) {
+            //     if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
+            //         recognizer.reset()
+            //     }
+            // })
+        }
+    };
+    //BCSView恰好是BCS.js最后一个类,在此手动将module.exports复制到window上以便外部代码访问
+    Object.prototype.shallowCopy.call(window, module.exports);
+    // Source: src/main/frontend/js/bcs/view/BCSControl.js
+
+
+    var BCSControlContentVerticalAlignmentEnum = exports.BCSControlContentVerticalAlignmentEnum = {
+        center: 0,
+        top: 1,
+        bottom: 2,
+        fill: 3
+    };
+
+    var BCSControlContentHorizontalAlignmentEnum = exports.BCSControlContentHorizontalAlignmentEnum = {
+        center: 1,
+        left: 2,
+        right: 3,
+        fill: 4,
+        leading: 5,
+        trailing: 6
+    };
+
+    var BCSControlState = exports.BCSControlState = {
+        normal: 1,
+        // used when UIControl isHighlighted is set
+        highlighted: 2,
+        disabled: 3,
+        // flag usable by app (see below)
+        selected: 4,
+        // Applicable only when the screen supports focus
+        focused: 5,
+        // additional flags available for application use
+        application: 6,
+        // flags reserved for internal framework use
+        reserved: 7
+    };
+
+    var BCSControlEvent = exports.BCSControlEvent = {
+        touchDown: 1,
+        touchDownRepeat: 2,
+        touchDragInside: 3,
+        touchDragOutside: 4,
+        touchDragEnter: 5,
+        touchDragExit: 6,
+        touchUpInside: 7,
+        touchUpOutside: 8,
+        touchCancel: 9,
+        valueChanged: 10,
+        primaryActionTriggered: 11,
+        editingDidBegin: 12,
+        editingChanged: 13,
+        editingDidEnd: 14,
+        editingDidEndOnExit: 15,
+        allTouchEvents: 16,
+        allEditingEvents: 17,
+        applicationReserved: 18,
+        systemReserved: 19,
+        allEvents: 20
+    };
+
+    function BCSControl(style, element) {
+        BCSView.call(this, style, element);
+        // if NO, ignores touch events and subclasses may draw differently
+        this.isEnabled = true;
+        // may be used by some subclasses or by application
+        this.isSelected = false;
+        // this gets set/cleared automatically when touch enters/exits during tracking and cleared on up
+        this.isHighlighted = false;
+        // how to position content vertically inside control. default is center
+        this.ontentVerticalAlignment = BCSControlContentVerticalAlignmentEnum.center;
+        // how to position content horizontally inside control. default is center
+        this.contentHorizontalAlignment = BCSControlContentHorizontalAlignmentEnum.center;
+        this.enableProtectedProperty({
+            state: BCSControlState.normal
+        });
+    }
+    BCSControl.extend(BCSView);
+    var prototype = BCSControl.prototype;
+    // how to position content horizontally inside control, guaranteed to return 'left' or 'right' for any 'leading' or 'trailing'
+    prototype.getEffectiveContentHorizontalAlignment = function () {
+        return this.getProtected('effectiveContentHorizontalAlignment');
+    };
+    // could be more than one state (e.g. disabled|selected). synthesized from other flags.
+    prototype.getState = function () {
+        return this.getProtected('state');
+    };
+    prototype.getIsTracking = function () {
+        return this.getProtected('isTracking');
+    };
+    // valid during tracking only
+    prototype.getIsTouchInside = function () {
+        return this.getProtected('isTouchInside');
+    };
+    // get info about target & actions. this makes it possible to enumerate all target/actions by checking for each event kind
+    prototype.getAllTargets = function () {
+        return this.getProtected('allTargets');
+    };
+    // list of all events that have at least one action
+    prototype.getAllControlEvents = function () {
+        return this.getProtected('allControlEvents');
+    };
+    prototype.get = function () {
+        return this.getProtected('');
+    };
+
+    prototype.beginTracking = function (touch, event) {};
+
+    prototype.continueTracking = function (touch, event) {};
+    // touch is sometimes nil if cancelTracking calls through to this.
+    prototype.endTracking = function (touch, event) {};
+    // event may be nil if cancelled for non-event reasons, e.g. removed from window
+    prototype.cancelTracking = function (event) {};
+
+    // add target/action for particular event. you can call this multiple times and you can specify multiple target/actions for a particular event.
+    // passing in nil as the target goes up the responder chain. The action may optionally include the sender and the event in that order
+    // the action cannot be NULL. Note that the target is not retained.
+    prototype.addTarget = function (target, action, controlEvents) {};
+
+    // remove the target/action for a set of events. pass in NULL for the action to remove all actions for that target
+    prototype.removeTarget = function (target, action, controlEvents) {};
+    // set may include NSNull to indicate at least one nil target
+    // list of all events that have at least one action
+    // single event. returns NSArray of NSString selector names. returns nil if none
+    prototype.actions = function (target, controlEvent) {};
+
+    // send the action. the first method is called for the event and is a point at which you can observe or override behavior. it is called repeately by the second.
+    prototype.sendAction = function (action, target, event) {};
+    // send all actions associated with events
+    prototype.sendActions = function (controlEvents) {};
     // Source: src/main/frontend/js/bcs/controller/BCSCollectionViewController.js
     /**
      * Created by kenhuang on 2019/2/16.
      */
 
-    function BCSCollectionViewController(element) {
-        BCSCollectionViewController.call(this, element);
+    function BCSCollectionViewController(view) {
+        BCSCollectionViewController.call(this, view);
     }
     BCSCollectionViewController.extend(BCSViewController);
     // Source: src/main/frontend/js/bcs/controller/BCSNavigationController.js
@@ -518,8 +962,8 @@
         pop: 'pop'
     };
 
-    function BCSNavigationController(rootViewController) {
-        BCSViewController.call(this);
+    function BCSNavigationController(rootViewController, view) {
+        BCSViewController.call(this, view);
         var toolbar = new BCSToolbar();
         this.isToolbarHidden = false;
         this.toolbarItems = [];
@@ -530,11 +974,11 @@
         this.hidesBarsWhenVerticallyCompact = false;
         var viewControllers = [];
         this.delegate = null;
-        var wrapperView = new BCSView1({
+        var wrapperView = new BCSView({
             width: '100%',
             height: '100%'
         });
-
+        wrapperView.setAttribute("comment", "wrapperView");
         this.getNavigationBar = function () {
             return navigationBar;
         };
@@ -673,8 +1117,8 @@
      * Created by kenhuang on 2019/2/16.
      */
 
-    function BCSPageViewController(element) {
-        BCSPageViewController.call(this, element);
+    function BCSPageViewController(view) {
+        BCSPageViewController.call(this, view);
     }
     BCSPageViewController.extend(BCSViewController);
     // Source: src/main/frontend/js/bcs/controller/BCSSearchController.js
@@ -682,8 +1126,8 @@
      * Created by kenhuang on 2019/3/5.
      */
 
-    function BCSSearchController(element) {
-        BCSViewController.call(this, element);
+    function BCSSearchController(view) {
+        BCSViewController.call(this, view);
     }
     BCSSearchController.extend(BCSViewController);
     // Source: src/main/frontend/js/bcs/controller/BCSSplitViewController.js
@@ -691,8 +1135,8 @@
      * Created by kenhuang on 2019/1/26.
      */
 
-    function BCSSplitViewController(element) {
-        BCSViewController.call(this, element);
+    function BCSSplitViewController(view) {
+        BCSViewController.call(this, view);
         this.viewControllers = [];
     }
     BCSSplitViewController.extend(BCSViewController);
@@ -701,8 +1145,8 @@
      * Created by kenhuang on 2019/1/26.
      */
 
-    function BCSTabBarController(element) {
-        BCSViewController.call(this, element);
+    function BCSTabBarController(view) {
+        BCSViewController.call(this, view);
         this.viewControllers = [];
     }
     BCSTabBarController.extend(BCSViewController);
@@ -711,33 +1155,34 @@
      * Created by kenhuang on 2019/1/26.
      */
 
-    function BCSViewController(element) {
+    var controllerComponentName = 'controller';
+    function BCSViewController(view) {
         var propertiesMap = {
             childViewControllers: [],
             parent: null,
             presentedViewController: null,
             presentingViewController: null
         };
-        this.enablePrivateProperty(propertiesMap);
-        if (typeof element === "string") {
-            this.view = BCSView.findViewById(element);
+        this.enableProtectedProperty(propertiesMap);
+        if (view && view.isKindOf(BCSView)) {
+            this.view = view;
         } else {
-            this.view = new BCSView({ width: '100%', height: '100%' }, element);
+            this.view = new BCSView({ width: '100%', height: '100%' });
         }
-        this.view.getLayer().setAttribute('controller', this.getClass());
+        this.view.getLayer().setAttribute(controllerComponentName, this.getClass());
     }
     var prototype = BCSViewController.prototype;
     prototype.getChildViewControllers = function () {
-        return this.getPrivate('childViewControllers');
+        return this.getProtected('childViewControllers');
     };
     prototype.getParent = function () {
-        return this.getPrivate('parent');
+        return this.getProtected('parent');
     };
     prototype.getPresentedViewController = function () {
-        return this.getPrivate('presentedViewController');
+        return this.getProtected('presentedViewController');
     };
     prototype.getPresentingViewController = function () {
-        return this.getPrivate('presentingViewController');
+        return this.getProtected('presentingViewController');
     };
     // 构造函数会在document.onload事件触发时调用，viewDidLoad则在window.onload事件中调用
     prototype.viewDidLoad = function () {};
@@ -881,8 +1326,8 @@
      * @param element
      * @constructor
      */
-    function BCSWindowController(element) {
-        BCSViewController.call(this, element);
+    function BCSWindowController(view) {
+        BCSViewController.call(this, view);
     }
     BCSWindowController.extend(BCSViewController);
     // Source: src/main/frontend/js/bcs/model/Encryption.js
@@ -1033,53 +1478,94 @@
              *  @param Class 类对象
              * @param propertiesMap
              */
-            Object.prototype.enablePrivateProperty = function (Class, propertiesMap) {
-                var superGetPrivate, superSetPrivate, superInitProperties;
-                for (var key in propertiesMap) {
+            // Object.prototype.enablePrivateProperty = function (Class,propertiesMap) {
+            //     var superGetPrivate, superSetPrivate,superInitProperties,self = this
+            //     for (var key in propertiesMap) {
+            //         if (this.hasOwnProperty(key) ) {
+            //             throw new Error('Duplicate key ' + key + '.')
+            //         }
+            //     }
+            //     if ('setPrivate' in this ) {
+            //         superGetPrivate = this.getPrivate.bind(this)
+            //         superSetPrivate = this.setPrivate.bind(this)
+            //         superInitProperties = this.superInitProperties
+            //     }
+            //     this.setPrivate = function(key,value,callerName){
+            //         if (!callerName) {
+            //             callerName = Function.getName(null)
+            //         }
+            //         if (self === this &&
+            //             ((this.hasOwnProperty(callerName) && callerName !== "setPrivate")|| callerName === 'setValueForKey'||
+            //             Class.prototype.hasOwnProperty(callerName)) &&propertiesMap.hasOwnProperty(key)) {
+            //             propertiesMap[key] = value
+            //         }else if(typeof superSetPrivate === 'function'){
+            //             superSetPrivate(key,value)
+            //         }else{
+            //             throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+            //         }
+            //     }
+            //     this.getPrivate = function(key,callerName){
+            //         if (!callerName) {
+            //             callerName = Function.getName(null)
+            //         }
+            //         if (self === this &&
+            //             ((this.hasOwnProperty(callerName) && callerName !== "getPrivate")|| callerName === 'valueForKey' ||
+            //             Class.prototype.hasOwnProperty(callerName)) &&propertiesMap.hasOwnProperty(key) ) {
+            //             return propertiesMap[key]
+            //         }else if(typeof superSetPrivate === 'function'){
+            //             return superGetPrivate(key,callerName)
+            //         }else{
+            //             throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+            //         }
+            //     }
+            //     this.initProperties = function (map) {
+            //         if (Class === this.constructor ) {
+            //             for (var key in map) {
+            //                 if (map.hasOwnProperty(key) ) {
+            //                     if (propertiesMap.hasOwnProperty(key) ) {
+            //                         throw new Error('Class ' + this.getClass() + ' has already had a private property named \''
+            //                             + key + '\'.')
+            //                     }else{
+            //                         propertiesMap[key] = map[key]
+            //                     }
+            //                 }
+            //             }
+            //         }else if(typeof superInitProperties === 'function'){
+            //             superInitProperties(map)
+            //         }else{
+            //             throw new Error('Class ' + Class + ' and  constructor' + this.constructor + ' mismatch.')
+            //         }
+            //     }
+            // }
+
+            Object.prototype.enableProtectedProperty = function (propertiesMap) {
+                var self = this,
+                    key;
+                for (key in propertiesMap) {
+                    /* 检查是否有重复公有属性*/
                     if (this.hasOwnProperty(key)) {
                         throw new Error('Duplicate key ' + key + '.');
                     }
                 }
-                if ('setPrivate' in this) {
-                    superGetPrivate = this.getPrivate;
-                    superSetPrivate = this.setPrivate;
-                    superInitProperties = this.superInitProperties;
-                }
-                this.setPrivate = function (key, value) {
-                    if (propertiesMap.hasOwnProperty(key) && Class === this.constructor) {
-                        propertiesMap[key] = value;
-                    } else if (typeof superSetPrivate === 'function') {
-                        superSetPrivate(key, value);
-                    } else {
-                        throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.');
-                    }
-                };
-                this.getPrivate = function (key) {
-                    if (propertiesMap.hasOwnProperty(key) && Class === this.constructor) {
-                        return propertiesMap[key];
-                    } else if (typeof superSetPrivate === 'function') {
-                        return superGetPrivate(key);
-                    } else {
-                        throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.');
-                    }
-                };
-                this.initProperties = function (map) {
-                    if (Class === this.constructor) {
-                        for (var key in map) {
-                            if (map.hasOwnProperty(key)) {
-                                if (propertiesMap.hasOwnProperty(key)) {
-                                    throw new Error('Class ' + this.getClass() + ' has already had a private property named \'' + key + '\'.');
-                                } else {
-                                    propertiesMap[key] = map[key];
-                                }
-                            }
+                if ('setProtected' in this) {
+                    for (key in propertiesMap) {
+                        /* 本方法在父类构造方法前调用，不允许父类的属性覆盖子类的属性 */
+                        if (propertiesMap.hasOwnProperty(key) && !this.getProtected(key)) {
+                            this.setProtected(key, propertiesMap[key]);
                         }
-                    } else if (typeof superInitProperties === 'function') {
-                        superInitProperties(map);
-                    } else {
-                        throw new Error('Class ' + Class + ' and  constructor' + this.constructor + ' mismatch.');
                     }
-                };
+                } else {
+                    this.setProtected = function (key, value) {
+                        if (this === self) {
+                            propertiesMap[key] = value;
+                        }
+                    };
+                    this.getProtected = function (key) {
+                        if (this === self) {
+                            return propertiesMap[key];
+                        }
+                    };
+                }
             };
 
             Object.prototype.setValueForKey = function (key, value) {
@@ -1087,8 +1573,8 @@
                     this[key] = value;
                     return;
                 }
-                if (this.setPrivate) {
-                    this.setPrivate(key, value);
+                if (this.setProtected) {
+                    this.setProtected(key, value);
                 } else {
                     throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.');
                 }
@@ -1105,8 +1591,8 @@
                 if (this.hasOwnProperty(key)) {
                     return this[key];
                 }
-                if (this.get) {
-                    return this.get(key);
+                if (this.getProtected) {
+                    return this.getProtected(key);
                 }
                 throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.');
             };
@@ -1114,6 +1600,7 @@
                 var keys = keyPath.split('.');
                 for (var i = 0; i < keys.length - 1; i++) {
                     object = object.valueForKey(keys[i]);
+                    /* object没有指定的keyPath */
                     if ((typeof object === "undefined" ? "undefined" : _typeof(object)) !== "object") {
                         throw new Error('KeyPath ' + keyPath + ' is invalid for class ' + this.getClass() + '.');
                     }
@@ -1157,84 +1644,79 @@
             }
             /**
              * 观察者模式,KVO仅限IE9及以上的直接属性。IE9以下全部使用NotificationCenter。
-             * 在构造方法中使用，observerListMap为私有属性,用于存放被监视的属性值。
+             * 在构造方法中使用，observerListMap用于存放被监视的属性值。
              * observerListMap的每一个List的第0个元素为key对应当前值。故Observer从List第1个元素开始
-             * swift允许重复添加observer，即多次添加时会多次触发。每次删除只删除一次添加。
-             * 与swift不同的是这里是先添加先触发，swift是后添加先触发
-             * @param privatePropertiesMap
+             * swift允许重复添加observer，即多次添加时会多次触发。每次删除只删除一次添加。先添加后触发。
+             * @param privatePropertiesMap 私有属性Map
              * @param observerListMap
              */
-            Object.prototype.enableKVO = function (privatePropertiesMap, observerListMap) {
+            Object.prototype.enableKVO = function () {
                 Function.requireArgumentNumber(arguments, 1);
-                if (observerListMap.isKindOf(window.ListMap)) {
-                    this.addObserver = function (observer, keyPath, options, context) {
-                        Function.requireArgumentNumber(arguments, 2);
-                        function setter(newValue) {
-                            var observerList = observerListMap.getAll(keyPath);
-                            var oldValue = observerList[0];
-                            observerList[0] = newValue;
-                            for (var i = 1; i < observerList.length; i++) {
-                                if (typeof observerList[i].observer.observeValue === 'function') {
-                                    observerList[i].observer.observeValue(this, keyPath, this, {
-                                        old: oldValue,
-                                        "new": newValue
-                                    }, context);
-                                }
+                var observerListMap = new ListMap(); // jshint ignore:line
+                this.addObserver = function (observer, keyPath, options, context) {
+                    Function.requireArgumentNumber(arguments, 2);
+                    if (!(observer instanceof Object)) {
+                        throw new TypeError('Observer must be object type.');
+                    } else if (!keyPath || typeof keyPath !== 'string') {
+                        throw new TypeError('Key must be string type.');
+                    }
+                    function setter(newValue) {
+                        var observerList = observerListMap.getAll(keyPath);
+                        var oldValue = observerList[0];
+                        observerList[0] = newValue;
+                        for (var i = observerList.length - 1; i >= 1; i--) {
+                            if (typeof observerList[i].observer.observeValue === 'function') {
+                                observerList[i].observer.observeValue(this, keyPath, this, {
+                                    old: oldValue,
+                                    "new": newValue
+                                }, context);
                             }
                         }
-                        function getter(key) {
-                            return observerListMap.get(key)[0];
-                        }
-                        if (!(observer instanceof Object)) {
-                            throw new TypeError('Observer must be object type.');
-                        } else if (!keyPath || typeof keyPath !== 'string') {
-                            throw new TypeError('Key must be string type.');
-                        }
-                        if (!observerListMap.has(keyPath)) {
-                            /* 得到上一层的对象以及最后一层的key */
-                            var result = resolveKeyPath(this, keyPath),
-                                object = this;
-                            /* 该属性可能是私有属性的直接属性，会被resolveKeyPath漏掉 */
-                            if (result.object === this && privatePropertiesMap.hasOwnProperty(result.key)) {
-                                object = privatePropertiesMap;
-                            }
-                            /* 保存原有的值到observerListMap[keyPath][0]*/
-                            observerListMap.append(keyPath, object[keyPath]);
-                            /* 此时已经应用ES5补丁 */
-                            if (Object.defineProperty) {
-                                Object.defineProperty(object, keyPath, {
-                                    set: setter,
-                                    get: getter
-                                });
-                            } else {
-                                throw new TypeError('Object.defineProperty is not supported in this browser');
-                            }
-                            // else if (Object.prototype.__defineGetter__ && Object.prototype.__defineSetter__) {
-                            //     Object.prototype.__defineGetter__.call(this, key, getter);
-                            //     Object.prototype.__defineSetter__.call(this, key, setter);
-                            // }
-                        }
-                        observerListMap.append(keyPath, {
-                            observer: observer,
-                            context: context
-                        });
-                    };
-                    this.removeObserver = function (observer, keyPath, context) {
-                        //todo 是否在移除最后一个观察者后将值还原回去
-                        if (keyPath) {
-                            /* 删除指定属性的指定观察者 */
-                            var observerList = observerListMap.getAll(keyPath);
-                            remove(observerListMap, keyPath, observerList, observer);
-                        } else {
-                            /* 删除所有属性的指定观察者 */
-                            observerListMap.forEach(function (observerList, key) {
-                                remove(observerListMap, key, observerList, observer);
+                    }
+                    function getter(key) {
+                        return observerListMap.get(key)[0];
+                    }
+                    if (!observerListMap.has(keyPath)) {
+                        /* 得到上一层的对象以及最后一层的key */
+                        var result = resolveKeyPath(this, keyPath),
+                            object = this;
+                        // /* 该属性可能是私有属性的直接属性，会被resolveKeyPath漏掉 */
+                        // if (result.object === this && privatePropertiesMap.hasOwnProperty(result.key)) {
+                        //     object = privatePropertiesMap
+                        // }
+                        /* 保存原有的值到observerListMap[keyPath][0]*/
+                        observerListMap.append(keyPath, object[keyPath]);
+                        /* 此时已经应用ES5补丁 */
+                        if (Object.defineProperty) {
+                            Object.defineProperty(object, keyPath, {
+                                set: setter,
+                                get: getter
                             });
+                        } else {
+                            throw new TypeError('Object.defineProperty is not supported in this browser');
                         }
-                    };
-                } else {
-                    throw new TypeError('observerListMap is not ListMap type');
-                }
+                        // else if (Object.prototype.__defineGetter__ && Object.prototype.__defineSetter__) {
+                        //     Object.prototype.__defineGetter__.call(this, key, getter);
+                        //     Object.prototype.__defineSetter__.call(this, key, setter);
+                        // }
+                    }
+                    observerListMap.append(keyPath, {
+                        observer: observer,
+                        context: context
+                    });
+                };
+                this.removeObserver = function (observer, keyPath, context) {
+                    if (keyPath) {
+                        /* 删除指定属性的指定观察者 */
+                        var observerList = observerListMap.getAll(keyPath);
+                        remove(observerListMap, keyPath, observerList, observer);
+                    } else {
+                        /* 删除所有属性的指定观察者 */
+                        observerListMap.forEach(function (observerList, key) {
+                            remove(observerListMap, key, observerList, observer);
+                        });
+                    }
+                };
             };
         }
 
@@ -1248,43 +1730,50 @@
             Function.prototype.extend = function (superClass) {
                 Function.requireArgumentType(superClass, 'function');
                 Function.requireArgumentType(this, 'function');
-                var Super = function Super() {};
+                function Super() {}
                 Super.prototype = superClass.prototype;
                 this.prototype = new Super();
                 this.prototype.constructor = this;
             };
             /**
-             * 有无法处理的情况，慎用
-             * @param callee
+             * 获取callee/calller的函数名
+             * @param func
+             * @param isCallee
              * @returns {*}
              */
-            Function.prototype.getName = function (callee) {
-                // return this.name || this.toString().match(/function\s*([^(]*)\(/)[1]
-                if (callee.name) {
-                    return callee.name;
-                }
-                var _callee = callee.toString().replace(/[\s\?]*/g, ""),
-                    comb = _callee.length >= 50 ? 50 : _callee.length;
-                _callee = _callee.substring(0, comb);
-                var name = _callee.match(/^function([^\(]+?)\(/);
-                if (name && name[1]) {
-                    return name[1];
-                }
-                if (callee.caller) {
-                    var caller = callee.caller,
-                        _caller = caller.toString().replace(/[\s\?]*/g, "");
-                    var last = _caller.indexOf(_callee),
-                        str = _caller.substring(last - 30, last);
-                    name = str.match(/var([^\=]+?)\=/);
-                    if (name && name[1]) {
-                        return name[1];
-                    }
-                }
+            Function.getName = function (func, isCallee) {
+                //use strict下不能使用caller callee argument
+                // if(func.name){
+                //     return func.name
+                // }
+                // var _f = func.toString().replace(/[\s\?]*/g,""),
+                //     comb = _f.length >= 50 ? 50 :_f.length
+                // _f = _f.substring(0,comb)
+                // var name = _f.match(/^function([^\(]+?)\(/)
+                // if(name && name[1]){
+                //     return name[1]
+                // }
+                // if(func.caller){
+                //     var caller = func.caller,
+                //         _caller = caller.toString().replace(/[\s\?]*/g,"")
+                //     var last = _caller.indexOf(_f),
+                //         str = _caller.substring(last-30,last)
+                //     name = str.match(/var([^\=]+?)\=/)
+                //     if(name && name[1]){
+                //         return name[1]
+                //     }
+                // }
                 var stack = new Error().stack;
                 if (stack) {
-                    name = stack.match(/Function.getName.*\n    at (.*) \(/);
+                    var name;
+                    if (isCallee) {
+                        name = stack.match(/Function.getName.*\n    at (.*) \(/);
+                    } else {
+                        name = stack.match(/Function.getName.*\n    at .*\n    at (.*) \(/);
+                    }
+
                     if (name && name[1]) {
-                        return name[1].replace('new window.', '').replace('new ', '');
+                        return name[1].replace('new ', '').replace(/.*\./, '');
                     }
                 }
                 return "anonymous";
@@ -1734,7 +2223,12 @@
                     };
                     Map.prototype[Symbol.iterator] = Map.prototype.entries;
                 }
-
+                /**
+                 *
+                 * @param iterable Iterable 是一个数组（二元数组）或者其他可迭代的且其元素是键值对的对象。每个键值对会被加到新的 WeakMap
+                 *                          里。null 会被当做 undefined。
+                 * @constructor
+                 */
                 window.WeakMap = function (iterable) {
                     var map = new Map();
                     this['delete'] = function (key) {
@@ -1780,7 +2274,11 @@
                         }
                     }
                 };
-
+                /**
+                 *
+                 * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+                 * @constructor
+                 */
                 window.Set = function (iterable) {
                     var map = new Map();
                     this.add = function (value) {
@@ -1826,7 +2324,11 @@
                     Set.prototype.forEach = Map.prototype.forEach;
                     Set.prototype[Symbol.iterator] = Set.prototype.values;
                 }
-
+                /**
+                 *
+                 * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+                 * @constructor
+                 */
                 window.WeakSet = function (iterable) {
                     var set = new Set();
                     this.add = function (value) {
@@ -1861,6 +2363,11 @@
                     }
                 };
             }
+            /**
+             *
+             * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+             * @constructor
+             */
             window.ListMap = function (iterable) {
                 var list,
                     map = new Map();
@@ -1940,7 +2447,11 @@
                 _ListMapIterator.extend(Iterator);
                 ListMap.prototype.forEach = Map.prototype.forEach;
             }
-
+            /**
+             *
+             * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+             * @constructor
+             */
             window.SetMap = function (iterable) {
                 var set,
                     map = new Map();
@@ -2025,8 +2536,9 @@
         this.apply = function () {
             extendObject();
             extendFunction();
-            extendWindow();
             extendString();
+            //调用toFirstUpperCase函数，需要在extendString之后执行。
+            extendWindow();
             extendArray();
             extendNumber();
             extendOthers();
@@ -2158,19 +2670,24 @@
         BCSControl.call(this, style);
         var titleLabel = new BCSLabel();
         var imageView = new BCSImageView();
-        this.setPrivate('titleLabel', titleLabel);
-        this.setPrivate('imageView', imageView);
+        this.enableProtectedProperty({
+            'titleLabel': titleLabel,
+            'imageView': imageView
+        });
+        this.setProtected('titleLabel', titleLabel);
+        this.setProtected('imageView', imageView);
         this.addSubView(titleLabel);
         this.addSubView(imageView);
     }
 
     BCSButton.extend(BCSControl);
+    BCSView["import"]('BUTTON', BCSButton);
     var prototype = BCSButton.prototype;
     prototype.getTitleLabel = function () {
-        return this.getPrivate('titleLabel');
+        return this.getProtected('titleLabel');
     };
     prototype.getImageView = function () {
-        return this.getPrivate('imageView');
+        return this.getProtected('imageView');
     };
     // Source: src/main/frontend/js/bcs/view/BCSCollectionView.js
     /**
@@ -2196,132 +2713,6 @@
     }
     BCSCollectionViewCell.extend(BCSView);
     var prototype = BCSCollectionViewCell.prototype;
-    // Source: src/main/frontend/js/bcs/view/BCSControl.js
-
-
-    var BCSControlContentVerticalAlignmentEnum = exports.BCSControlContentVerticalAlignmentEnum = {
-        center: 0,
-        top: 1,
-        bottom: 2,
-        fill: 3
-    };
-
-    var BCSControlContentHorizontalAlignmentEnum = exports.BCSControlContentHorizontalAlignmentEnum = {
-        center: 1,
-        left: 2,
-        right: 3,
-        fill: 4,
-        leading: 5,
-        trailing: 6
-    };
-
-    var BCSControlState = exports.BCSControlState = {
-        normal: 1,
-        // used when UIControl isHighlighted is set
-        highlighted: 2,
-        disabled: 3,
-        // flag usable by app (see below)
-        selected: 4,
-        // Applicable only when the screen supports focus
-        focused: 5,
-        // additional flags available for application use
-        application: 6,
-        // flags reserved for internal framework use
-        reserved: 7
-    };
-
-    var BCSControlEvent = exports.BCSControlEvent = {
-        touchDown: 1,
-        touchDownRepeat: 2,
-        touchDragInside: 3,
-        touchDragOutside: 4,
-        touchDragEnter: 5,
-        touchDragExit: 6,
-        touchUpInside: 7,
-        touchUpOutside: 8,
-        touchCancel: 9,
-        valueChanged: 10,
-        primaryActionTriggered: 11,
-        editingDidBegin: 12,
-        editingChanged: 13,
-        editingDidEnd: 14,
-        editingDidEndOnExit: 15,
-        allTouchEvents: 16,
-        allEditingEvents: 17,
-        applicationReserved: 18,
-        systemReserved: 19,
-        allEvents: 20
-    };
-
-    function BCSControl(style, element) {
-        BCSView.call(this, style, element);
-        // if NO, ignores touch events and subclasses may draw differently
-        this.isEnabled = true;
-        // may be used by some subclasses or by application
-        this.isSelected = false;
-        // this gets set/cleared automatically when touch enters/exits during tracking and cleared on up
-        this.isHighlighted = false;
-        // how to position content vertically inside control. default is center
-        this.ontentVerticalAlignment = BCSControlContentVerticalAlignmentEnum.center;
-        // how to position content horizontally inside control. default is center
-        this.contentHorizontalAlignment = BCSControlContentHorizontalAlignmentEnum.center;
-        this.initProperties({
-            state: BCSControlState.normal
-        });
-    }
-    BCSControl.extend(BCSView);
-    var prototype = BCSControl.prototype;
-    // how to position content horizontally inside control, guaranteed to return 'left' or 'right' for any 'leading' or 'trailing'
-    prototype.getEffectiveContentHorizontalAlignment = function () {
-        return this.getPrivate('effectiveContentHorizontalAlignment');
-    };
-    // could be more than one state (e.g. disabled|selected). synthesized from other flags.
-    prototype.getState = function () {
-        return this.getPrivate('state');
-    };
-    prototype.getIsTracking = function () {
-        return this.getPrivate('isTracking');
-    };
-    // valid during tracking only
-    prototype.getIsTouchInside = function () {
-        return this.getPrivate('isTouchInside');
-    };
-    // get info about target & actions. this makes it possible to enumerate all target/actions by checking for each event kind
-    prototype.getAllTargets = function () {
-        return this.getPrivate('allTargets');
-    };
-    // list of all events that have at least one action
-    prototype.getAllControlEvents = function () {
-        return this.getPrivate('allControlEvents');
-    };
-    prototype.get = function () {
-        return this.getPrivate('');
-    };
-
-    prototype.beginTracking = function (touch, event) {};
-
-    prototype.continueTracking = function (touch, event) {};
-    // touch is sometimes nil if cancelTracking calls through to this.
-    prototype.endTracking = function (touch, event) {};
-    // event may be nil if cancelled for non-event reasons, e.g. removed from window
-    prototype.cancelTracking = function (event) {};
-
-    // add target/action for particular event. you can call this multiple times and you can specify multiple target/actions for a particular event.
-    // passing in nil as the target goes up the responder chain. The action may optionally include the sender and the event in that order
-    // the action cannot be NULL. Note that the target is not retained.
-    prototype.addTarget = function (target, action, controlEvents) {};
-
-    // remove the target/action for a set of events. pass in NULL for the action to remove all actions for that target
-    prototype.removeTarget = function (target, action, controlEvents) {};
-    // set may include NSNull to indicate at least one nil target
-    // list of all events that have at least one action
-    // single event. returns NSArray of NSString selector names. returns nil if none
-    prototype.actions = function (target, controlEvent) {};
-
-    // send the action. the first method is called for the event and is a point at which you can observe or override behavior. it is called repeately by the second.
-    prototype.sendAction = function (action, target, event) {};
-    // send all actions associated with events
-    prototype.sendActions = function (controlEvents) {};
     // Source: src/main/frontend/js/bcs/view/BCSDatePicker.js
     /**
      * Created by kenhuang on 2019/2/16.
@@ -2339,8 +2730,11 @@
      * Created by kenhuang on 2019/2/16.
      */
 
-    function BCSImageView(style, imageSrc) {
-        BCSView1.call(this, style, 'img');
+    function BCSImageView(style, imageSrc, element) {
+        if (!element) {
+            element = document.createElement('label');
+        }
+        BCSView.call(this, style, element);
         if (imageSrc) {
             this.getLayer().src = imageSrc;
         }
@@ -2358,6 +2752,7 @@
     }
 
     BCSImageView.extend(BCSView);
+    BCSView["import"]('IMG', BCSImageView);
     var prototype = BCSImageView.prototype;
     prototype.startAnimating = function () {};
     prototype.stopAnimating = function () {};
@@ -2367,10 +2762,14 @@
      */
 
     function BCSLabel(style) {
-        BCSView1.call(this, style, 'label');
+        this.enableProtectedProperty({
+            layer: document.createElement('label')
+        });
+        BCSView.call(this, style);
     }
 
     BCSLabel.extend(BCSView);
+    BCSView["import"]('LABEL', BCSLabel);
     var prototype = BCSLabel.prototype;
     prototype.setText = function (text) {
         var element = this.getLayer();
@@ -2392,7 +2791,7 @@
     var prototype1 = BCSBarButton.prototype;
 
     function BCSNavigationBar() {
-        BCSView1.call(this, BCSNavigationBar.style);
+        BCSView.call(this, BCSNavigationBar.style);
         this.isTranslucent = false;
         this.delegate = null;
     }
@@ -2606,7 +3005,7 @@
 
     function BCSScrollView(style, element) {
         BCSView.call(this, style, element);
-        this.initProperties({
+        this.enableProtectedProperty({
             /* When contentInsetAdjustmentBehavior allows, UIScrollView may incorporate
              its safeAreaInsets into the adjustedContentInset.
             */
@@ -2692,39 +3091,39 @@
     BCSScrollView.extend(BCSView);
     var prototype = BCSScrollView.prototype;
     prototype.getContentLayoutGuide = function () {
-        return this.getPrivate('contentLayoutGuide');
+        return this.getProtected('contentLayoutGuide');
     };
     prototype.getFrameLayoutGuide = function () {
-        return this.getPrivate('frameLayoutGuide');
+        return this.getProtected('frameLayoutGuide');
     };
     prototype.getIsTracking = function () {
-        return this.getPrivate('isTracking');
+        return this.getProtected('isTracking');
     };
     prototype.getIsDragging = function () {
-        return this.getPrivate('isDragging');
+        return this.getProtected('isDragging');
     };
     prototype.getIsDecelerating = function () {
-        return this.getPrivate('isDecelerating');
+        return this.getProtected('isDecelerating');
     };
     // returns YES if user in zoom gesture
     prototype.getIsZooming = function () {
-        return this.getPrivate('isZooming');
+        return this.getProtected('isZooming');
     };
     // returns YES if we are in the middle of zooming back to the min/max value
     prototype.getIsZoomBouncing = function () {
-        return this.getPrivate('isZoomBouncing');
+        return this.getProtected('isZoomBouncing');
     };
     // Change `panGestureRecognizer.allowedTouchTypes` to limit scrolling to a particular set of touch types.
     prototype.getPanGestureRecognizer = function () {
-        return this.getPrivate('panGestureRecognizer');
+        return this.getProtected('panGestureRecognizer');
     };
     // `pinchGestureRecognizer` will return nil when zooming is disabled.
     prototype.getPinchGestureRecognizer = function () {
-        return this.getPrivate('pinchGestureRecognizer');
+        return this.getProtected('pinchGestureRecognizer');
     };
     // `directionalPressGestureRecognizer` is disabled by default, but can be enabled to perform scrolling in response to up / down / left / right arrow button presses directly, instead of scrolling indirectly in response to focus updates.
     prototype.getDirectionalPressGestureRecognizer = function () {
-        return this.getPrivate('directionalPressGestureRecognizer');
+        return this.getProtected('directionalPressGestureRecognizer');
     };
 
     prototype.adjustedContentInsetDidChange = function () {};
@@ -2851,7 +3250,7 @@
     ;
 
     function BCSTabBar() {
-        BCSView1.call(this, {
+        BCSView.call(this, {
             bottom: '0px',
             width: '100%'
         });
@@ -2962,16 +3361,16 @@
 
     function BCSTableViewCell(style, element) {
         BCSView.call(this, style, element);
-        // this.setPrivate('imageView',)
-        // this.setPrivate('textLabel',)
-        // this.setPrivate('detailTextLabel',)
-        // this.setPrivate('contentView',)
-        // this.setPrivate('reuseIdentifier',)
+        // this.setProtected('imageView',)
+        // this.setProtected('textLabel',)
+        // this.setProtected('detailTextLabel',)
+        // this.setProtected('contentView',)
+        // this.setProtected('reuseIdentifier',)
         // // default is UITableViewCellEditingStyleNone. This is set by UITableView using the delegate's value for cells who customize their appearance accordingly.
-        // this.setPrivate('editingStyle',)
-        // this.setPrivate('showingDeleteConfirmation',)
+        // this.setProtected('editingStyle',)
+        // this.setProtected('showingDeleteConfirmation',)
         var propertiesMap = {};
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
         this.backgroundView = null;
         this.selectedBackgroundView = null;
         this.multipleSelectionBackgroundView = null;
@@ -2995,25 +3394,25 @@
     BCSTableViewCell.extend(BCSView);
     var prototype = BCSTableViewCell.prototype;
     prototype.getImageView = function () {
-        return this.getPrivate('imageView');
+        return this.getProtected('imageView');
     };
     prototype.getTextLabel = function () {
-        return this.getPrivate('textLabel');
+        return this.getProtected('textLabel');
     };
     prototype.getDetailTextLabel = function () {
-        return this.getPrivate('detailTextLabel');
+        return this.getProtected('detailTextLabel');
     };
     prototype.getContentView = function () {
-        return this.getPrivate('contentView');
+        return this.getProtected('contentView');
     };
     prototype.getReuseIdentifier = function () {
-        return this.getPrivate('reuseIdentifier');
+        return this.getProtected('reuseIdentifier');
     };
     prototype.getEditingStyle = function () {
-        return this.getPrivate('editingStyle');
+        return this.getProtected('editingStyle');
     };
     prototype.getShowingDeleteConfirmation = function () {
-        return this.getPrivate('showingDeleteConfirmation');
+        return this.getProtected('showingDeleteConfirmation');
     };
     prototype.prepareForReuse = function () {};
     prototype.setSelected = function (selected, animated) {};
@@ -3058,349 +3457,76 @@
         backgroundColor: 'red'
     };
     function BCSToolbar() {
-        BCSView1.call(this, style);
+        BCSView.call(this, style);
     }
     BCSToolbar.extend(BCSView);
     var prototype = BCSToolbar.prototype;
-    // Source: src/main/frontend/js/bcs/view/BCSView.js
+    // Source: src/main/frontend/js/bcs/view/BCSWindow.js
     /**
-     * Created by kenhuang on 2019/1/10.
+     * Created by kenhuang on 2020/4/13.
      */
 
-    var componentName = 'view';
-    function BCSView(style, element) {
-        if (!element) {
-            element = document.createElement('div');
-        }
-        var propertiesMap = {
+    function BCSWindow() {
+        var Class, subElement, children, controllerClass;
+        var viewMap = new Map();
+        var controllerMap = new Map();
+        var element = document.getElementsByTagName("html")[0];
+        var list = [element];
+        this.enableProtectedProperty({
             layer: element,
-            subViews: generateSubViews(element),
-            gestureRecognizers: []
-        };
-        this.enablePrivateProperty(propertiesMap);
-        if ((typeof style === "undefined" ? "undefined" : _typeof(style)) === 'object') {
-            if (!style.hasOwnProperty('position')) {
-                style.position = 'absolute';
-            }
-        } else {
-            style = { position: 'absolute' };
-        }
-        this.setStyle(style);
-        /* 方便调试 */
-        element.setAttribute(componentName, this.getClass());
-    }
-
-    var prototype = BCSView.prototype;
-    prototype.getLayer = function () {
-        return this.getPrivate('layer');
-    };
-    prototype.getSubViews = function () {
-        return this.getPrivate('subViews');
-    };
-
-    prototype.getGestureRecognizers = function () {
-        return this.getPrivate('gestureRecognizers');
-    };
-
-    function generateSubViews(layer) {
-        var subViews = [];
-        if (layer.children.length > 0) {
-            var subLayers = layer.children;
-            for (var i = 0; i < layer.children.length; i++) {
-                subViews.push(new BCSView(subLayers[i]));
-            }
-        }
-        return subViews;
-    }
-    /**
-     * 1.这里假设调用者倾向于在同一个view添加不同的手势识别器，而非添加多个相同手势识别器
-     * 2.和iOS不同，event和event.touches对象每次都不同,靠touch.identifier进行区分
-     * 3.没有必要在这里使用定时器，例如可能出现两个tap手势识别器，它们要求的tap次数不同，如a.numberOfTouchesRequired = 1,
-     * b.numberOfTouchesRequired = 2,当用户想使用a时，此时需要两个定时器，一个750ms，一个1500ms。
-     * @param view
-     */
-    function addListeners(view) {
-        var delegate, touches, recognizer, stateChangedRecognizers, i, j, gestureRecognizers;
-        var handleEvent = function handleEvent(event) {
-            gestureRecognizers = view.getGestureRecognizers();
-            stateChangedRecognizers = [];
-            /*使用手势识别器识别event*/
-            for (i = 0; i < gestureRecognizers.length; i++) {
-                recognizer = gestureRecognizers[i];
-                if (recognizer.isEnabled) {
-                    touches = [];
-                    delegate = recognizer.delegate;
-                    if (event.type === EventTypeEnum.TOUCH_START) {
-                        if (delegate && delegate.shouldReceiveTouch) {
-                            for (j = 0; j < event.changedTouches.length; j++) {
-                                if (delegate.shouldReceiveTouch(recognizer, event.changedTouches[j])) {
-                                    touches.push(event.changedTouches[j]);
-                                }
-                            }
-                        } else {
-                            for (j = 0; j < event.changedTouches.length; j++) {
-                                touches.push(event.changedTouches[j]);
-                            }
-                        }
-                    } else if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
-                        continue;
-                    } else {
-                        for (j = 0; j < event.changedTouches.length; j++) {
-                            if (recognizer.hasAvailableTouch(event.changedTouches[j])) {
-                                touches.push(event.changedTouches[j]);
-                            }
-                        }
-                        if (touches.length === 0) {
-                            continue;
-                        }
-                    }
-                    switch (event.type) {
-                        case EventTypeEnum.TOUCH_START:
-                            recognizer.touchesBegan(touches, event);
-                            for (j = i + 1; j < gestureRecognizers.length; j++) {
-                                if (recognizer.shouldRequireFailureOf(gestureRecognizers[j])) {
-                                    gestureRecognizers[j].addDependent(recognizer);
-                                } else if (delegate && delegate.shouldRequireFailureOf && delegate.shouldRequireFailureOf(recognizer, gestureRecognizers[j])) {
-                                    gestureRecognizers[j].addDependent(recognizer);
-                                } else if (recognizer.shouldBeRequiredToFailBy(gestureRecognizers[j])) {
-                                    recognizer.addDependent(gestureRecognizers[j]);
-                                } else if (delegate && delegate.shouldBeRequiredToFailBy && delegate.shouldBeRequiredToFailBy(recognizer, gestureRecognizers[j])) {
-                                    recognizer.addDependent(gestureRecognizers[j]);
-                                }
-                            }
-                            break;
-                        case EventTypeEnum.TOUCH_MOVE:
-                            recognizer.touchesMoved(touches, event);
-                            break;
-                        case EventTypeEnum.TOUCH_END:
-                            recognizer.touchesEnded(touches, event);
-                            if (recognizer.state === BCSGestureRecognizerStateEnum.POSSIBLE) {
-                                recognizer.removeAvailableTouches(touches);
-                            }
-                            break;
-                        case EventTypeEnum.TOUCH_CANCEL:
-                            recognizer.touchesCancelled(touches, event);
-                            break;
-                        default:
-                        //pc或其他
-                    }
-                    console.log(new Date(), new Date().getMilliseconds(), event.type, recognizer.name, "state:", recognizer.state, recognizer.getNumberOfTouches(), event.touches, event.targetTouches, event.changedTouches);
-                    if (recognizer.state >= BCSGestureRecognizerStateEnum.BEGAN) {
-                        stateChangedRecognizers.push(recognizer);
-                    }
-                }
-            }
-            view.executeStateChangedRecognizers(stateChangedRecognizers);
-        };
-        EventTypeEnum.values.forEach(function (eventName) {
-            view.getLayer().addEventListener(eventName, handleEvent);
+            rootViewController: null
         });
-    }
-    prototype.addSubView = function (view) {
-        var subViews = this.getSubViews(),
-            length = this.getLayer().children.length;
-        this.getLayer().appendChild(view.getLayer());
-        if (this.getLayer().children.length === length) {
-            /* layer的子元素已经包含 view的layer*/
-            for (var i = 0; i < subViews.length; i++) {
-                if (subViews[i].getLayer() === view.getLayer()) {
-                    subViews.splice(i, 1);
-                    break;
-                }
-            }
-        }
-        subViews.push(view);
-    };
-
-    prototype.addGestureRecognizer = function (gestureRecognizer) {
-        this.removeGestureRecognizer(gestureRecognizer);
-        gestureRecognizer.setPrivate('view', this);
-        this.getGestureRecognizers().push(gestureRecognizer);
-        //todo
-        if (!this.get('isListenersAdded')) {
-            addListeners(this);
-            this.set('isListenersAdded', true);
-        }
-    };
-
-    prototype.removeGestureRecognizer = function (gestureRecognizer) {
-        var gestureRecognizerList = this.getGestureRecognizers();
-        gestureRecognizer.setPrivate('view', null);
-        for (var i = 0; i < gestureRecognizerList.length; i++) {
-            if (gestureRecognizerList[i] === gestureRecognizer) {
-                gestureRecognizerList.splice(i, 1);
-                // break 防止有更多的同一个gestureRecognizer
-            }
-        }
-    };
-
-    prototype.gestureRecognizerShouldBegin = function (gestureRecognizer) {
-        return true;
-    };
-
-    prototype.removeSubView = function (subView) {
-        var subViews = this.getSubViews();
-        for (var i = 0; i < subViews.length; i++) {
-            if (subViews[i] === subView) {
-                subViews.splice(i, 1);
-                this.getLayer().removeChild(subView.getLayer());
-                return;
-            }
-        }
-    };
-
-    prototype.setStyle = function (cssObject) {
-        var attribute,
-            background,
-            backgroundAttributes,
-            cssText = '',
-            element = this.getLayer();
-        if (window.cssSandpaper) {
-            ['transform', 'opacity', 'boxShadow', 'textShadow'].forEach(function (attributeName) {
-                if (cssObject.hasOwnProperty(attributeName)) {
-                    attribute = cssObject[attributeName];
-                    delete cssObject[attributeName];
-                    window.cssSandpaper['set' + attributeName.toFirstUpperCase()](element, attribute);
-                }
-            }.bind(this));
-            background = cssObject.backgroundImage || cssObject.background;
-            if (background) {
-                ['rgba', 'hsla'].forEach(function (name) {
-                    backgroundAttributes = new RegExp(name + '\\s*?\\((.*?)\\)').exec(background);
-                    if (backgroundAttributes) {
-                        window.cssSandpaper['set' + name.toUpperCase() + 'Background'](this.getLayer(), backgroundAttributes[1]);
+        BCSView.call(this);
+        /* 解析HTML文档，生成子View树*/
+        viewMap.set(element, this);
+        while (list.length > 0) {
+            element = list.shift();
+            children = element.children;
+            for (var i = 0; i < children.length; i++) {
+                subElement = children[i];
+                if (!IgnoreTagEnum[subElement.tagName]) {
+                    // jshint ignore:line
+                    list.push(subElement);
+                    /* 已经自行使用view='xxx'指定类型 */
+                    Class = window[subElement.getAttribute(componentName)]; // jshint ignore:line
+                    if (!Class) {
+                        // /*根据标签名创建相应类型的View*/
+                        // Class = window['BCS' + subElement.tagName.toFirstUpperCase()]
+                        Class = ElementViewEnum[subElement.tagName]; // jshint ignore:line
                     }
-                }.bind(this));
-                backgroundAttributes = /(-(webkit|o|moz)-)?(repeating-radial|repeating-linear|radial|linear)-gradient\s*?\((.*)\)/.exec(background);
-                if (backgroundAttributes) {
-                    window.cssSandpaper.setGradient(element, "-sand-gradient(" + backgroundAttributes[3] + "," + backgroundAttributes[4] + ")");
-                }
-            }
-
-            if (cssObject.hasOwnProperty('color')) {
-                var arr = /hsl\((.*?)\)/.exec(cssObject.color);
-                if (arr) {
-                    window.cssSandpaper.setHSLColor(element, 'color', arr[1]);
-                }
-            }
-        }
-
-        if (window.PIE && (cssObject.borderRadius || cssObject.borderImage || cssObject.backgroundAttachment || cssObject.background && cssObject.background.indexOf('url') !== -1 || cssObject.backgroundSize || cssObject.backgroundRepeat || cssObject.backgroundOrigin || cssObject.backgroundClip || element.nodeName === 'IMG')) {
-            window.PIE.attach(element);
-        }
-
-        for (var name in cssObject) {
-            if (cssObject.hasOwnProperty(name)) {
-                cssText += name.replace(/([A-Z])/g, function (match) {
-                    return '-' + match.toLowerCase();
-                }) + ":" + cssObject[name] + ';';
-            }
-        }
-
-        if (typeof element.style.cssText !== 'undefined') {
-            element.style.cssText += ';' + cssText;
-        } else {
-            element.setAttribute('style', cssText);
-        }
-    };
-    //todo  100%的情况
-    prototype.getStyle = function (propertyName) {
-        if (typeof propertyName === 'string') {
-            return Number(window.getComputedStyle(this.getLayer())[propertyName].replace('px', ''));
-        }
-        return window.getComputedStyle(this.getLayer());
-    };
-
-    prototype.setHTML = function (htmlText) {
-        var element = this.getLayer();
-        if (htmlText === undefined) {
-            element.innerHTML = '';
-        } else if (typeof htmlText === "string") {
-            element.innerHTML = htmlText;
-        }
-    };
-
-    BCSView.findViewById = function (id) {
-        var element = document.getElementById(id);
-        if (element) {
-            /* 已经自行使用component='xxx'指定类型 */
-            var Class = window[element.getAttribute(componentName)];
-            if (!Class) {
-                /*根据标签名创建相应类型的View*/
-                Class = window['BCS' + element.tagName.toFirstUpperCase()];
-            }
-            if (Class) {
-                return new Class(null, element);
-            } else {
-                if (element.tagName !== 'div') {
-                    console.log(id + ' is initialized as BCSView.');
-                }
-                return new BCSView(null, element);
-            }
-        } else {
-            return null;
-        }
-    };
-    /**
-     * 手势识别器已经识别出手势，执行状态已经改变的手势识别器进行识别。
-     * @param stateChangedRecognizers
-     */
-    prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
-        var gestureRecognizers = this.getGestureRecognizers();
-        if (stateChangedRecognizers.length > 0) {
-            /* 阻止识别器进行识别 */
-            for (var i = 0; i < stateChangedRecognizers.length; i++) {
-                switch (gestureRecognizers[i].state) {
-                    case BCSGestureRecognizerStateEnum.CHANGED:
-                    case BCSGestureRecognizerStateEnum.BEGAN:
-                    case BCSGestureRecognizerStateEnum.ENDED:
-                        for (var j = 0; j < gestureRecognizers.length; j++) {
-                            if (stateChangedRecognizers[j].state !== BCSGestureRecognizerStateEnum.FAILED && stateChangedRecognizers[i] !== stateChangedRecognizers[j] && stateChangedRecognizers[j].state !== BCSGestureRecognizerStateEnum.CANCELLED) {
-                                if (stateChangedRecognizers[i].hasDependent(gestureRecognizers[j])) {
-                                    stateChangedRecognizers[j].state = BCSGestureRecognizerStateEnum.FAILED;
-                                    stateChangedRecognizers.push(stateChangedRecognizers[j]);
-                                    continue;
-                                }
-                                if (!stateChangedRecognizers[i].canPrevent(gestureRecognizers[j]) || !gestureRecognizers[j].canBePrevented(stateChangedRecognizers[i])) {
-                                    continue;
-                                }
-                                if (!(stateChangedRecognizers[i].delegate && stateChangedRecognizers[i].delegate.shouldRecognizeSimultaneouslyWith && stateChangedRecognizers[i].delegate.shouldRecognizeSimultaneouslyWith(stateChangedRecognizers[i], gestureRecognizers[j])) && !(gestureRecognizers[j].delegate && gestureRecognizers[j].delegate.shouldRecognizeSimultaneouslyWith && gestureRecognizers[j].delegate.shouldRecognizeSimultaneouslyWith(gestureRecognizers[j], stateChangedRecognizers[i]))) {
-                                    gestureRecognizers[j].state = BCSGestureRecognizerStateEnum.FAILED;
-                                    stateChangedRecognizers.push(stateChangedRecognizers[j]);
-                                }
-                            }
+                    if (!Class) {
+                        /* 默认BCSView处理 */
+                        if (subElement.tagName !== 'div') {
+                            console.log(subElement.tagName + ' is initialized as BCSView.');
                         }
-                        break;
-                    default:
+                        Class = BCSView;
+                    }
+                    var view = new Class();
+                    subElement.setAttribute(componentName, Class.name); // jshint ignore:line
+                    view.setProtected('layer', subElement);
+                    viewMap.get(element).getProtected('subViews').push(view);
+                    viewMap.set(subElement, view);
+                    controllerClass = window[subElement.getAttribute(controllerComponentName)]; // jshint ignore:line
+                    if (controllerClass) {
+                        controllerMap.set(subElement, new controllerClass(view));
+                    }
                 }
             }
-            /*执行或者ignore touch*/
-            stateChangedRecognizers.forEach(function (recognizer) {
-                switch (recognizer.state) {
-                    case BCSGestureRecognizerStateEnum.BEGAN:
-                    case BCSGestureRecognizerStateEnum.CHANGED:
-                        recognizer.executeActions();
-                        break;
-                    case BCSGestureRecognizerStateEnum.ENDED:
-                        recognizer.executeActions();
-                        recognizer.ignoreAvailableTouches();
-                        break;
-                    case BCSGestureRecognizerStateEnum.FAILED:
-                    case BCSGestureRecognizerStateEnum.CANCELLED:
-                        recognizer.ignoreAvailableTouches();
-                        break;
-                    default:
-                }
-            });
-            stateChangedRecognizers.forEach(function (recognizer) {
-                if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
-                    recognizer.reset();
-                }
-            });
         }
+        this.findViewById = function (id) {
+            var e = document.getElementById(id);
+            return viewMap.get(e);
+        };
+        this.findControllerById = function (id) {
+            var e = document.getElementById(id);
+            return controllerMap.get(e);
+        };
+    }
+    BCSWindow.extend(BCSView);
+    BCSWindow.prototype.setRootViewController = function (controller) {
+        this.setProtected('rootViewController', controller);
+        this.getSubViews()[0].addSubView(controller.view);
     };
-    //BCSView恰好是BCS.js最后一个类,在此手动将module.exports复制到window上以便外部代码访问
-    Object.prototype.shallowCopy.call(window, module.exports);
     // Source: src/main/frontend/js/bcs/view/recognizer/BCSGestureRecognizer.js
     /**
      * Created by kenhuang on 2019/3/12.
@@ -3458,13 +3584,14 @@
         Function.requireArgumentType(target, 'object');
         Function.requireArgumentType(action, 'function');
         var propertiesMap = {
+            /*action,target*/
             actionMap: new Map(),
             view: null,
             /*手势识别器本次识别应该考虑的touch (identifier:touch),按照identifier排序*/
             availableTouches: {},
             dependentSet: new Set()
         };
-        this.enablePrivateProperty(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
         this.state = BCSGestureRecognizerStateEnum.POSSIBLE;
         this.delegate = null;
         this.isEnabled = true;
@@ -3480,20 +3607,20 @@
 
     var prototype = BCSGestureRecognizer.prototype;
     prototype.reset = function () {
-        this.setPrivate('availableTouches', {});
-        this.setPrivate('dependentSet', new Set());
+        this.setProtected('availableTouches', {});
+        this.setProtected('dependentSet', new Set());
     };
     //本识别器失败后，dependent才能继续识别
     prototype.addDependent = function (dependent) {
-        this.getPrivate('dependentSet').add(dependent);
+        this.getProtected('dependentSet').add(dependent);
     };
     prototype.hasDependent = function (dependent) {
-        return this.getPrivate('dependentSet').has(dependent);
+        return this.getProtected('dependentSet').has(dependent);
     };
 
     prototype.ignoreAvailableTouches = function () {
-        var availableTouches = this.getPrivate('availableTouches'),
-            event = this.getPrivate('event');
+        var availableTouches = this.getProtected('availableTouches'),
+            event = this.getProtected('event');
         for (var identifier in availableTouches) {
             if (availableTouches.hasOwnProperty(identifier)) {
                 this.ignore(availableTouches[identifier], event);
@@ -3502,26 +3629,26 @@
     };
 
     prototype.ignore = function (touch, event) {
-        delete this.getPrivate('availableTouches')[touch.identifier];
+        delete this.getProtected('availableTouches')[touch.identifier];
     };
 
     /* number of touches involved for which locations can be queried */
     prototype.getNumberOfTouches = function () {
-        return Object.keys(this.getPrivate('availableTouches')).length;
+        return Object.keys(this.getProtected('availableTouches')).length;
     };
 
     prototype.hasAvailableTouch = function (touch) {
-        return this.getPrivate('availableTouches').hasOwnProperty(touch.identifier);
+        return this.getProtected('availableTouches').hasOwnProperty(touch.identifier);
     };
 
     prototype.removeAvailableTouches = function (touches) {
-        var availableTouches = this.getPrivate('availableTouches');
+        var availableTouches = this.getProtected('availableTouches');
         if (touches) {
             for (var i = 0; i < touches.length; i++) {
                 delete availableTouches[touches[i].identifier];
             }
         } else {
-            this.setPrivate('availableTouches', {});
+            this.setProtected('availableTouches', {});
         }
     };
 
@@ -3531,7 +3658,7 @@
      * @returns {{}}
      */
     prototype.locate = function (view) {
-        var touches = this.getPrivate('availableTouches'),
+        var touches = this.getProtected('availableTouches'),
             length = Object.keys(touches).length;
         if (view && length > 0) {
             var averageX = 0,
@@ -3554,7 +3681,7 @@
      * @returns {{}}
      */
     prototype.locateTouch = function (index, view) {
-        var touches = this.getPrivate('availableTouches');
+        var touches = this.getProtected('availableTouches');
         if (view && index >= 0) {
             var key = Object.keys(touches)[index];
             if (key) {
@@ -3585,7 +3712,7 @@
         return false;
     };
     prototype.addTarget = function (target, action) {
-        var actionMap = this.getPrivate('availableTouches');
+        var actionMap = this.getProtected('actionMap');
         if (target && action) {
             Function.requireArgumentType(target, 'object');
             Function.requireArgumentType(action, 'function');
@@ -3594,7 +3721,7 @@
     };
 
     prototype.removeTarget = function (target, action) {
-        var actionMap = this.getPrivate('availableTouches');
+        var actionMap = this.getProtected('actionMap');
         if (action) {
             actionMap["delete"](action);
         } else if (target) {
@@ -3609,18 +3736,18 @@
     };
 
     prototype.getView = function () {
-        return this.getPrivate('view');
+        return this.getProtected('view');
     };
 
     prototype.executeActions = function () {
-        var actionMap = this.getPrivate('availableTouches');
+        var actionMap = this.getProtected('actionMap');
         actionMap.forEach(function (target, action) {
             action.call(target, this);
         }.bind(this));
     };
 
-    function refreshAvailableTouches(self, touches, isStrict) {
-        var availableTouches = this.getPrivate('availableTouches');
+    function refreshAvailableTouches(touches, isStrict) {
+        var availableTouches = this.getProtected('availableTouches');
         for (var i = 0; i < touches.length; i++) {
             if (isStrict) {
                 if (availableTouches.hasOwnProperty(touches[i].identifier)) {
@@ -3632,13 +3759,13 @@
         }
     }
     prototype.touchesBegan = function (touches, event) {
-        refreshAvailableTouches(this, touches);
+        refreshAvailableTouches.call(this, touches);
     };
     prototype.touchesMoved = function (touches, event) {
-        refreshAvailableTouches(this, touches, true);
+        refreshAvailableTouches.call(this, touches, true);
     };
     prototype.touchesEnded = function (touches, event) {
-        refreshAvailableTouches(this, touches, true);
+        refreshAvailableTouches.call(this, touches, true);
     };
 
     prototype.touchesCancelled = function (touches, event) {
@@ -3674,13 +3801,13 @@
             isAvailableTouchesRemovable: false,
             timer: undefined
         };
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
     }
 
     BCSLongPressGestureRecognizer.extend(BCSGestureRecognizer);
     var prototype = BCSLongPressGestureRecognizer.prototype;
     prototype.getNumberOfTouches = function () {
-        return BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired && this.getPrivate('numberOfContinualTaps') === this.numberOfTapsRequired ? this.numberOfTouchesRequired : 0;
+        return BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired && this.getProtected('numberOfContinualTaps') === this.numberOfTapsRequired ? this.numberOfTouchesRequired : 0;
     };
 
     prototype.locate = function (view) {
@@ -3700,13 +3827,13 @@
     };
     prototype.reset = function () {
         BCSGestureRecognizer.prototype.reset.call(this);
-        this.setPrivate('numberOfContinualTaps', 0);
-        this.setPrivate('initTapStartLocation', new BCSPoint());
-        this.setPrivate('currentTouchBeganTimeStamp', 0);
-        this.setPrivate('numberOfOffTouches', 0);
-        this.setPrivate('isAvailableTouchesRemovable', false);
-        clearTimeout(this.getPrivate('timer'));
-        this.setPrivate('timer', undefined);
+        this.setProtected('numberOfContinualTaps', 0);
+        this.setProtected('initTapStartLocation', new BCSPoint());
+        this.setProtected('currentTouchBeganTimeStamp', 0);
+        this.setProtected('numberOfOffTouches', 0);
+        this.setProtected('isAvailableTouchesRemovable', false);
+        clearTimeout(this.getProtected('timer'));
+        this.setProtected('timer', undefined);
     };
 
     prototype.shouldRequireFailureOf = function (otherGestureRecognizer) {
@@ -3724,7 +3851,7 @@
     };
 
     function startTimer(self, interval) {
-        self.setPrivate('timer', setTimeout(function () {
+        self.setProtected('timer', setTimeout(function () {
             if (self.state !== BCSGestureRecognizerStateEnum.FAILED) {
                 self.state = BCSGestureRecognizerStateEnum.FAILED;
                 self.ignoreAvailableTouches();
@@ -3743,41 +3870,41 @@
             if (touches.length + BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) <= this.numberOfTouchesRequired) {
                 if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === 0) {
                     /*停止连续敲击倒计时并开始新一轮敲击计时*/
-                    this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
-                    this.setPrivate('currentTouchBeganTimeStamp', event.timeStamp);
-                    this.setPrivate('isAvailableTouchesRemovable', false);
+                    this.setProtected('timer', clearTimeout(this.setProtected('timer')));
+                    this.setProtected('currentTouchBeganTimeStamp', event.timeStamp);
+                    this.setProtected('isAvailableTouchesRemovable', false);
                     this.state = BCSGestureRecognizerStateEnum.POSSIBLE;
-                    if (this.getPrivate('numberOfContinualTaps') < this.numberOfTapsRequired) {
+                    if (this.getProtected('numberOfContinualTaps') < this.numberOfTapsRequired) {
                         startTimer(this, defaults.onInterval);
                     }
                 }
                 BCSGestureRecognizer.prototype.touchesBegan.call(this, touches, event);
                 if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired) {
-                    if (this.getPrivate('numberOfContinualTaps') < this.numberOfTapsRequired) {
-                        if (this.getPrivate('numberOfContinualTaps') === 0) {
-                            this.setPrivate('initTapStartLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
+                    if (this.getProtected('numberOfContinualTaps') < this.numberOfTapsRequired) {
+                        if (this.getProtected('numberOfContinualTaps') === 0) {
+                            this.setProtected('initTapStartLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
                         } else {
                             /* 检查本次触点和第一次触点距离是否过大*/
-                            if (this.getPrivate('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window)) > defaults.offsetThreshold) {
-                                this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
+                            if (this.getProtected('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window)) > defaults.offsetThreshold) {
+                                this.setProtected('timer', clearTimeout(this.setProtected('timer')));
                                 this.state = BCSGestureRecognizerStateEnum.FAILED;
                                 return;
                             }
                         }
-                        this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
-                        startTimer(this, defaults.onInterval * 2 - event.timeStamp + this.getPrivate('currentTouchBeganTimeStamp'));
+                        this.setProtected('timer', clearTimeout(this.setProtected('timer')));
+                        startTimer(this, defaults.onInterval * 2 - event.timeStamp + this.getProtected('currentTouchBeganTimeStamp'));
                     } else {
                         /*开始长按*/
-                        this.setPrivate('currentTouchBeganTimeStamp', event.timeStamp);
-                        this.setPrivate('initTapStartLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
-                        this.setPrivate('timer', setTimeout(function () {
+                        this.setProtected('currentTouchBeganTimeStamp', event.timeStamp);
+                        this.setProtected('initTapStartLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
+                        this.setProtected('timer', setTimeout(function () {
                             this.state = BCSGestureRecognizerStateEnum.BEGAN;
                             this.getView().executeStateChangedRecognizers([this]);
                         }.bind(this), this.minimumPressDuration * 1000));
                     }
                 }
             } else {
-                this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
+                this.setProtected('timer', clearTimeout(this.setProtected('timer')));
                 this.state = BCSGestureRecognizerStateEnum.FAILED;
             }
         } else {
@@ -3789,15 +3916,15 @@
 
     prototype.touchesMoved = function (touches, event) {
         if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired) {
-            if (this.getPrivate('numberOfContinualTaps') < this.numberOfTapsRequired) {
-                if (event.targetTouches.length < this.numberOfTouchesRequired || this.getPrivate('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window)) > defaults.offsetThreshold) {
-                    this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
+            if (this.getProtected('numberOfContinualTaps') < this.numberOfTapsRequired) {
+                if (event.targetTouches.length < this.numberOfTouchesRequired || this.getProtected('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window)) > defaults.offsetThreshold) {
+                    this.setProtected('timer', clearTimeout(this.setProtected('timer')));
                     this.state = BCSGestureRecognizerStateEnum.FAILED;
                 }
             } else {
                 /*长按移动*/
-                if (BCSGestureRecognizer.prototype.locate.call(this, this.getView().window).distanceFrom(this.getPrivate('initTapStartLocation')) > this.allowableMovement) {
-                    this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
+                if (BCSGestureRecognizer.prototype.locate.call(this, this.getView().window).distanceFrom(this.getProtected('initTapStartLocation')) > this.allowableMovement) {
+                    this.setProtected('timer', clearTimeout(this.setProtected('timer')));
                     this.state = BCSGestureRecognizerStateEnum.FAILED;
                 } else {
                     if (this.state === BCSGestureRecognizerStateEnum.BEGAN) {
@@ -3810,10 +3937,10 @@
 
     prototype.touchesEnded = function (touches, event) {
         if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired) {
-            if (this.getPrivate('numberOfContinualTaps') === this.numberOfTapsRequired) {
+            if (this.getProtected('numberOfContinualTaps') === this.numberOfTapsRequired) {
                 /*长按未完成，则报错*/
                 if (this.state !== BCSGestureRecognizerStateEnum.BEGAN && this.state !== BCSGestureRecognizerStateEnum.CHANGED || this.delegate && this.delegate.shouldBegin && !this.delegate.shouldBegin()) {
-                    this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
+                    this.setProtected('timer', clearTimeout(this.setProtected('timer')));
                     this.state = BCSGestureRecognizerStateEnum.FAILED;
                 } else {
                     this.state = BCSGestureRecognizerStateEnum.ENDED;
@@ -3822,28 +3949,28 @@
                 /* 手指可能先后离开屏幕,从而触发多次touchesEnded */
                 for (var i = 0; i < touches.length; i++) {
                     if (this.hasAvailableTouch(touches[i])) {
-                        if (this.getPrivate('numberOfOffTouches') + 1 === this.numberOfTouchesRequired) {
+                        if (this.getProtected('numberOfOffTouches') + 1 === this.numberOfTouchesRequired) {
                             /*本轮结束，停止计时*/
-                            this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
-                            this.setPrivate('numberOfContinualTaps', this.getPrivate('numberOfContinualTaps') + 1);
+                            this.setProtected('timer', clearTimeout(this.setProtected('timer')));
+                            this.setProtected('numberOfContinualTaps', this.getProtected('numberOfContinualTaps') + 1);
                             /*连续敲击倒计时*/
                             startTimer(this, defaults.offInterval);
-                            this.setPrivate('isAvailableTouchesRemovable', true);
+                            this.setProtected('isAvailableTouchesRemovable', true);
                         } else {
-                            this.setPrivate('numberOfOffTouches', this.getPrivate('numberOfOffTouches') + 1);
+                            this.setProtected('numberOfOffTouches', this.getProtected('numberOfOffTouches') + 1);
                         }
                     }
                 }
             }
         } else {
-            this.setPrivate('timer', clearTimeout(this.setPrivate('timer')));
+            this.setProtected('timer', clearTimeout(this.setProtected('timer')));
             this.state = BCSGestureRecognizerStateEnum.FAILED;
         }
     };
 
     prototype.removeAvailableTouches = function (touches) {
-        if (this.getPrivate('isAvailableTouchesRemovable')) {
-            this.setPrivate('numberOfOffTouches', 0);
+        if (this.getProtected('isAvailableTouchesRemovable')) {
+            this.setProtected('numberOfOffTouches', 0);
             BCSGestureRecognizer.prototype.removeAvailableTouches.call(this);
         }
     };
@@ -3866,7 +3993,7 @@
             translation: new BCSPoint(0, 0),
             velocity: new BCSPoint(0, 0)
         };
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
     }
 
     BCSPanGestureRecognizer.extend(BCSGestureRecognizer);
@@ -3894,11 +4021,11 @@
     };
     prototype.reset = function () {
         BCSGestureRecognizer.prototype.reset.call(this);
-        this.setPrivate('initLocation', null);
-        this.setPrivate('panLocation', null);
-        this.setPrivate('lastTimestamp', 0);
-        this.setPrivate('translation', new BCSPoint(0, 0));
-        this.setPrivate('velocity', new BCSPoint(0, 0));
+        this.setProtected('initLocation', null);
+        this.setProtected('panLocation', null);
+        this.setProtected('lastTimestamp', 0);
+        this.setProtected('translation', new BCSPoint(0, 0));
+        this.setProtected('velocity', new BCSPoint(0, 0));
     };
 
     prototype.shouldRequireFailureOf = function (otherGestureRecognizer) {
@@ -3931,21 +4058,21 @@
             if (number > this.maximumNumberOfTouches) {
                 this.state = BCSGestureRecognizerStateEnum.FAILED;
             } else if (number >= this.minimumNumberOfTouches) {
-                this.setPrivate('initLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
-                this.setPrivate('lastTimestamp', event.timeStamp);
+                this.setProtected('initLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
+                this.setProtected('lastTimestamp', event.timeStamp);
             }
         }
     };
 
     function setTranslation(self, event, location) {
-        var duration = (event.timeStamp - self.getPrivate('lastTimestamp')) / 1000,
-            deltaX = location.x - self.getPrivate('panLocation').x,
-            deltaY = location.y - self.getPrivate('panLocation').y,
-            translation = self.getPrivate('translation');
-        self.setPrivate('translation', new BCSPoint(translation.x + deltaX, translation.y + deltaY));
-        self.setPrivate('velocity', new BCSPoint(deltaX / duration, deltaY / duration));
-        self.setPrivate('panLocation', location);
-        self.setPrivate('lastTimestamp', event.timeStamp);
+        var duration = (event.timeStamp - self.getProtected('lastTimestamp')) / 1000,
+            deltaX = location.x - self.getProtected('panLocation').x,
+            deltaY = location.y - self.getProtected('panLocation').y,
+            translation = self.getProtected('translation');
+        self.setProtected('translation', new BCSPoint(translation.x + deltaX, translation.y + deltaY));
+        self.setProtected('velocity', new BCSPoint(deltaX / duration, deltaY / duration));
+        self.setProtected('panLocation', location);
+        self.setProtected('lastTimestamp', event.timeStamp);
     }
 
     prototype.touchesMoved = function (touches, event) {
@@ -3955,22 +4082,22 @@
         switch (this.state) {
             case BCSGestureRecognizerStateEnum.POSSIBLE:
                 if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) >= this.minimumNumberOfTouches) {
-                    delta = location.x - this.getPrivate('initLocation').x;
+                    delta = location.x - this.getProtected('initLocation').x;
                     if (Math.abs(delta) >= defaults.panMinOffset) {
                         if (delta < 0) {
-                            this.setPrivate('panLocation', new BCSPoint(this.getPrivate('initLocation').x - defaults.panMinOffset, location.y));
+                            this.setProtected('panLocation', new BCSPoint(this.getProtected('initLocation').x - defaults.panMinOffset, location.y));
                         } else {
-                            this.setPrivate('panLocation', new BCSPoint(this.getPrivate('initLocation').x + defaults.panMinOffset, location.y));
+                            this.setProtected('panLocation', new BCSPoint(this.getProtected('initLocation').x + defaults.panMinOffset, location.y));
                         }
                         this.state = BCSGestureRecognizerStateEnum.BEGAN;
                         setTranslation();
                     }
-                    delta = location.y - this.getPrivate('initLocation').y;
+                    delta = location.y - this.getProtected('initLocation').y;
                     if (Math.abs(delta) >= defaults.panMinOffset) {
                         if (delta < 0) {
-                            this.setPrivate('panLocation', new BCSPoint(location.x, this.getPrivate('initLocation').y - defaults.panMinOffset));
+                            this.setProtected('panLocation', new BCSPoint(location.x, this.getProtected('initLocation').y - defaults.panMinOffset));
                         } else {
-                            this.setPrivate('panLocation', new BCSPoint(location.x, this.getPrivate('initLocation').y + defaults.panMinOffset));
+                            this.setProtected('panLocation', new BCSPoint(location.x, this.getProtected('initLocation').y + defaults.panMinOffset));
                         }
                         this.state = BCSGestureRecognizerStateEnum.BEGAN;
                         setTranslation();
@@ -4005,15 +4132,15 @@
     };
 
     prototype.translation = function (view) {
-        return this.getPrivate('translation');
+        return this.getProtected('translation');
     };
 
     prototype.setTranslation = function (translation, view) {
-        this.setPrivate('translation', translation);
+        this.setProtected('translation', translation);
     };
 
     prototype.velocity = function (view) {
-        return this.getPrivate('velocity');
+        return this.getProtected('velocity');
     };
     // Source: src/main/frontend/js/bcs/view/recognizer/BCSPinchGestureRecognizer.js
     /**
@@ -4036,7 +4163,7 @@
             scaleDistance: 0,
             lastTimestamp: 0
         };
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
     }
 
     var pinchGestureRecognizerMap = {};
@@ -4063,11 +4190,11 @@
     };
     prototype.reset = function () {
         BCSGestureRecognizer.prototype.reset.call(this);
-        this.setPrivate('scale', 1);
-        this.setPrivate('velocity', 0);
-        this.setPrivate('initDistance', 0);
-        this.setPrivate('scaleDistance', 0);
-        this.setPrivate('lastTimestamp', 0);
+        this.setProtected('scale', 1);
+        this.setProtected('velocity', 0);
+        this.setProtected('initDistance', 0);
+        this.setProtected('scaleDistance', 0);
+        this.setProtected('lastTimestamp', 0);
     };
 
     prototype.getScale = function () {
@@ -4099,9 +4226,9 @@
             touchesNeeded.push(touches[i]);
         }
         BCSGestureRecognizer.prototype.touchesBegan.call(this, touchesNeeded, event);
-        if (this.getPrivate('lastTimestamp') === 0 && BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === NUMBER_OF_TOUCHES_REQUIRED) {
-            this.setPrivate('initDistance', BCSGestureRecognizer.prototype.locateTouch.call(this, 0, this.getView().window).distanceFrom(BCSGestureRecognizer.prototype.locateTouch.call(this, 1, this.getView().window)));
-            this.setPrivate('lastTimestamp', event.timeStamp);
+        if (this.getProtected('lastTimestamp') === 0 && BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === NUMBER_OF_TOUCHES_REQUIRED) {
+            this.setProtected('initDistance', BCSGestureRecognizer.prototype.locateTouch.call(this, 0, this.getView().window).distanceFrom(BCSGestureRecognizer.prototype.locateTouch.call(this, 1, this.getView().window)));
+            this.setProtected('lastTimestamp', event.timeStamp);
         }
         if (this.state !== BCSGestureRecognizerStateEnum.BEGAN && this.state !== BCSGestureRecognizerStateEnum.CHANGED) {
             this.state = BCSGestureRecognizerStateEnum.POSSIBLE;
@@ -4112,14 +4239,14 @@
     };
     function calculateScaleVelocity(self) {
         var distanceAfterUpdate = 0;
-        var scale = distanceAfterUpdate / self.getPrivate('scaleDistance');
-        var duration = event.timeStamp - self.getPrivate('lastTimestamp');
+        var scale = distanceAfterUpdate / self.getProtected('scaleDistance');
+        var duration = event.timeStamp - self.getProtected('lastTimestamp');
         if (duration !== 0) {
             //todo 不知道为何会出现duration = 0
-            self.setPrivate('velocity', (scale - self.getPrivate('scale')) / duration * 1000);
+            self.setProtected('velocity', (scale - self.getProtected('scale')) / duration * 1000);
         }
-        self.setPrivate('lastTimestamp', event.timeStamp);
-        self.setPrivate('scale', scale);
+        self.setProtected('lastTimestamp', event.timeStamp);
+        self.setProtected('scale', scale);
     }
     //抬起后scale和velocity保持不变，可以抬起一根手指后重新按下与另一根手指重新形成新手势
     prototype.touchesMoved = function (touches, event) {
@@ -4129,9 +4256,9 @@
             distanceAfterUpdate = BCSGestureRecognizer.prototype.locateTouch.call(this, 0, this.getView().window).distanceFrom(BCSGestureRecognizer.prototype.locateTouch.call(this, 1, this.getView().window));
             switch (this.state) {
                 case BCSGestureRecognizerStateEnum.POSSIBLE:
-                    var delta = distanceAfterUpdate - this.getPrivate('initDistance');
+                    var delta = distanceAfterUpdate - this.getProtected('initDistance');
                     if (Math.abs(delta) >= defaults.pinchMinOffset) {
-                        this.setPrivate('scaleDistance', this.getPrivate('initDistance') + delta / Math.abs(delta) * defaults.pinchMinOffset);
+                        this.setProtected('scaleDistance', this.getProtected('initDistance') + delta / Math.abs(delta) * defaults.pinchMinOffset);
                         this.state = BCSGestureRecognizerStateEnum.BEGAN;
                         calculateScaleVelocity(this);
                     }
@@ -4183,7 +4310,7 @@
             lastVector: 0,
             lastTimestamp: 0
         };
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
     }
 
     var rotationGestureRecognizerMap = {};
@@ -4210,11 +4337,11 @@
     };
     prototype.reset = function () {
         BCSGestureRecognizer.prototype.reset.call(this);
-        this.setPrivate('rotation', 0);
-        this.setPrivate('velocity', 0);
-        this.setPrivate('initVector', null);
-        this.setPrivate('rotateAngle', 0);
-        this.setPrivate('lastTimestamp', 0);
+        this.setProtected('rotation', 0);
+        this.setProtected('velocity', 0);
+        this.setProtected('initVector', null);
+        this.setProtected('rotateAngle', 0);
+        this.setProtected('lastTimestamp', 0);
     };
 
     prototype.getRotation = function () {
@@ -4245,9 +4372,9 @@
             touchesNeeded.push(touches[i]);
         }
         BCSGestureRecognizer.prototype.touchesBegan.call(this, touchesNeeded, event);
-        if (!this.getPrivate('initVector') && BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === NUMBER_OF_TOUCHES_REQUIRED) {
-            this.setPrivate('initVector', new BCSVector1(BCSGestureRecognizer.prototype.locateTouch.call(this, 0, this.getView().window), BCSGestureRecognizer.prototype.locateTouch.call(this, 1, this.getView().window)));
-            this.setPrivate('lastTimestamp', event.timeStamp);
+        if (!this.getProtected('initVector') && BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === NUMBER_OF_TOUCHES_REQUIRED) {
+            this.setProtected('initVector', new BCSVector1(BCSGestureRecognizer.prototype.locateTouch.call(this, 0, this.getView().window), BCSGestureRecognizer.prototype.locateTouch.call(this, 1, this.getView().window)));
+            this.setProtected('lastTimestamp', event.timeStamp);
         }
         if (this.state !== BCSGestureRecognizerStateEnum.BEGAN && this.state !== BCSGestureRecognizerStateEnum.CHANGED) {
             this.state = BCSGestureRecognizerStateEnum.POSSIBLE;
@@ -4257,16 +4384,16 @@
         }
     };
     function calculateRotationVelocity(self) {
-        var vectorAfterUpdate = self.getPrivate('lastVector');
-        var delta = vectorAfterUpdate.intersectionAngleWith(self.getPrivate('lastVector'));
-        self.setPrivate('rotation', self.getPrivate('rotation') + delta);
-        var duration = event.timeStamp - self.getPrivate('lastTimestamp');
+        var vectorAfterUpdate = self.getProtected('lastVector');
+        var delta = vectorAfterUpdate.intersectionAngleWith(self.getProtected('lastVector'));
+        self.setProtected('rotation', self.getProtected('rotation') + delta);
+        var duration = event.timeStamp - self.getProtected('lastTimestamp');
         if (duration > 0) {
             //todo 不知道为何会出现duration = 0
-            self.setPrivate('velocity', delta / duration * 1000);
+            self.setProtected('velocity', delta / duration * 1000);
         }
-        self.setPrivate('lastTimestamp', event.timeStamp);
-        self.setPrivate('lastVector', vectorAfterUpdate);
+        self.setProtected('lastTimestamp', event.timeStamp);
+        self.setProtected('lastVector', vectorAfterUpdate);
     }
     //抬起后rotation和velocity保持不变，可以抬起一根手指后重新按下与另一根手指重新形成新手势
     prototype.touchesMoved = function (touches, event) {
@@ -4276,20 +4403,20 @@
             vectorAfterUpdate = new BCSVector1(BCSGestureRecognizer.prototype.locateTouch.call(this, 0, this.getView().window), BCSGestureRecognizer.prototype.locateTouch.call(this, 1, this.getView().window));
             switch (this.state) {
                 case BCSGestureRecognizerStateEnum.POSSIBLE:
-                    delta = vectorAfterUpdate.intersectionAngleWith(this.getPrivate('initVector'));
+                    delta = vectorAfterUpdate.intersectionAngleWith(this.getProtected('initVector'));
                     if (Math.abs(delta) >= defaults.rotationMinAngle) {
                         this.state = BCSGestureRecognizerStateEnum.BEGAN;
                         if (delta < 0) {
-                            this.setPrivate('rotation', delta + defaults.rotationMinAngle);
+                            this.setProtected('rotation', delta + defaults.rotationMinAngle);
                         } else {
-                            this.setPrivate('rotation', delta - defaults.rotationMinAngle);
+                            this.setProtected('rotation', delta - defaults.rotationMinAngle);
                         }
-                        duration = event.timeStamp - this.getPrivate('lastTimestamp');
+                        duration = event.timeStamp - this.getProtected('lastTimestamp');
                         if (duration !== 0) {
-                            this.setPrivate('velocity', this.getPrivate('rotation') / duration * 1000);
+                            this.setProtected('velocity', this.getProtected('rotation') / duration * 1000);
                         }
-                        this.setPrivate('lastTimestamp', event.timeStamp);
-                        this.setPrivate('lastVector', vectorAfterUpdate);
+                        this.setProtected('lastTimestamp', event.timeStamp);
+                        this.setProtected('lastVector', vectorAfterUpdate);
                     }
                     break;
                 case BCSGestureRecognizerStateEnum.BEGAN:
@@ -4342,7 +4469,7 @@
             /*满足开始触发swipe条件时touch成员*/
             previousTouches: {}
         };
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
     }
 
     var swipeGestureRecognizerMap = {};
@@ -4350,13 +4477,13 @@
     var prototype = BCSSwipeGestureRecognizer.prototype;
     prototype.reset = function () {
         BCSGestureRecognizer.prototype.reset.call(this);
-        this.setPrivate('swipeStartPoint', null);
-        this.setPrivate('swipeStartTimeStamp', 0);
+        this.setProtected('swipeStartPoint', null);
+        this.setProtected('swipeStartTimeStamp', 0);
         /*满足开始触发swipe条件时touch成员*/
-        this.setPrivate('swipeNumberOfTouches', 0);
-        this.setPrivate('previousTouches', {});
-        this.setPrivate('newTotalX', 0);
-        this.setPrivate('newTotalY', 0);
+        this.setProtected('swipeNumberOfTouches', 0);
+        this.setProtected('previousTouches', {});
+        this.setProtected('newTotalX', 0);
+        this.setProtected('newTotalY', 0);
     };
 
     prototype.getNumberOfTouches = function () {
@@ -4405,22 +4532,22 @@
         this.state = BCSGestureRecognizerStateEnum.POSSIBLE;
         if (numberOfAllTouches <= this.numberOfTouchesRequired) {
             for (var i = 0; i < touches.length; i++) {
-                this.getPrivate('previousTouches')[touches[i].identifier] = touches[i];
+                this.getProtected('previousTouches')[touches[i].identifier] = touches[i];
             }
-            this.setPrivate('swipeStartTimeStamp', event.timeStamp);
-            this.setPrivate('swipeStartPoint', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
-            this.setPrivate('swipeNumberOfTouches', this.getPrivate('swipeNumberOfTouches') + touches.length);
+            this.setProtected('swipeStartTimeStamp', event.timeStamp);
+            this.setProtected('swipeStartPoint', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
+            this.setProtected('swipeNumberOfTouches', this.getProtected('swipeNumberOfTouches') + touches.length);
         }
     };
 
     function refreshStatus(self, touch) {
-        var newTotalX = self.getPrivate('newTotalX'),
-            newTotalY = self.getPrivate('newTotalY');
-        newTotalX += touch.pageX - self.getPrivate('previousTouches')[touch.identifier].pageX;
-        newTotalY += touch.pageY - self.getPrivate('previousTouches')[touch.identifier].pageY;
-        self.setPrivate('newTotalX', newTotalX);
-        self.setPrivate('newTotalY', newTotalY);
-        self.getPrivate('previousTouches')[touch.identifier] = touch;
+        var newTotalX = self.getProtected('newTotalX'),
+            newTotalY = self.getProtected('newTotalY');
+        newTotalX += touch.pageX - self.getProtected('previousTouches')[touch.identifier].pageX;
+        newTotalY += touch.pageY - self.getProtected('previousTouches')[touch.identifier].pageY;
+        self.setProtected('newTotalX', newTotalX);
+        self.setProtected('newTotalY', newTotalY);
+        self.getProtected('previousTouches')[touch.identifier] = touch;
     }
 
     prototype.touchesMoved = function (touches, event) {
@@ -4430,13 +4557,13 @@
          * 2.可能还计算移动速率，觉得复杂，没有实现
          */
         if (touches.length <= this.getNumberOfTouches()) {
-            if (event.timeStamp - this.getPrivate('swipeStartTimeStamp') <= defaults.swipeMaxDuration) {
+            if (event.timeStamp - this.getProtected('swipeStartTimeStamp') <= defaults.swipeMaxDuration) {
                 var touch, previousTouch;
                 switch (this.direction) {
                     case BCSSwipeGestureRecognizerDirectionEnum.RIGHT:
                         for (i = 0; i < touches.length; i++) {
                             touch = touches[i];
-                            previousTouch = this.getPrivate('previousTouches')[touch.identifier];
+                            previousTouch = this.getProtected('previousTouches')[touch.identifier];
                             if (previousTouch) {
                                 if (touch.pageX - previousTouch.pageX <= 0) {
                                     this.state = BCSGestureRecognizerStateEnum.FAILED;
@@ -4450,7 +4577,7 @@
                     case BCSSwipeGestureRecognizerDirectionEnum.LEFT:
                         for (i = 0; i < touches.length; i++) {
                             touch = touches[i];
-                            previousTouch = this.getPrivate('previousTouches')[touch.identifier];
+                            previousTouch = this.getProtected('previousTouches')[touch.identifier];
                             if (previousTouch) {
                                 if (touch.pageX - previousTouch.pageX >= 0) {
                                     this.state = BCSGestureRecognizerStateEnum.FAILED;
@@ -4464,7 +4591,7 @@
                     case BCSSwipeGestureRecognizerDirectionEnum.UP:
                         for (i = 0; i < touches.length; i++) {
                             touch = touches[i];
-                            previousTouch = this.getPrivate('previousTouches')[touch.identifier];
+                            previousTouch = this.getProtected('previousTouches')[touch.identifier];
                             if (previousTouch) {
                                 if (touch.pageY - previousTouch.pageY >= 0) {
                                     this.state = BCSGestureRecognizerStateEnum.FAILED;
@@ -4478,7 +4605,7 @@
                     case BCSSwipeGestureRecognizerDirectionEnum.DOWN:
                         for (i = 0; i < touches.length; i++) {
                             touch = touches[i];
-                            previousTouch = this.getPrivate('previousTouches')[touch.identifier];
+                            previousTouch = this.getProtected('previousTouches')[touch.identifier];
                             if (previousTouch) {
                                 if (touch.pageY - previousTouch.pageY <= 0) {
                                     this.state = BCSGestureRecognizerStateEnum.FAILED;
@@ -4491,7 +4618,7 @@
                         break;
                     default:
                 }
-                if (this.getNumberOfTouches() === this.numberOfTouchesRequired && this.getPrivate('swipeStartPoint').distanceFrom(new BCSPoint(this.getPrivate('newTotalX') / numberOfTouches, this.getPrivate('newTotalY') / numberOfTouches)) >= defaults.swipeOffsetThreshold) {
+                if (this.getNumberOfTouches() === this.numberOfTouchesRequired && this.getProtected('swipeStartPoint').distanceFrom(new BCSPoint(this.getProtected('newTotalX') / numberOfTouches, this.getProtected('newTotalY') / numberOfTouches)) >= defaults.swipeOffsetThreshold) {
                     this.state = BCSGestureRecognizerStateEnum.ENDED;
                 }
                 BCSGestureRecognizer.prototype.touchesMoved.call(this, touches, event);
@@ -4526,7 +4653,7 @@
             isAvailableTouchesRemovable: false,
             timer: undefined
         };
-        this.initProperties(propertiesMap);
+        this.enableProtectedProperty(propertiesMap);
         this.numberOfTapsRequired = 1;
         this.numberOfTouchesRequired = 1;
     }
@@ -4538,7 +4665,7 @@
     };
 
     prototype.locate = function (view) {
-        var location = this.getPrivate('initTapStartLocation');
+        var location = this.getProtected('initTapStartLocation');
         return new BCSPoint(location.x - view.getStyle('left'), location.y - view.getStyle('top'));
     };
     prototype.locateTouch = function (index, view) {
@@ -4551,12 +4678,12 @@
 
     prototype.reset = function () {
         BCSGestureRecognizer.prototype.reset.call(this);
-        this.setPrivate('numberOfContinualTaps', 0);
-        this.setPrivate('initTapStartLocation', new BCSPoint());
-        this.setPrivate('currentTouchBeganTimeStamp', 0);
-        this.setPrivate('numberOfOffTouches', 0);
-        clearTimeout(this.getPrivate('timer'));
-        this.setPrivate('timer', undefined);
+        this.setProtected('numberOfContinualTaps', 0);
+        this.setProtected('initTapStartLocation', new BCSPoint());
+        this.setProtected('currentTouchBeganTimeStamp', 0);
+        this.setProtected('numberOfOffTouches', 0);
+        clearTimeout(this.getProtected('timer'));
+        this.setProtected('timer', undefined);
     };
 
     prototype.shouldRequireFailureOf = function (otherGestureRecognizer) {
@@ -4574,7 +4701,7 @@
     };
 
     function startTimer(self, interval) {
-        self.setPrivate('timer', setTimeout(function () {
+        self.setProtected('timer', setTimeout(function () {
             if (self.state !== BCSGestureRecognizerStateEnum.FAILED) {
                 self.state = BCSGestureRecognizerStateEnum.FAILED;
                 self.ignoreAvailableTouches();
@@ -4593,37 +4720,37 @@
         if (touches.length + BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) <= this.numberOfTouchesRequired) {
             if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === 0) {
                 /*停止连续敲击倒计时并开始新一轮敲击计时*/
-                clearTimeout(this.getPrivate('timer'));
-                this.setPrivate('timer', undefined);
-                this.setPrivate('currentTouchBeganTimeStamp', event.timeStamp);
-                this.setPrivate('isAvailableTouchesRemovable', false);
+                clearTimeout(this.getProtected('timer'));
+                this.setProtected('timer', undefined);
+                this.setProtected('currentTouchBeganTimeStamp', event.timeStamp);
+                this.setProtected('isAvailableTouchesRemovable', false);
                 startTimer(this, defaults.onInterval);
                 this.state = BCSGestureRecognizerStateEnum.POSSIBLE;
             }
             BCSGestureRecognizer.prototype.touchesBegan.call(this, touches, event);
             if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired) {
-                if (this.getPrivate('numberOfContinualTaps') === 0) {
-                    this.setPrivate('initTapStartLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
+                if (this.getProtected('numberOfContinualTaps') === 0) {
+                    this.setProtected('initTapStartLocation', BCSGestureRecognizer.prototype.locate.call(this, this.getView().window));
                 } else {
                     /* 检查本次触点和第一次触点距离是否过大*/
-                    if (this.getPrivate('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window)) > defaults.offsetThreshold) {
-                        this.setPrivate('timer', clearTimeout(this.getPrivate('timer')));
+                    if (this.getProtected('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window)) > defaults.offsetThreshold) {
+                        this.setProtected('timer', clearTimeout(this.getProtected('timer')));
                         this.state = BCSGestureRecognizerStateEnum.FAILED;
                         return;
                     }
                 }
-                this.setPrivate('timer', clearTimeout(this.getPrivate('timer')));
-                startTimer(this, defaults.onInterval * 2 - event.timeStamp + this.getPrivate('currentTouchBeganTimeStamp'));
+                this.setProtected('timer', clearTimeout(this.getProtected('timer')));
+                startTimer(this, defaults.onInterval * 2 - event.timeStamp + this.getProtected('currentTouchBeganTimeStamp'));
             }
         } else {
-            this.setPrivate('timer', clearTimeout(this.getPrivate('timer')));
+            this.setProtected('timer', clearTimeout(this.getProtected('timer')));
             this.state = BCSGestureRecognizerStateEnum.FAILED;
         }
     };
 
     prototype.touchesMoved = function (touches, event) {
-        if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired && (event.targetTouches.length < this.numberOfTouchesRequired || this.getPrivate('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window))) > defaults.offsetThreshold) {
-            this.setPrivate('timer', clearTimeout(this.getPrivate('timer')));
+        if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === this.numberOfTouchesRequired && (event.targetTouches.length < this.numberOfTouchesRequired || this.getProtected('initTapStartLocation').distanceFrom(BCSGestureRecognizer.prototype.locate.call(this, this.getView().window))) > defaults.offsetThreshold) {
+            this.setProtected('timer', clearTimeout(this.getProtected('timer')));
             this.state = BCSGestureRecognizerStateEnum.FAILED;
         }
     };
@@ -4633,11 +4760,11 @@
             /* 手指可能先后离开屏幕,从而触发多次touchesEnded */
             for (var i = 0; i < touches.length; i++) {
                 if (this.hasAvailableTouch(touches[i])) {
-                    if (this.getPrivate('numberOfOffTouches') + 1 === this.numberOfTouchesRequired) {
+                    if (this.getProtected('numberOfOffTouches') + 1 === this.numberOfTouchesRequired) {
                         /*本轮结束，停止计时*/
-                        this.setPrivate('timer', clearTimeout(this.getPrivate('timer')));
-                        var numberOfContinualTaps = this.getPrivate('numberOfContinualTaps');
-                        this.setPrivate('numberOfContinualTaps', ++numberOfContinualTaps);
+                        this.setProtected('timer', clearTimeout(this.getProtected('timer')));
+                        var numberOfContinualTaps = this.getProtected('numberOfContinualTaps');
+                        this.setProtected('numberOfContinualTaps', ++numberOfContinualTaps);
                         if (numberOfContinualTaps === this.numberOfTapsRequired) {
                             if (this.delegate && this.delegate.shouldBegin && !this.delegate.shouldBegin()) {
                                 this.state = BCSGestureRecognizerStateEnum.FAILED;
@@ -4647,23 +4774,23 @@
                         } else {
                             /*连续敲击倒计时*/
                             startTimer(this, defaults.offInterval);
-                            this.getPrivate('isAvailableTouchesRemovable', true);
+                            this.setProtected('isAvailableTouchesRemovable', true);
                         }
                     } else {
-                        var numberOfOffTouches = this.getPrivate('numberOfOffTouches');
-                        this.setPrivate('numberOfOffTouches', ++numberOfOffTouches);
+                        var numberOfOffTouches = this.getProtected('numberOfOffTouches');
+                        this.setProtected('numberOfOffTouches', ++numberOfOffTouches);
                     }
                 }
             }
         } else {
-            this.setPrivate('timer', clearTimeout(this.getPrivate('timer')));
+            this.setProtected('timer', clearTimeout(this.getProtected('timer')));
             this.state = BCSGestureRecognizerStateEnum.FAILED;
         }
     };
 
     prototype.removeAvailableTouches = function (touches) {
-        if (this.getPrivate('isAvailableTouchesRemovable')) {
-            this.setPrivate('numberOfOffTouches', 0);
+        if (this.getProtected('isAvailableTouchesRemovable')) {
+            this.setProtected('numberOfOffTouches', 0);
             BCSGestureRecognizer.prototype.removeAvailableTouches.call(this);
         }
     };

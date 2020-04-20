@@ -1,13 +1,17 @@
 /**
  * Created by kenhuang on 2019/2/16.
  */
-import {BCSView,BCSView1} from './BCSView'
+import {BCSView} from './BCSView'
 
 export function BCSLabel(style) {
-    BCSView1.call(this,style,'label')
+    this.enableProtectedProperty({
+        layer : document.createElement('label')
+    })
+    BCSView.call(this,style)
 }
 
 BCSLabel.extend(BCSView)
+BCSView.import('LABEL',BCSLabel)
 var prototype = BCSLabel.prototype
 prototype.setText = function (text) {
     var element = this.getLayer()

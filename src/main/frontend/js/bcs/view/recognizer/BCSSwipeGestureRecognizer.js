@@ -22,7 +22,7 @@ export function BCSSwipeGestureRecognizer(target,action){
         /*满足开始触发swipe条件时touch成员*/
         previousTouches:{}
     }
-    this.initProperties(propertiesMap)
+    this.enableProtectedProperty(propertiesMap)
 }
 
 var swipeGestureRecognizerMap = {}
@@ -30,13 +30,13 @@ BCSSwipeGestureRecognizer.extend(BCSGestureRecognizer)
 var prototype = BCSSwipeGestureRecognizer.prototype
 prototype.reset = function () {
     BCSGestureRecognizer.prototype.reset.call(this)
-    this.setPrivate('swipeStartPoint',null)
-    this.setPrivate('swipeStartTimeStamp',0)
+    this.setProtected('swipeStartPoint',null)
+    this.setProtected('swipeStartTimeStamp',0)
     /*满足开始触发swipe条件时touch成员*/
-    this.setPrivate('swipeNumberOfTouches',0)
-    this.setPrivate('previousTouches',{})
-    this.setPrivate('newTotalX',0)
-    this.setPrivate('newTotalY',0)
+    this.setProtected('swipeNumberOfTouches',0)
+    this.setProtected('previousTouches',{})
+    this.setProtected('newTotalX',0)
+    this.setProtected('newTotalY',0)
 }
 
 prototype.getNumberOfTouches = function () {
@@ -87,22 +87,22 @@ prototype.touchesBegan = function (touches, event){
     this.state = BCSGestureRecognizerStateEnum.POSSIBLE
     if (numberOfAllTouches <= this.numberOfTouchesRequired) {
         for(var i = 0; i < touches.length; i++) {
-            this.getPrivate('previousTouches')[touches[i].identifier] = touches[i]
+            this.getProtected('previousTouches')[touches[i].identifier] = touches[i]
         }
-        this.setPrivate('swipeStartTimeStamp',event.timeStamp)
-        this.setPrivate('swipeStartPoint',BCSGestureRecognizer.prototype.locate.call(this,this.getView().window))
-        this.setPrivate('swipeNumberOfTouches',this.getPrivate('swipeNumberOfTouches')+touches.length)
+        this.setProtected('swipeStartTimeStamp',event.timeStamp)
+        this.setProtected('swipeStartPoint',BCSGestureRecognizer.prototype.locate.call(this,this.getView().window))
+        this.setProtected('swipeNumberOfTouches',this.getProtected('swipeNumberOfTouches')+touches.length)
     }
 }
 
 function refreshStatus(self,touch){
-    var newTotalX = self.getPrivate('newTotalX'),
-        newTotalY = self.getPrivate('newTotalY')
-    newTotalX += touch.pageX - self.getPrivate('previousTouches')[touch.identifier].pageX
-    newTotalY += touch.pageY - self.getPrivate('previousTouches')[touch.identifier].pageY
-    self.setPrivate('newTotalX',newTotalX)
-    self.setPrivate('newTotalY',newTotalY)
-    self.getPrivate('previousTouches')[touch.identifier] = touch
+    var newTotalX = self.getProtected('newTotalX'),
+        newTotalY = self.getProtected('newTotalY')
+    newTotalX += touch.pageX - self.getProtected('previousTouches')[touch.identifier].pageX
+    newTotalY += touch.pageY - self.getProtected('previousTouches')[touch.identifier].pageY
+    self.setProtected('newTotalX',newTotalX)
+    self.setProtected('newTotalY',newTotalY)
+    self.getProtected('previousTouches')[touch.identifier] = touch
 }
 
 prototype.touchesMoved = function (touches, event){
@@ -111,13 +111,13 @@ prototype.touchesMoved = function (touches, event){
      * 2.可能还计算移动速率，觉得复杂，没有实现
      */
     if (touches.length <= this.getNumberOfTouches() ) {
-        if (event.timeStamp - this.getPrivate('swipeStartTimeStamp') <= defaults.swipeMaxDuration) {
+        if (event.timeStamp - this.getProtected('swipeStartTimeStamp') <= defaults.swipeMaxDuration) {
             var touch,previousTouch
             switch(this.direction){
                 case BCSSwipeGestureRecognizerDirectionEnum.RIGHT:
                     for(i = 0; i < touches.length; i++) {
                         touch = touches[i]
-                        previousTouch = this.getPrivate('previousTouches')[touch.identifier]
+                        previousTouch = this.getProtected('previousTouches')[touch.identifier]
                         if (previousTouch) {
                             if ( touch.pageX - previousTouch.pageX  <= 0) {
                                 this.state = BCSGestureRecognizerStateEnum.FAILED
@@ -131,7 +131,7 @@ prototype.touchesMoved = function (touches, event){
                 case BCSSwipeGestureRecognizerDirectionEnum.LEFT:
                     for(i = 0; i < touches.length; i++) {
                         touch = touches[i]
-                        previousTouch = this.getPrivate('previousTouches')[touch.identifier]
+                        previousTouch = this.getProtected('previousTouches')[touch.identifier]
                         if (previousTouch) {
                             if ( touch.pageX - previousTouch.pageX  >= 0) {
                                 this.state = BCSGestureRecognizerStateEnum.FAILED
@@ -145,7 +145,7 @@ prototype.touchesMoved = function (touches, event){
                 case BCSSwipeGestureRecognizerDirectionEnum.UP:
                     for(i = 0; i < touches.length; i++) {
                         touch = touches[i]
-                        previousTouch = this.getPrivate('previousTouches')[touch.identifier]
+                        previousTouch = this.getProtected('previousTouches')[touch.identifier]
                         if (previousTouch) {
                             if ( touch.pageY - previousTouch.pageY  >= 0) {
                                 this.state = BCSGestureRecognizerStateEnum.FAILED
@@ -159,7 +159,7 @@ prototype.touchesMoved = function (touches, event){
                 case BCSSwipeGestureRecognizerDirectionEnum.DOWN:
                     for(i = 0; i < touches.length; i++) {
                         touch = touches[i]
-                        previousTouch = this.getPrivate('previousTouches')[touch.identifier]
+                        previousTouch = this.getProtected('previousTouches')[touch.identifier]
                         if (previousTouch) {
                             if ( touch.pageY - previousTouch.pageY  <= 0) {
                                 this.state = BCSGestureRecognizerStateEnum.FAILED
@@ -173,8 +173,8 @@ prototype.touchesMoved = function (touches, event){
                 default:
             }
             if (this.getNumberOfTouches() === this.numberOfTouchesRequired &&
-                this.getPrivate('swipeStartPoint').distanceFrom(new BCSPoint(this.getPrivate('newTotalX')
-                    / numberOfTouches, this.getPrivate('newTotalY') / numberOfTouches)) >=defaults.swipeOffsetThreshold ) {
+                this.getProtected('swipeStartPoint').distanceFrom(new BCSPoint(this.getProtected('newTotalX')
+                    / numberOfTouches, this.getProtected('newTotalY') / numberOfTouches)) >=defaults.swipeOffsetThreshold ) {
                 this.state = BCSGestureRecognizerStateEnum.ENDED
             }
             BCSGestureRecognizer.prototype.touchesMoved.call(this,touches, event)

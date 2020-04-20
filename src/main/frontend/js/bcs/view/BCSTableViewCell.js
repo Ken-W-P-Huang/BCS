@@ -45,18 +45,18 @@ var BCSTableViewCellDragStateEnum = {
 
 export function BCSTableViewCell(style,element) {
     BCSView.call(this,style,element)
-    // this.setPrivate('imageView',)
-    // this.setPrivate('textLabel',)
-    // this.setPrivate('detailTextLabel',)
-    // this.setPrivate('contentView',)
-    // this.setPrivate('reuseIdentifier',)
+    // this.setProtected('imageView',)
+    // this.setProtected('textLabel',)
+    // this.setProtected('detailTextLabel',)
+    // this.setProtected('contentView',)
+    // this.setProtected('reuseIdentifier',)
     // // default is UITableViewCellEditingStyleNone. This is set by UITableView using the delegate's value for cells who customize their appearance accordingly.
-    // this.setPrivate('editingStyle',)
-    // this.setPrivate('showingDeleteConfirmation',)
+    // this.setProtected('editingStyle',)
+    // this.setProtected('showingDeleteConfirmation',)
     var propertiesMap = {
 
     }
-    this.initProperties(propertiesMap)
+    this.enableProtectedProperty(propertiesMap)
     this.backgroundView = null
     this.selectedBackgroundView = null
     this.multipleSelectionBackgroundView = null
@@ -80,25 +80,25 @@ export function BCSTableViewCell(style,element) {
 BCSTableViewCell.extend(BCSView)
 var prototype = BCSTableViewCell.prototype
 prototype.getImageView = function(){
-    return this.getPrivate('imageView')
+    return this.getProtected('imageView')
 }
 prototype.getTextLabel = function(){
-    return this.getPrivate('textLabel')
+    return this.getProtected('textLabel')
 }
 prototype.getDetailTextLabel = function(){
-    return this.getPrivate('detailTextLabel')
+    return this.getProtected('detailTextLabel')
 }
 prototype.getContentView = function(){
-    return this.getPrivate('contentView')
+    return this.getProtected('contentView')
 }
 prototype.getReuseIdentifier = function(){
-    return this.getPrivate('reuseIdentifier')
+    return this.getProtected('reuseIdentifier')
 }
 prototype.getEditingStyle = function(){
-    return this.getPrivate('editingStyle')
+    return this.getProtected('editingStyle')
 }
 prototype.getShowingDeleteConfirmation = function(){
-    return this.getPrivate('showingDeleteConfirmation')
+    return this.getProtected('showingDeleteConfirmation')
 }
 prototype.prepareForReuse = function () {
     

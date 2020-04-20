@@ -19,7 +19,7 @@ export function BCSRotationGestureRecognizer(target,action){
         lastVector:0,
         lastTimestamp : 0
     }
-    this.initProperties(propertiesMap)
+    this.enableProtectedProperty(propertiesMap)
 }
 
 var rotationGestureRecognizerMap = {}
@@ -46,11 +46,11 @@ prototype.locateTouch = function (index,view) {
 }
 prototype.reset = function() {
     BCSGestureRecognizer.prototype.reset.call(this)
-    this.setPrivate('rotation',0)
-    this.setPrivate('velocity',0)
-    this.setPrivate('initVector',null)
-    this.setPrivate('rotateAngle',0)
-    this.setPrivate('lastTimestamp',0)
+    this.setProtected('rotation',0)
+    this.setProtected('velocity',0)
+    this.setProtected('initVector',null)
+    this.setProtected('rotateAngle',0)
+    this.setProtected('lastTimestamp',0)
 }
 
 
@@ -83,11 +83,11 @@ prototype.touchesBegan = function (touches, event){
         touchesNeeded.push(touches[i])
     }
     BCSGestureRecognizer.prototype.touchesBegan.call(this,touchesNeeded, event)
-    if (!this.getPrivate('initVector') && BCSGestureRecognizer.prototype.getNumberOfTouches.call(this)
+    if (!this.getProtected('initVector') && BCSGestureRecognizer.prototype.getNumberOfTouches.call(this)
         === NUMBER_OF_TOUCHES_REQUIRED) {
-        this.setPrivate('initVector',new BCSVector1(BCSGestureRecognizer.prototype.locateTouch.call(this,0,
+        this.setProtected('initVector',new BCSVector1(BCSGestureRecognizer.prototype.locateTouch.call(this,0,
             this.getView().window), BCSGestureRecognizer.prototype.locateTouch.call(this,1,this.getView().window)))
-        this.setPrivate('lastTimestamp',event.timeStamp)
+        this.setProtected('lastTimestamp',event.timeStamp)
     }
     if (this.state !== BCSGestureRecognizerStateEnum.BEGAN &&  this.state !== BCSGestureRecognizerStateEnum.CHANGED) {
         this.state = BCSGestureRecognizerStateEnum.POSSIBLE
@@ -97,16 +97,16 @@ prototype.touchesBegan = function (touches, event){
     }
 }
 function calculateRotationVelocity(self) {
-    var vectorAfterUpdate = self.getPrivate('lastVector')
-    var delta = vectorAfterUpdate.intersectionAngleWith(self.getPrivate('lastVector'))
-    self.setPrivate('rotation',self.getPrivate('rotation')+delta)
-    var duration = event.timeStamp - self.getPrivate('lastTimestamp')
+    var vectorAfterUpdate = self.getProtected('lastVector')
+    var delta = vectorAfterUpdate.intersectionAngleWith(self.getProtected('lastVector'))
+    self.setProtected('rotation',self.getProtected('rotation')+delta)
+    var duration = event.timeStamp - self.getProtected('lastTimestamp')
     if (duration > 0 ) {
         //todo 不知道为何会出现duration = 0
-        self.setPrivate('velocity',delta / duration * 1000)
+        self.setProtected('velocity',delta / duration * 1000)
     }
-    self.setPrivate('lastTimestamp',event.timeStamp)
-    self.setPrivate('lastVector',vectorAfterUpdate)
+    self.setProtected('lastTimestamp',event.timeStamp)
+    self.setProtected('lastVector',vectorAfterUpdate)
 }
 //抬起后rotation和velocity保持不变，可以抬起一根手指后重新按下与另一根手指重新形成新手势
 prototype.touchesMoved = function (touches, event){
@@ -117,20 +117,20 @@ prototype.touchesMoved = function (touches, event){
             BCSGestureRecognizer.prototype.locateTouch.call(this,1,this.getView().window))
         switch(this.state){
             case BCSGestureRecognizerStateEnum.POSSIBLE:
-                delta = vectorAfterUpdate.intersectionAngleWith(this.getPrivate('initVector'))
+                delta = vectorAfterUpdate.intersectionAngleWith(this.getProtected('initVector'))
                 if (Math.abs(delta) >= defaults.rotationMinAngle ) {
                     this.state = BCSGestureRecognizerStateEnum.BEGAN
                     if (delta < 0 ) {
-                        this.setPrivate('rotation',delta + defaults.rotationMinAngle)
+                        this.setProtected('rotation',delta + defaults.rotationMinAngle)
                     }else{
-                        this.setPrivate('rotation',delta - defaults.rotationMinAngle)
+                        this.setProtected('rotation',delta - defaults.rotationMinAngle)
                     }
-                    duration = event.timeStamp - this.getPrivate('lastTimestamp')
+                    duration = event.timeStamp - this.getProtected('lastTimestamp')
                     if (duration !== 0 ) {
-                        this.setPrivate('velocity',this.getPrivate('rotation') / duration * 1000)
+                        this.setProtected('velocity',this.getProtected('rotation') / duration * 1000)
                     }
-                    this.setPrivate('lastTimestamp',event.timeStamp)
-                    this.setPrivate('lastVector',vectorAfterUpdate)
+                    this.setProtected('lastTimestamp',event.timeStamp)
+                    this.setProtected('lastVector',vectorAfterUpdate)
                 }
                 break
             case BCSGestureRecognizerStateEnum.BEGAN:

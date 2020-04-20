@@ -53,6 +53,10 @@
         // import 'PIE_IE9_uncompressed.js'
     }
 
+    function patchFormData() {
+        // import 'FormData.es5.js'
+    }
+
     function patchTransform() {
         // import 'EventHelpers.js'
         // import 'cssQuery-p.js'

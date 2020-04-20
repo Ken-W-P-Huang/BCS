@@ -4,17 +4,26 @@
 import {BCSGestureRecognizerStateEnum,BCSGestureRecognizer,defaults} from './BCSGestureRecognizer'
 import {EventTypeEnum,SetMap} from '../model/Extensions'
 var componentName = 'view'
-export function BCSView(style,element) {
-    if (! element) {
-        element = document.createElement('div')
-    }
+var ElementViewEnum = {
+    'DIV':BCSView
+}
+var IgnoreTagEnum = {
+    'HEAD':'head',
+    'SCRIPT':'script'
+}
+BCSView.import = function (tagName,viewConstructor) {
+    ElementViewEnum[tagName] = viewConstructor
+}
+export function BCSView(style) {
     var propertiesMap = {
-        layer : element,
-        subViews : generateSubViews(element),
-        gestureRecognizers:[]
+        layer : document.createElement('div'),
+        subViews : [],
+        gestureRecognizers:[],
+        isListenersAdded:false
     }
-    this.enablePrivateProperty(propertiesMap)
-    if(typeof style === 'object'){
+    this.enableProtectedProperty(propertiesMap)
+    var element = this.getProtected('layer')
+    if(style && typeof style === 'object'){
         if(!style.hasOwnProperty('position')){
             style.position = 'absolute'
         }
@@ -26,28 +35,25 @@ export function BCSView(style,element) {
     element.setAttribute(componentName,this.getClass())
 }
 
+
+
 var prototype = BCSView.prototype
 prototype.getLayer = function () {
-    return this.getPrivate('layer')
+    return this.getProtected('layer')
 }
+
+prototype.setAttribute = function (name,value) {
+     this.getProtected('layer').setAttribute(name,value)
+}
+
 prototype.getSubViews = function () {
-    return this.getPrivate('subViews')
+    return this.getProtected('subViews')
 }
 
 prototype.getGestureRecognizers = function () {
-    return this.getPrivate('gestureRecognizers')
+    return this.getProtected('gestureRecognizers')
 }
 
-function generateSubViews(layer) {
-    var subViews = []
-    if(layer.children.length > 0){
-        var subLayers = layer.children
-        for(var i = 0 ;i < layer.children.length; i++){
-            subViews.push(new BCSView(subLayers[i]))
-        }
-    }
-    return subViews
-}
 /**
  * 1.这里假设调用者倾向于在同一个view添加不同的手势识别器，而非添加多个相同手势识别器
  * 2.和iOS不同，event和event.touches对象每次都不同,靠touch.identifier进行区分
@@ -146,18 +152,9 @@ function addListeners(view) {
     })
 }
 prototype.addSubView = function (view) {
-    var subViews = this.getSubViews(),
-        length = this.getLayer().children.length
+    var subViews = this.getProtected('subViews')
+    this.removeSubView(view)
     this.getLayer().appendChild(view.getLayer())
-    if( this.getLayer().children.length === length){
-        /* layer的子元素已经包含 view的layer*/
-        for(var i = 0 ;i < subViews.length; i++){
-            if(subViews[i].getLayer() === view.getLayer()){
-                subViews.splice(i,1)
-                break
-            }
-        }
-    }
     subViews.push(view)
 }
 
@@ -165,18 +162,18 @@ prototype.addSubView = function (view) {
 
 prototype.addGestureRecognizer = function (gestureRecognizer) {
     this.removeGestureRecognizer(gestureRecognizer)
-    gestureRecognizer.setPrivate('view',this)
+    gestureRecognizer.setProtected('view',this)
     this.getGestureRecognizers().push(gestureRecognizer)
-    //todo
-    if (!this.get('isListenersAdded')) {
+    //todo 判断监听器是否已添加
+    if (!this.getProtected('isListenersAdded')) {
         addListeners(this)
-        this.set('isListenersAdded',true)
+        this.setProtected('isListenersAdded',true)
     }
 }
 
 prototype.removeGestureRecognizer = function (gestureRecognizer) {
     var  gestureRecognizerList = this.getGestureRecognizers()
-    gestureRecognizer.setPrivate('view',null)
+    gestureRecognizer.setProtected('view',null)
     for (var i = 0;i < gestureRecognizerList.length ; i++){
         if (gestureRecognizerList[i] === gestureRecognizer ) {
             gestureRecognizerList.splice(i,1)
@@ -190,7 +187,7 @@ prototype.gestureRecognizerShouldBegin = function (gestureRecognizer) {
 }
 
 prototype.removeSubView = function (subView) {
-    var subViews = this.getSubViews()
+    var subViews = this.getProtected('subViews')
     for(var i = 0 ;i < subViews.length; i++){
         if(subViews[i] === subView){
             subViews.splice(i,1)
@@ -279,33 +276,16 @@ prototype.setHTML = function (htmlText) {
 
 BCSView.findViewById = function (id) {
     var element = document.getElementById(id)
-    if (element) {
-        /* 已经自行使用component='xxx'指定类型 */
-        var Class =  window[element.getAttribute(componentName)]
-        if(!Class){
-            /*根据标签名创建相应类型的View*/
-            Class = window['BCS' + element.tagName.toFirstUpperCase()]
-        }
-        if (Class) {
-            return new Class(null,element)
-        } else {
-            if (element.tagName !== 'div') {
-                console.log(id + ' is initialized as BCSView.')
-            }
-            return new BCSView(null,element)
-        }
-    }else{
-        return null
-    }
+    return element.view
 }
 /**
- * 手势识别器已经识别出手势，执行状态已经改变的手势识别器进行识别。
+ * 手势识别器已经识别出手势，执行状态已经改变的手势识别器。
  * @param stateChangedRecognizers
  */
 prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
     var gestureRecognizers = this.getGestureRecognizers()
     if (stateChangedRecognizers.length > 0 ) {
-        /* 阻止识别器进行识别 */
+        /* 判断识别器是否进行识别 */
         for(var i = 0; i < stateChangedRecognizers.length ; i++) {
             switch(gestureRecognizers[i].state){
                 case BCSGestureRecognizerStateEnum.CHANGED:
@@ -318,6 +298,7 @@ prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
                             if (stateChangedRecognizers[i].hasDependent(gestureRecognizers[j]) ) {
                                 stateChangedRecognizers[j].state = BCSGestureRecognizerStateEnum.FAILED
                                 stateChangedRecognizers.push(stateChangedRecognizers[j])
+                                console.log(stateChangedRecognizers[j].name + "is ")
                                 continue
                             }
                             if (!stateChangedRecognizers[i].canPrevent(gestureRecognizers[j])
@@ -333,6 +314,7 @@ prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
                                 && gestureRecognizers[j].delegate.shouldRecognizeSimultaneouslyWith(
                                     gestureRecognizers[j],stateChangedRecognizers[i]))) {
                                 gestureRecognizers[j].state = BCSGestureRecognizerStateEnum.FAILED
+                                console.log(stateChangedRecognizers[j].name + "is ")
                                 stateChangedRecognizers.push(stateChangedRecognizers[j])
                             }
                         }
@@ -341,7 +323,7 @@ prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
                 default:
             }
         }
-        /*执行或者ignore touch*/
+        /*执行或者ignore touches*/
         stateChangedRecognizers.forEach(function (recognizer) {
             switch(recognizer.state){
                 case BCSGestureRecognizerStateEnum.BEGAN:
@@ -351,19 +333,22 @@ prototype.executeStateChangedRecognizers = function (stateChangedRecognizers) {
                 case BCSGestureRecognizerStateEnum.ENDED:
                     recognizer.executeActions()
                     recognizer.ignoreAvailableTouches()
+                    recognizer.reset()
                     break
                 case BCSGestureRecognizerStateEnum.FAILED:
                 case BCSGestureRecognizerStateEnum.CANCELLED:
                     recognizer.ignoreAvailableTouches()
+                    recognizer.reset()
                     break
                 default:
             }
         })
-        stateChangedRecognizers.forEach(function (recognizer) {
-            if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
-                recognizer.reset()
-            }
-        })
+
+        // stateChangedRecognizers.forEach(function (recognizer) {
+        //     if (recognizer.state >= BCSGestureRecognizerStateEnum.ENDED) {
+        //         recognizer.reset()
+        //     }
+        // })
     }
 }
 //BCSView恰好是BCS.js最后一个类,在此手动将module.exports复制到window上以便外部代码访问

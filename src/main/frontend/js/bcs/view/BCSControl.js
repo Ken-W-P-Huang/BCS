@@ -66,7 +66,7 @@ export function BCSControl(style,element) {
     this.ontentVerticalAlignment = BCSControlContentVerticalAlignmentEnum.center
     // how to position content horizontally inside control. default is center
     this.contentHorizontalAlignment = BCSControlContentHorizontalAlignmentEnum.center
-    this.initProperties({
+    this.enableProtectedProperty({
         state:BCSControlState.normal
     })
 }
@@ -74,29 +74,29 @@ BCSControl.extend(BCSView)
 var prototype = BCSControl.prototype
 // how to position content horizontally inside control, guaranteed to return 'left' or 'right' for any 'leading' or 'trailing'
 prototype.getEffectiveContentHorizontalAlignment = function(){
-    return this.getPrivate('effectiveContentHorizontalAlignment')
+    return this.getProtected('effectiveContentHorizontalAlignment')
 }
 // could be more than one state (e.g. disabled|selected). synthesized from other flags.
 prototype.getState = function(){
-    return this.getPrivate('state')
+    return this.getProtected('state')
 }
 prototype.getIsTracking = function(){
-    return this.getPrivate('isTracking')
+    return this.getProtected('isTracking')
 }
 // valid during tracking only
 prototype.getIsTouchInside = function(){
-    return this.getPrivate('isTouchInside')
+    return this.getProtected('isTouchInside')
 }
 // get info about target & actions. this makes it possible to enumerate all target/actions by checking for each event kind
 prototype.getAllTargets = function(){
-    return this.getPrivate('allTargets')
+    return this.getProtected('allTargets')
 }
 // list of all events that have at least one action
 prototype.getAllControlEvents = function(){
-    return this.getPrivate('allControlEvents')
+    return this.getProtected('allControlEvents')
 }
 prototype.get = function(){
-    return this.getPrivate('')
+    return this.getProtected('')
 }
 
 prototype.beginTracking = function(touch,event){

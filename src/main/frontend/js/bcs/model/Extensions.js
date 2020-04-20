@@ -6,6 +6,7 @@
  * @constructor
  */
 import {NotificationCenter} from './NotificationCenter'
+
 function Extensions(window) {
     /**
      * 对Object进行扩展会破坏jQuery
@@ -106,52 +107,91 @@ function Extensions(window) {
          *  @param Class 类对象
          * @param propertiesMap
          */
-        Object.prototype.enablePrivateProperty = function (Class,propertiesMap) {
-            var superGetPrivate, superSetPrivate,superInitProperties
-            for (var key in propertiesMap) {
+        // Object.prototype.enablePrivateProperty = function (Class,propertiesMap) {
+        //     var superGetPrivate, superSetPrivate,superInitProperties,self = this
+        //     for (var key in propertiesMap) {
+        //         if (this.hasOwnProperty(key) ) {
+        //             throw new Error('Duplicate key ' + key + '.')
+        //         }
+        //     }
+        //     if ('setPrivate' in this ) {
+        //         superGetPrivate = this.getPrivate.bind(this)
+        //         superSetPrivate = this.setPrivate.bind(this)
+        //         superInitProperties = this.superInitProperties
+        //     }
+        //     this.setPrivate = function(key,value,callerName){
+        //         if (!callerName) {
+        //             callerName = Function.getName(null)
+        //         }
+        //         if (self === this &&
+        //             ((this.hasOwnProperty(callerName) && callerName !== "setPrivate")|| callerName === 'setValueForKey'||
+        //             Class.prototype.hasOwnProperty(callerName)) &&propertiesMap.hasOwnProperty(key)) {
+        //             propertiesMap[key] = value
+        //         }else if(typeof superSetPrivate === 'function'){
+        //             superSetPrivate(key,value)
+        //         }else{
+        //             throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+        //         }
+        //     }
+        //     this.getPrivate = function(key,callerName){
+        //         if (!callerName) {
+        //             callerName = Function.getName(null)
+        //         }
+        //         if (self === this &&
+        //             ((this.hasOwnProperty(callerName) && callerName !== "getPrivate")|| callerName === 'valueForKey' ||
+        //             Class.prototype.hasOwnProperty(callerName)) &&propertiesMap.hasOwnProperty(key) ) {
+        //             return propertiesMap[key]
+        //         }else if(typeof superSetPrivate === 'function'){
+        //             return superGetPrivate(key,callerName)
+        //         }else{
+        //             throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
+        //         }
+        //     }
+        //     this.initProperties = function (map) {
+        //         if (Class === this.constructor ) {
+        //             for (var key in map) {
+        //                 if (map.hasOwnProperty(key) ) {
+        //                     if (propertiesMap.hasOwnProperty(key) ) {
+        //                         throw new Error('Class ' + this.getClass() + ' has already had a private property named \''
+        //                             + key + '\'.')
+        //                     }else{
+        //                         propertiesMap[key] = map[key]
+        //                     }
+        //                 }
+        //             }
+        //         }else if(typeof superInitProperties === 'function'){
+        //             superInitProperties(map)
+        //         }else{
+        //             throw new Error('Class ' + Class + ' and  constructor' + this.constructor + ' mismatch.')
+        //         }
+        //     }
+        // }
+
+        Object.prototype.enableProtectedProperty = function (propertiesMap) {
+            var self = this,key
+            for (key in propertiesMap) {
+                /* 检查是否有重复公有属性*/
                 if (this.hasOwnProperty(key) ) {
                     throw new Error('Duplicate key ' + key + '.')
                 }
             }
-            if ('setPrivate' in this ) {
-                superGetPrivate = this.getPrivate
-                superSetPrivate = this.setPrivate
-                superInitProperties = this.superInitProperties
-            }
-            this.setPrivate = function(key,value){
-                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
-                    propertiesMap[key] = value
-                }else if(typeof superSetPrivate === 'function'){
-                    superSetPrivate(key,value)
-                }else{
-                    throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
-                }
-            }
-            this.getPrivate = function(key){
-                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
-                    return propertiesMap[key]
-                }else if(typeof superSetPrivate === 'function'){
-                    return superGetPrivate(key)
-                }else{
-                    throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
-                }
-            }
-            this.initProperties = function (map) {
-                if (Class === this.constructor ) {
-                    for (var key in map) {
-                        if (map.hasOwnProperty(key) ) {
-                            if (propertiesMap.hasOwnProperty(key) ) {
-                                throw new Error('Class ' + this.getClass() + ' has already had a private property named \''
-                                    + key + '\'.')
-                            }else{
-                                propertiesMap[key] = map[key]
-                            }
-                        }
+            if ('setProtected' in this ) {
+                for (key in propertiesMap) {
+                    /* 本方法在父类构造方法前调用，不允许父类的属性覆盖子类的属性 */
+                    if (propertiesMap.hasOwnProperty(key) && !this.getProtected(key)) {
+                        this.setProtected(key,propertiesMap[key])
                     }
-                }else if(typeof superInitProperties === 'function'){
-                    superInitProperties(map)
-                }else{
-                    throw new Error('Class ' + Class + ' and  constructor' + this.constructor + ' mismatch.')
+                }
+            }else{
+                this.setProtected = function(key,value){
+                    if (this === self ) {
+                        propertiesMap[key] = value
+                    }
+                }
+                this.getProtected = function(key){
+                    if (this === self ) {
+                        return propertiesMap[key]
+                    }
                 }
             }
         }
@@ -161,8 +201,8 @@ function Extensions(window) {
                 this[key] = value
                 return
             }
-            if (this.setPrivate) {
-                this.setPrivate(key,value)
+            if (this.setProtected) {
+                this.setProtected(key,value)
             } else{
                 throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
             }
@@ -175,19 +215,20 @@ function Extensions(window) {
                 }
             }
         }
-        Object.prototype .valueForKey = function(key){
+        Object.prototype.valueForKey = function(key){
             if (this.hasOwnProperty(key) ){
                 return this[key]
             }
-            if (this.get ) {
-                return this.get(key)
+            if (this.getProtected ) {
+                return this.getProtected(key)
             }
             throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
         }
         function resolveKeyPath(object,keyPath){
             var keys = keyPath.split('.')
-            for(var i = 0; i < keys.length -1 ; i++) {
+            for(var i = 0; i < keys.length - 1 ; i++) {
                 object = object.valueForKey(keys[i])
+                /* object没有指定的keyPath */
                 if (typeof object !== "object") {
                     throw new Error('KeyPath '+ keyPath +' is invalid for class ' + this.getClass() +'.')
                 }
@@ -231,83 +272,78 @@ function Extensions(window) {
         }
         /**
          * 观察者模式,KVO仅限IE9及以上的直接属性。IE9以下全部使用NotificationCenter。
-         * 在构造方法中使用，observerListMap为私有属性,用于存放被监视的属性值。
+         * 在构造方法中使用，observerListMap用于存放被监视的属性值。
          * observerListMap的每一个List的第0个元素为key对应当前值。故Observer从List第1个元素开始
-         * swift允许重复添加observer，即多次添加时会多次触发。每次删除只删除一次添加。
-         * 与swift不同的是这里是先添加先触发，swift是后添加先触发
-         * @param privatePropertiesMap
+         * swift允许重复添加observer，即多次添加时会多次触发。每次删除只删除一次添加。先添加后触发。
+         * @param privatePropertiesMap 私有属性Map
          * @param observerListMap
          */
-        Object.prototype.enableKVO = function (privatePropertiesMap,observerListMap) {
+        Object.prototype.enableKVO = function () {
             Function.requireArgumentNumber(arguments,1)
-            if(observerListMap.isKindOf(window.ListMap)){
-                this.addObserver = function (observer,keyPath,options,context) {
-                    Function.requireArgumentNumber(arguments,2)
-                    function setter(newValue) {
-                        var observerList = observerListMap.getAll(keyPath)
-                        var oldValue =  observerList[0]
-                        observerList[0] = newValue
-                        for (var i = 1; i < observerList.length; i++) {
-                            if (typeof observerList[i].observer.observeValue === 'function') {
-                                observerList[i].observer.observeValue(this, keyPath, this,{
-                                    old:oldValue,
-                                    new:newValue
-                                }, context)
-                            }
+            var observerListMap = new ListMap()  // jshint ignore:line
+            this.addObserver = function (observer,keyPath,options,context) {
+                Function.requireArgumentNumber(arguments,2)
+                if (!(observer instanceof Object)) {
+                    throw new TypeError('Observer must be object type.')
+                } else if (!keyPath || typeof keyPath !== 'string' ) {
+                    throw new TypeError('Key must be string type.')
+                }
+                function setter(newValue) {
+                    var observerList = observerListMap.getAll(keyPath)
+                    var oldValue =  observerList[0]
+                    observerList[0] = newValue
+                    for (var i = observerList.length - 1; i >= 1; i--) {
+                        if (typeof observerList[i].observer.observeValue === 'function') {
+                            observerList[i].observer.observeValue(this, keyPath, this,{
+                                old:oldValue,
+                                new:newValue
+                            }, context)
                         }
                     }
-                    function getter(key) {
-                        return observerListMap.get(key)[0]
+                }
+                function getter(key) {
+                    return observerListMap.get(key)[0]
+                }
+                if(!observerListMap.has(keyPath)){
+                    /* 得到上一层的对象以及最后一层的key */
+                    var result = resolveKeyPath(this,keyPath),
+                        object = this
+                    // /* 该属性可能是私有属性的直接属性，会被resolveKeyPath漏掉 */
+                    // if (result.object === this && privatePropertiesMap.hasOwnProperty(result.key)) {
+                    //     object = privatePropertiesMap
+                    // }
+                    /* 保存原有的值到observerListMap[keyPath][0]*/
+                    observerListMap.append(keyPath,object[keyPath])
+                    /* 此时已经应用ES5补丁 */
+                    if (Object.defineProperty) {
+                        Object.defineProperty(object, keyPath, {
+                            set:setter,
+                            get:getter
+                        })
+                    } else {
+                        throw new TypeError('Object.defineProperty is not supported in this browser')
                     }
-                    if (!(observer instanceof Object)) {
-                        throw new TypeError('Observer must be object type.')
-                    } else if (!keyPath || typeof keyPath !== 'string' ) {
-                        throw new TypeError('Key must be string type.')
-                    }
-                    if(!observerListMap.has(keyPath)){
-                        /* 得到上一层的对象以及最后一层的key */
-                        var result = resolveKeyPath(this,keyPath),
-                            object = this
-                        /* 该属性可能是私有属性的直接属性，会被resolveKeyPath漏掉 */
-                        if (result.object === this && privatePropertiesMap.hasOwnProperty(result.key)) {
-                            object = privatePropertiesMap
-                        }
-                        /* 保存原有的值到observerListMap[keyPath][0]*/
-                        observerListMap.append(keyPath,object[keyPath])
-                        /* 此时已经应用ES5补丁 */
-                        if (Object.defineProperty) {
-                            Object.defineProperty(object, keyPath, {
-                                set:setter,
-                                get:getter
-                            })
-                        } else {
-                            throw new TypeError('Object.defineProperty is not supported in this browser')
-                        }
-                        // else if (Object.prototype.__defineGetter__ && Object.prototype.__defineSetter__) {
-                        //     Object.prototype.__defineGetter__.call(this, key, getter);
-                        //     Object.prototype.__defineSetter__.call(this, key, setter);
-                        // }
-                    }
-                    observerListMap.append(keyPath,{
-                        observer:observer,
-                        context:context
+                    // else if (Object.prototype.__defineGetter__ && Object.prototype.__defineSetter__) {
+                    //     Object.prototype.__defineGetter__.call(this, key, getter);
+                    //     Object.prototype.__defineSetter__.call(this, key, setter);
+                    // }
+                }
+                observerListMap.append(keyPath,{
+                    observer:observer,
+                    context:context
+                })
+            }
+            this.removeObserver = function (observer,keyPath,context) {
+                if(keyPath){
+                    /* 删除指定属性的指定观察者 */
+                    var observerList =  observerListMap.getAll(keyPath)
+                    remove(observerListMap,keyPath,observerList,observer)
+                }else{
+                    /* 删除所有属性的指定观察者 */
+                    observerListMap.forEach(function (observerList,key) {
+                        remove(observerListMap,key,observerList,observer)
                     })
                 }
-                this.removeObserver = function (observer,keyPath,context) {
-                    //todo 是否在移除最后一个观察者后将值还原回去
-                    if(keyPath){
-                        /* 删除指定属性的指定观察者 */
-                        var observerList =  observerListMap.getAll(keyPath)
-                        remove(observerListMap,keyPath,observerList,observer)
-                    }else{
-                        /* 删除所有属性的指定观察者 */
-                        observerListMap.forEach(function (observerList,key) {
-                            remove(observerListMap,key,observerList,observer)
-                        })
-                    }
-                }
-            }else{
-                throw new TypeError('observerListMap is not ListMap type')
             }
         }
     }
@@ -322,43 +358,50 @@ function Extensions(window) {
         Function.prototype.extend = function(superClass) {
             Function.requireArgumentType(superClass,'function')
             Function.requireArgumentType(this,'function')
-            var Super = function(){}
+            function Super(){}
             Super.prototype = superClass.prototype
             this.prototype = new Super()
             this.prototype.constructor = this
         }
         /**
-         * 有无法处理的情况，慎用
-         * @param callee
+         * 获取callee/calller的函数名
+         * @param func
+         * @param isCallee
          * @returns {*}
          */
-        Function.prototype.getName = function (callee) {
-            // return this.name || this.toString().match(/function\s*([^(]*)\(/)[1]
-            if(callee.name){
-                return callee.name
-            }
-            var _callee = callee.toString().replace(/[\s\?]*/g,""),
-                comb = _callee.length >= 50 ? 50 :_callee.length
-            _callee = _callee.substring(0,comb)
-            var name = _callee.match(/^function([^\(]+?)\(/)
-            if(name && name[1]){
-                return name[1]
-            }
-            if(callee.caller){
-                var caller = callee.caller,
-                    _caller = caller.toString().replace(/[\s\?]*/g,"")
-                var last = _caller.indexOf(_callee),
-                    str = _caller.substring(last-30,last)
-                name = str.match(/var([^\=]+?)\=/)
-                if(name && name[1]){
-                    return name[1]
-                }
-            }
+        Function.getName = function (func,isCallee) {
+            //use strict下不能使用caller callee argument
+            // if(func.name){
+            //     return func.name
+            // }
+            // var _f = func.toString().replace(/[\s\?]*/g,""),
+            //     comb = _f.length >= 50 ? 50 :_f.length
+            // _f = _f.substring(0,comb)
+            // var name = _f.match(/^function([^\(]+?)\(/)
+            // if(name && name[1]){
+            //     return name[1]
+            // }
+            // if(func.caller){
+            //     var caller = func.caller,
+            //         _caller = caller.toString().replace(/[\s\?]*/g,"")
+            //     var last = _caller.indexOf(_f),
+            //         str = _caller.substring(last-30,last)
+            //     name = str.match(/var([^\=]+?)\=/)
+            //     if(name && name[1]){
+            //         return name[1]
+            //     }
+            // }
             var stack = new Error().stack
             if(stack){
-                name = stack.match(/Function.getName.*\n    at (.*) \(/)
+                var name
+                if (isCallee) {
+                    name = stack.match(/Function.getName.*\n    at (.*) \(/)
+                }else{
+                    name = stack.match(/Function.getName.*\n    at .*\n    at (.*) \(/)
+                }
+
                 if(name && name[1]){
-                    return name[1].replace('new window.','').replace('new ','')
+                    return name[1].replace('new ','').replace(/.*\./,'')
                 }
             }
             return "anonymous"
@@ -813,7 +856,12 @@ function Extensions(window) {
                 }
                 Map.prototype[Symbol.iterator] = Map.prototype.entries
             }
-
+            /**
+             *
+             * @param iterable Iterable 是一个数组（二元数组）或者其他可迭代的且其元素是键值对的对象。每个键值对会被加到新的 WeakMap
+             *                          里。null 会被当做 undefined。
+             * @constructor
+             */
             window.WeakMap = function (iterable) {
                 var map  = new Map()
                 this['delete'] = function (key) {
@@ -861,7 +909,11 @@ function Extensions(window) {
                 }
 
             }
-
+            /**
+             *
+             * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+             * @constructor
+             */
             window.Set = function(iterable) {
                 var map  = new Map()
                 this.add = function (value) {
@@ -907,7 +959,11 @@ function Extensions(window) {
                 Set.prototype.forEach = Map.prototype.forEach
                 Set.prototype[Symbol.iterator] = Set.prototype.values
             }
-
+            /**
+             *
+             * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+             * @constructor
+             */
             window.WeakSet = function (iterable) {
                 var set = new Set()
                 this.add = function (value) {
@@ -943,6 +999,11 @@ function Extensions(window) {
                 }
             }
         }
+        /**
+         *
+         * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+         * @constructor
+         */
         window.ListMap = function (iterable) {
             var list,map = new Map()
             this.append = function (key, value) {
@@ -1021,7 +1082,11 @@ function Extensions(window) {
             ListMapIterator.extend(Iterator)
             ListMap.prototype.forEach = Map.prototype.forEach
         }
-
+        /**
+         *
+         * @param iterable 如果传入一个可迭代对象作为参数, 则该对象的所有迭代值都会被自动添加进生成
+         * @constructor
+         */
         window.SetMap = function (iterable) {
             var set,map = new Map()
             this.append = function (key, value) {
@@ -1105,8 +1170,9 @@ function Extensions(window) {
     this.apply = function () {
         extendObject()
         extendFunction()
-        extendWindow()
         extendString()
+        //调用toFirstUpperCase函数，需要在extendString之后执行。
+        extendWindow()
         extendArray()
         extendNumber()
         extendOthers()

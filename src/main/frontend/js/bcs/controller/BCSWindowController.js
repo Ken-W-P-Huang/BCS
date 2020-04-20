@@ -7,7 +7,7 @@ import {BCSViewController} from './BCSViewController'
  * @param element
  * @constructor
  */
-export function BCSWindowController(element) {
-    BCSViewController.call(this,element)
+export function BCSWindowController(view) {
+    BCSViewController.call(this,view)
 }
 BCSWindowController.extend(BCSViewController)

@@ -56,13 +56,14 @@ export function BCSGestureRecognizer(target,action) {
     Function.requireArgumentType(target,'object')
     Function.requireArgumentType(action,'function')
     var propertiesMap = {
+        /*action,target*/
         actionMap : new Map(),
         view:null,
         /*手势识别器本次识别应该考虑的touch (identifier:touch),按照identifier排序*/
         availableTouches:{},
         dependentSet:new Set()
     }
-    this.enablePrivateProperty(propertiesMap)
+    this.enableProtectedProperty(propertiesMap)
     this.state = BCSGestureRecognizerStateEnum.POSSIBLE
     this.delegate = null
     this.isEnabled = true
@@ -78,20 +79,20 @@ export function BCSGestureRecognizer(target,action) {
 
 var prototype = BCSGestureRecognizer.prototype
 prototype.reset = function () {
-    this.setPrivate('availableTouches',{})
-    this.setPrivate('dependentSet',new Set())
+    this.setProtected('availableTouches',{})
+    this.setProtected('dependentSet',new Set())
 }
 //本识别器失败后，dependent才能继续识别
 prototype.addDependent = function (dependent){
-    this.getPrivate('dependentSet').add(dependent)
+    this.getProtected('dependentSet').add(dependent)
 }
 prototype.hasDependent = function (dependent){
-    return this.getPrivate('dependentSet').has(dependent)
+    return this.getProtected('dependentSet').has(dependent)
 }
 
 prototype.ignoreAvailableTouches = function () {
-    var availableTouches = this.getPrivate('availableTouches'),
-        event = this.getPrivate('event')
+    var availableTouches = this.getProtected('availableTouches'),
+        event = this.getProtected('event')
     for (var identifier in availableTouches) {
         if (availableTouches.hasOwnProperty(identifier) ) {
             this.ignore(availableTouches[identifier],event)
@@ -100,26 +101,26 @@ prototype.ignoreAvailableTouches = function () {
 }
 
 prototype.ignore = function(touch, event){
-    delete  this.getPrivate('availableTouches')[touch.identifier]
+    delete  this.getProtected('availableTouches')[touch.identifier]
 }
 
 /* number of touches involved for which locations can be queried */
 prototype.getNumberOfTouches = function () {
-    return Object.keys(this.getPrivate('availableTouches')).length
+    return Object.keys(this.getProtected('availableTouches')).length
 }
 
 prototype.hasAvailableTouch = function (touch) {
-    return this.getPrivate('availableTouches').hasOwnProperty(touch.identifier)
+    return this.getProtected('availableTouches').hasOwnProperty(touch.identifier)
 }
 
 prototype.removeAvailableTouches = function (touches) {
-    var availableTouches = this.getPrivate('availableTouches')
+    var availableTouches = this.getProtected('availableTouches')
     if (touches) {
         for(var i = 0; i <touches.length; i++) {
             delete availableTouches[touches[i].identifier]
         }
     }else{
-        this.setPrivate('availableTouches',{})
+        this.setProtected('availableTouches',{})
     }
 }
 
@@ -129,7 +130,7 @@ prototype.removeAvailableTouches = function (touches) {
  * @returns {{}}
  */
 prototype.locate = function (view) {
-    var touches = this.getPrivate('availableTouches'),
+    var touches = this.getProtected('availableTouches'),
         length =  Object.keys(touches).length
     if (view && length > 0) {
         var averageX = 0,
@@ -153,7 +154,7 @@ prototype.locate = function (view) {
  * @returns {{}}
  */
 prototype.locateTouch = function (index,view) {
-    var touches = this.getPrivate('availableTouches')
+    var touches = this.getProtected('availableTouches')
     if (view  && index >= 0 ) {
         var key = Object.keys(touches)[index]
         if (key) {
@@ -188,7 +189,7 @@ prototype.shouldBeRequiredToFail = function (otherGestureRecognizer) {
     return false
 }
 prototype.addTarget = function (target,action) {
-    var actionMap = this.getPrivate('availableTouches')
+    var actionMap = this.getProtected('actionMap')
     if (target && action ) {
         Function.requireArgumentType(target,'object')
         Function.requireArgumentType(action,'function')
@@ -197,7 +198,7 @@ prototype.addTarget = function (target,action) {
 }
 
 prototype.removeTarget = function (target,action) {
-    var actionMap = this.getPrivate('availableTouches')
+    var actionMap = this.getProtected('actionMap')
     if (action) {
         actionMap.delete(action)
     }else if (target) {
@@ -212,18 +213,18 @@ prototype.removeTarget = function (target,action) {
 }
 
 prototype.getView = function () {
-    return this.getPrivate('view')
+    return this.getProtected('view')
 }
 
 prototype.executeActions = function () {
-    var actionMap = this.getPrivate('availableTouches')
+    var actionMap = this.getProtected('actionMap')
     actionMap.forEach(function (target,action) {
         action.call(target,this)
     }.bind(this))
 }
 
-function refreshAvailableTouches(self,touches,isStrict) {
-    var availableTouches = this.getPrivate('availableTouches')
+function refreshAvailableTouches(touches,isStrict) {
+    var availableTouches = this.getProtected('availableTouches')
     for(var i = 0; i < touches.length; i++) {
         if (isStrict) {
             if (availableTouches.hasOwnProperty(touches[i].identifier) ) {
@@ -235,13 +236,13 @@ function refreshAvailableTouches(self,touches,isStrict) {
     }
 }
 prototype.touchesBegan = function (touches, event){
-    refreshAvailableTouches(this,touches)
+    refreshAvailableTouches.call(this,touches)
 }
 prototype.touchesMoved = function (touches, event){
-    refreshAvailableTouches(this,touches,true)
+    refreshAvailableTouches.call(this,touches,true)
 }
 prototype.touchesEnded = function (touches, event){
-    refreshAvailableTouches(this,touches,true)
+    refreshAvailableTouches.call(this,touches,true)
 }
 
 prototype.touchesCancelled = function (touches, event){

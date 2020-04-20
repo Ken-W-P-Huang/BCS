@@ -35,13 +35,15 @@ module.exports = function (grunt) {
                 options: {
                     stripBanners: true,
                     separator: ';\n',
-                    // banner: '<%= banner %>',
+                    banner: '<%= banner %>',
                     process: function(src, filepath) {
                         return '// Source: ' + filepath + '\n' +
                             src.replace(/(^|\n)[ \t]*?import.*?from[ \t]*?['"].*?['"].*?/g, '\n');
-                    },
+                    }
                 },
                 src:['<%= frontend %>/js/bcs/model/Browser.js',
+                    '<%= frontend %>/js/bcs/view/BCSView.js',
+                    '<%= frontend %>/js/bcs/view/BCSControl.js',
                     '<%= frontend %>/js/bcs/**/*.js'],
                 dest:'<%= tmp %>/js/BCS.js'
             },
@@ -49,11 +51,10 @@ module.exports = function (grunt) {
                 options: {
                     stripBanners: true,
                     separator: '\n',
-                    banner: '<%= banner %>',
+                    banner: '<%= banner %>'
                 },
                 src:['<%= frontend %>/css/*.css',
-                    // '!<%= frontend %>/css/mediaelementplayer.css',
-                    // '!<%= frontend %>/css/normalize.css'
+                    '!<%= frontend %>/css/mediaelementplayer.css'
                 ],
                 dest:'<%= csslib %>/patch.css'
             },
@@ -79,7 +80,7 @@ module.exports = function (grunt) {
                 "immed": false,         //Require immediate invocations to be wrapped in parens
                 "latedef": false,       //Require variables/functions to be defined before being used
                 "newcap": false,        //Require capitalization of all constructor functions
-                "noarg": true,          //Prohibit use of `arguments.caller` and `arguments.callee`
+                "noarg": false,          //Prohibit use of `arguments.caller` and `arguments.callee`
                 "noempty": true,        //Prohibit use of empty block福龙开发区英明路13号s
                 "nonbsp": true,         //Prohibit "non-breaking whitespace" characters.
                 "nonew": false,         //Prohibit use of constructors for side-effects
@@ -171,13 +172,14 @@ module.exports = function (grunt) {
                     ["babel-plugin-transform-es3-property-literals"],
                     ["babel-plugin-transform-es3-member-expression-literals"],
                     ['babel-plugin-transform-es2015-modules-umd', { "loose": true }],
+                    ["babel-plugin-transform-remove-strict-mode"]
                 ]
             },
             dist: {
                 files: {
                     // '<%= frontend %>/js/dist/BCS.js': ['<%= concat.BCSConcat.dest %>']
-                    '<%= jslib %>/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js'],
-                    '<%= jslib %>/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js'],
+                    // '<%= jslib %>/FormData.es5.js': ['<%= frontend %>/js/lib/FormData.js'],
+                    // '<%= jslib %>/sendbeacon.es5.js': ['<%= frontend %>/js/lib/sendbeacon.js'],
                     '<%= jslib %>/BCS.js': ['<%= concat.bcsjs.dest %>']
                     // '<%= frontend %>/js/lib/dialog-polyfill.es5.js': ['<%= frontend %>/js/lib/dialog-polyfill.js'],
                 }
@@ -187,7 +189,7 @@ module.exports = function (grunt) {
         uglify: {
             options: {
                 stripBanners: true,
-                mangle: {},
+                mangle: { reserved: ['require', 'exports', 'module'] },
                 ie8: true,
                 banner: '<%= banner %>'
             },
@@ -251,18 +253,30 @@ module.exports = function (grunt) {
  //压缩css
         cssmin:{
             options:{
-                stripBanners:true, //合并时允许输出头部信息
+                stripBanners:true,
                 banner:'<%= banner %>'
             },
-            build:{
-                src:'<%= csslib %>/patch.css',//压缩是要压缩合并了的
-                dest:'<%= webapp %>/css/patch.min.css' //dest 是目的地输出
+            patch:{
+                src:'<%= csslib %>/patch.css',
+                dest:'<%= webapp %>/css/patch.min.css'
+            },
+            media:{
+                src:'<%= csslib %>/media.css',
+                dest:'<%= webapp %>/css/media.min.css'
             }
         },
 /***********************************************************************************************************************
  * 复制swf
  **********************************************************************************************************************/
         copy: {
+            options:{
+                mode:true,
+                timestamp:true
+            },
+            cssMedia:{
+                src: '<%= frontend %>/css/mediaelementplayer.css',
+                dest: '<%= webapp %>/css/lib/media.css'
+            },
             swf: {
                 files: [
                     // includes files within path
@@ -326,46 +340,51 @@ module.exports = function (grunt) {
  * watch
  **********************************************************************************************************************/
         watch: {
+            options: {
+                livereload:  {
+                    port: 35729,
+                    // key: grunt.file.read('path/to/ssl.key'),
+                    // cert: grunt.file.read('path/to/ssl.crt')
+                },
+                //如果gruntfile被监控，在这个文件被修改之后，会导致监控任务重新启动。
+                reload:true,
+                // 在监视器启动时触发每个指定任务的运行
+                atBegin:true,
+                event: ['added', 'deleted'],
+                debounceDelay: 250
+            },
+            Gruntfile:{
+                files:['Gruntfile.js']
+            },
             js:{
                 files: ['<%= frontend %>/js/bcs/**/*.js'],
                 tasks: ['concat:bcsjs','jshint','babel','uglify:bcsjs'],
                 options: {
-                    livereload: true,
-                    atBegin:true
+                    event: ['added', 'deleted','changed']
                 }
             },
-            // jspatch:{
-            //     files: ['<%= frontend %>/js/patch/**/*.js'],
-            //         tasks: ['includes:jspatch','uglify:jspatch'],
-            //         options: {
-            //         livereload: true,
-            //             atBegin:true
-            //     }
-            // },
-            // css:{
-            //     files: ['<%= frontend %>/css/**/*.css'],
-            //     tasks: ['concat:css','csslint','cssmin'],
-            //     options: {
-            //         livereload: true,
-            //         atBegin:true
-            //     }
-            // },
-            // htc:{
-            //     files: ['<%= frontend %>/js/bcs/lib/**/*.htc'],
-            //     tasks: ['copy:htc'],
-            //     options: {
-            //         livereload: true,
-            //         atBegin:true
-            //     }
-            // },
-            // swf:{
-            //     files:['<%= frontend %>/swf/**/*.swf'],
-            //     tasks: ['copy:swf'],
-            //     options: {
-            //         livereload: true,
-            //         atBegin:true
-            //     }
-            // }
+            jspatch:{
+                files: ['<%= frontend %>/js/patch/**/*.js'],
+                tasks: ['includes:jspatch','uglify:jspatch']
+            },
+            cssPatch:{
+                files: ['<%= frontend %>/css/**/*.css'],
+                tasks: ['concat:css','csslint','cssmin:patch']
+            },
+            // @-ms-keyframes无法被csslint识别
+            // https://github.com/CSSLint/csslint/issues/295
+            cssMedia:{
+                files: ['<%= frontend %>/css/mediaelementplayer.css'],
+                tasks: ['copy:cssMedia','cssmin:media']
+            },
+            htc:{
+                files: ['<%= frontend %>/js/bcs/lib/**/*.htc'],
+                tasks: ['copy:htc']
+            },
+            swf:{
+                files:['<%= frontend %>/swf/**/*.swf'],
+                tasks: ['copy:swf']
+            }
         }
     })
     grunt.loadNpmTasks('grunt-includes')
@@ -379,6 +398,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-cssmin')
     grunt.loadNpmTasks('grunt-git')
     grunt.registerInitTask('default',
-        ['includes','babel','jshint','concat','uglify','watch','copy','git'])
+        ['includes','concat','babel','jshint','uglify','watch','copy'])
     grunt.registerTask('push',['gitadd','gitcommit','gitpush'])
 };

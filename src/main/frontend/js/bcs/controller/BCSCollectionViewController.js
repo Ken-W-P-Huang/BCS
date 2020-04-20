@@ -3,7 +3,7 @@
  */
 import {BCSViewController} from './BCSViewController'
 
-export function BCSCollectionViewController(element) {
-    BCSCollectionViewController.call(this,element)
+export function BCSCollectionViewController(view) {
+    BCSCollectionViewController.call(this,view)
 }
 BCSCollectionViewController.extend(BCSViewController)

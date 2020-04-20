@@ -3,7 +3,7 @@
  */
 import BCSViewController from './BCSViewController'
 import BCSToolbar from '../view/BCSToolbar'
-import BCSView1 from '../view/BCSView'
+import BCSView from '../view/BCSView'
 import BCSNavigationBar from '../view/BCSNavigationBar'
 
 
@@ -13,8 +13,8 @@ export var UINavigationControllerOperationEnum = {
     pop:'pop'
 }
 
-export function BCSNavigationController(rootViewController) {
-    BCSViewController.call(this)
+export function BCSNavigationController(rootViewController,view) {
+    BCSViewController.call(this,view)
     var toolbar = new BCSToolbar()
     this.isToolbarHidden = false
     this.toolbarItems = []
@@ -25,11 +25,11 @@ export function BCSNavigationController(rootViewController) {
     this.hidesBarsWhenVerticallyCompact = false
     var viewControllers = []
     this.delegate = null
-    var wrapperView = new BCSView1({
+    var wrapperView = new BCSView({
         width:'100%',
         height:'100%'
     })
-
+    wrapperView.setAttribute("comment","wrapperView")
     this.getNavigationBar = function () {
         return navigationBar
     }

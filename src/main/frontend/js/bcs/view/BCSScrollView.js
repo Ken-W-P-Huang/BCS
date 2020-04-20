@@ -1,7 +1,7 @@
 /**
  * Created by kenhuang on 2019/1/25.
  */
-import {BCSView,BCSView1} from './BCSView'
+import {BCSView} from './BCSView'
 import {BCSProgressView} from "./BCSProgressView";
 import {BCSEdgeInsets, BCSPoint, BCSSize} from "./BCSPoint";
 
@@ -39,7 +39,7 @@ export var BCSScrollViewContentInsetAdjustmentBehaviorEnum = {
 
 export function BCSScrollView(style,element){
     BCSView.call(this,style,element)
-    this.initProperties({
+    this.enableProtectedProperty({
         /* When contentInsetAdjustmentBehavior allows, UIScrollView may incorporate
          its safeAreaInsets into the adjustedContentInset.
         */
@@ -125,39 +125,39 @@ export function BCSScrollView(style,element){
 BCSScrollView.extend(BCSView)
 var prototype = BCSScrollView.prototype
 prototype.getContentLayoutGuide = function(){
-    return this.getPrivate('contentLayoutGuide')
+    return this.getProtected('contentLayoutGuide')
 }
 prototype.getFrameLayoutGuide = function(){
-    return this.getPrivate('frameLayoutGuide')
+    return this.getProtected('frameLayoutGuide')
 }
 prototype.getIsTracking = function(){
-    return this.getPrivate('isTracking')
+    return this.getProtected('isTracking')
 }
 prototype.getIsDragging = function(){
-    return this.getPrivate('isDragging')
+    return this.getProtected('isDragging')
 }
 prototype.getIsDecelerating = function(){
-    return this.getPrivate('isDecelerating')
+    return this.getProtected('isDecelerating')
 }
 // returns YES if user in zoom gesture
 prototype.getIsZooming = function(){
-    return this.getPrivate('isZooming')
+    return this.getProtected('isZooming')
 }
 // returns YES if we are in the middle of zooming back to the min/max value
 prototype.getIsZoomBouncing = function(){
-    return this.getPrivate('isZoomBouncing')
+    return this.getProtected('isZoomBouncing')
 }
 // Change `panGestureRecognizer.allowedTouchTypes` to limit scrolling to a particular set of touch types.
 prototype.getPanGestureRecognizer = function(){
-    return this.getPrivate('panGestureRecognizer')
+    return this.getProtected('panGestureRecognizer')
 }
 // `pinchGestureRecognizer` will return nil when zooming is disabled.
 prototype.getPinchGestureRecognizer = function(){
-    return this.getPrivate('pinchGestureRecognizer')
+    return this.getProtected('pinchGestureRecognizer')
 }
 // `directionalPressGestureRecognizer` is disabled by default, but can be enabled to perform scrolling in response to up / down / left / right arrow button presses directly, instead of scrolling indirectly in response to focus updates.
 prototype.getDirectionalPressGestureRecognizer = function(){
-    return this.getPrivate('directionalPressGestureRecognizer')
+    return this.getProtected('directionalPressGestureRecognizer')
 }
 
 prototype.adjustedContentInsetDidChange = function(){

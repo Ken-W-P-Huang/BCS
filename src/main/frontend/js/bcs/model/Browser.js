@@ -4,10 +4,10 @@
 
 import {BCSViewController} from '../controller/BCSViewController'
 import {BCSView} from '../view/BCSView'
+import {BCSWindow} from '../view/BCSWindow'
 import {Extensions} from './Extensions'
 
 function File(fullPath) {
-    'use strict'
     var name,path
     var arr = fullPath.split("/")
     name = arr[arr.length - 1]
@@ -251,11 +251,12 @@ function Browser(window) {
      * @param controllerClass
      * @param element
      */
-    this.runWith = function(controllerClass,element) {
+    this.runWith = function(controllerClass) {
         var document = window.document
         var controller
         if(typeof controllerClass === 'function'){
             document.ready(function () {
+                BCSView.prototype.window = new BCSWindow()
                 if(this.isMobile){
                     // 阻止safari双击放大
                     // document.addEventListener('touchstart',function (event) {
@@ -282,13 +283,8 @@ function Browser(window) {
                     document.body.style.cssText = "height:100%;overflow:hidden;"
                     document.getElementsByTagName('html')[0].style.cssText = "height:100%;overflow:hidden;"
                 }
-                controller = new controllerClass(element)
-                window.rootViewController = controller
-                if(!element){
-                    /* 将rootViewController的view的layer作为body的唯一满屏元素 */
-                    document.body.appendChild(controller.view.getLayer())
-                }
-                 BCSView.prototype.window = new BCSView(document.body,{position:'relative'})
+                controller = new controllerClass()
+                BCSView.prototype.window.setRootViewController(controller)
             }.bind(this))
             //http://www.w3school.com.cn/tags/html_ref_eventattributes.asp
             // https://developer.mozilla.org/zh-CN/docs/Web/API/WindowEventHandlers

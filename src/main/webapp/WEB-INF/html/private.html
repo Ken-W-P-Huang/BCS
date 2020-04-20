@@ -4,32 +4,79 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script type="text/javascript">
-        Object.prototype.enablePrivateProperty = function (Class,propertiesMap) {
-            var superGetPrivate, superSetPrivate,superInitProperties
+        /**
+         * 获取callee/caller的函数名
+         * @param 函数
+         * @returns {*}
+         */
+        Function.getName = function (func,isCallee) {
+            if(func.name){
+                return func.name
+            }
+            var _f = func.toString().replace(/[\s\?]*/g,""),
+                comb = _f.length >= 50 ? 50 :_f.length
+            _f = _f.substring(0,comb)
+            var name = _f.match(/^function([^\(]+?)\(/)
+            if(name && name[1]){
+                return name[1]
+            }
+            if(func.caller){
+                var caller = func.caller,
+                    _caller = caller.toString().replace(/[\s\?]*/g,"")
+                var last = _caller.indexOf(_f),
+                    str = _caller.substring(last-30,last)
+                name = str.match(/var([^\=]+?)\=/)
+                if(name && name[1]){
+                    return name[1]
+                }
+            }
+            var stack = new Error().stack
+            if(stack){
+                if (isCallee) {
+                    name = stack.match(/Function.getName.*\n    at (.*) \(/)
+                }else{
+                    name = stack.match(/Function.getName.*\n    at .*\n    at (.*) \(/)
+                }
+
+                if(name && name[1]){
+                    return name[1].replace('new ','').replace(/.*\./,'')
+                }
+            }
+            return "anonymous"
+        }
+        Object.prototype.enableProtectedProperty = function (Class,propertiesMap) {
+            var supergetProtected, supersetProtected,superInitProperties,self = this
             for (var key in propertiesMap) {
                 if (this.hasOwnProperty(key) ) {
                     throw new Error('Duplicate key ' + key + '.')
                 }
             }
-            if ('setPrivate' in this ) {
-                superGetPrivate = this.getPrivate
-                superSetPrivate = this.setPrivate
+            if ('setProtected' in this ) {
+                supergetProtected = this.getProtected.bind(this)
+                supersetProtected = this.setProtected.bind(this)
                 superInitProperties = this.superInitProperties
             }
-            this.setPrivate = function(key,value){
-                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
+            this.setProtected = function(key,value){
+                if (self === this &&
+                    ((this.hasOwnProperty(callerName) && callerName !== "setProtected")|| callerName === 'setValueForKey'||
+                    Class.prototype.hasOwnProperty(callerName)) &&propertiesMap.hasOwnProperty(key)) {
                     propertiesMap[key] = value
-                }else if(typeof superSetPrivate === 'function'){
-                    superSetPrivate(key,value)
+                }else if(typeof supersetProtected === 'function'){
+                    supersetProtected(key,value)
                 }else{
                     throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
                 }
             }
-            this.getPrivate = function(key){
-                if (propertiesMap.hasOwnProperty(key) && Class === this.constructor ) {
+            this.getProtected = function(key,callerName){
+                if (arguments.callee.caller !== null && !callerName) {
+                    callerName = Function.getName(arguments.callee.caller)
+                }
+                if (self === this &&
+                    ((this.hasOwnProperty(callerName) && callerName !== "getProtected")|| callerName === 'valueForKey' ||
+                    Class.prototype.hasOwnProperty(callerName)) &&propertiesMap.hasOwnProperty(key) ) {
                     return propertiesMap[key]
-                }else if(typeof superSetPrivate === 'function'){
-                    return superGet(key)
+                }else if(typeof supersetProtected === 'function'){
+                    return supergetProtected(key,callerName)
                 }else{
                     throw new Error('Class ' + this.getClass() + ' doesn\'t have a property ' + key + '.')
                 }
@@ -61,21 +108,31 @@
         }
         function Super() {
             var map = {'a':10,'super':20}
-            this.enablePrivateProperty(Super,map)
+            this.enableProtectedProperty(Super,map)
+        }
+        Super.prototype.display = function () {
+            console.log(this.getProtected('super'))
         }
         function Sub() {
             Super.apply(this)
             var map = {'a':12}
-            this.enablePrivateProperty(Sub,map)
+            this.enableProtectedProperty(Sub,map)
         }
         Sub.extend(Super)
-        var s = new Super()
+        Sub.prototype.say = function () {
+            console.log(this.getProtected('a'))
+            console.log(this.getProtected('super'))
+        }
+        var sup = new Super()
         var sub = new Sub()
 
-        console.log(s.getPrivate('a'))
-        console.log(s.getPrivate('super'))
-        console.log(sub.getPrivate('a'))
-        console.log(sub.getPrivate('super'))
+
+//        console.log(sup.getProtected('a'))
+//        console.log(sup.getProtected('super'))
+//        console.log(sub.getProtected('a'))
+        console.log(sub.display())
+        console.log(sub.say())
+//        console.log(sub.getProtected('super'))
 
     </script>
 </head>

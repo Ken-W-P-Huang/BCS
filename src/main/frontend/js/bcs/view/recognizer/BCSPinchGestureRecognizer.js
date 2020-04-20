@@ -19,7 +19,7 @@ export function BCSPinchGestureRecognizer(target,action){
         scaleDistance:0,
         lastTimestamp : 0
     }
-    this.initProperties(propertiesMap)
+    this.enableProtectedProperty(propertiesMap)
 }
 
 var pinchGestureRecognizerMap = {}
@@ -46,11 +46,11 @@ prototype.locateTouch = function (index,view) {
 }
 prototype.reset = function() {
     BCSGestureRecognizer.prototype.reset.call(this)
-    this.setPrivate('scale',1)
-    this.setPrivate('velocity',0)
-    this.setPrivate('initDistance',0)
-    this.setPrivate('scaleDistance',0)
-    this.setPrivate('lastTimestamp',0)
+    this.setProtected('scale',1)
+    this.setProtected('velocity',0)
+    this.setProtected('initDistance',0)
+    this.setProtected('scaleDistance',0)
+    this.setProtected('lastTimestamp',0)
 }
 
 
@@ -84,11 +84,11 @@ prototype.touchesBegan = function (touches, event){
         touchesNeeded.push(touches[i])
     }
     BCSGestureRecognizer.prototype.touchesBegan.call(this,touchesNeeded, event)
-    if (this.getPrivate('lastTimestamp') === 0 &&
+    if (this.getProtected('lastTimestamp') === 0 &&
         BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) === NUMBER_OF_TOUCHES_REQUIRED) {
-        this.setPrivate('initDistance',BCSGestureRecognizer.prototype.locateTouch.call(this,0,this.getView()
+        this.setProtected('initDistance',BCSGestureRecognizer.prototype.locateTouch.call(this,0,this.getView()
             .window).distanceFrom(BCSGestureRecognizer.prototype.locateTouch.call(this,1,this.getView().window)))
-        this.setPrivate('lastTimestamp',event.timeStamp)
+        this.setProtected('lastTimestamp',event.timeStamp)
     }
     if (this.state !== BCSGestureRecognizerStateEnum.BEGAN &&  this.state !== BCSGestureRecognizerStateEnum.CHANGED) {
         this.state = BCSGestureRecognizerStateEnum.POSSIBLE
@@ -99,14 +99,14 @@ prototype.touchesBegan = function (touches, event){
 }
 function calculateScaleVelocity(self) {
     var distanceAfterUpdate = 0
-    var scale = distanceAfterUpdate / self.getPrivate('scaleDistance')
-    var duration = event.timeStamp - self.getPrivate('lastTimestamp')
+    var scale = distanceAfterUpdate / self.getProtected('scaleDistance')
+    var duration = event.timeStamp - self.getProtected('lastTimestamp')
     if (duration !== 0 ) {
         //todo 不知道为何会出现duration = 0
-        self.setPrivate('velocity', (scale - self.getPrivate('scale')) / duration * 1000)
+        self.setProtected('velocity', (scale - self.getProtected('scale')) / duration * 1000)
     }
-    self.setPrivate('lastTimestamp',event.timeStamp)
-    self.setPrivate('scale',scale)
+    self.setProtected('lastTimestamp',event.timeStamp)
+    self.setProtected('scale',scale)
 }
 //抬起后scale和velocity保持不变，可以抬起一根手指后重新按下与另一根手指重新形成新手势
 prototype.touchesMoved = function (touches, event){
@@ -117,9 +117,9 @@ prototype.touchesMoved = function (touches, event){
             .distanceFrom(BCSGestureRecognizer.prototype.locateTouch.call(this,1,this.getView().window))
         switch(this.state){
             case BCSGestureRecognizerStateEnum.POSSIBLE:
-                var delta = distanceAfterUpdate - this.getPrivate('initDistance')
+                var delta = distanceAfterUpdate - this.getProtected('initDistance')
                 if (Math.abs(delta) >= defaults.pinchMinOffset ) {
-                    this.setPrivate('scaleDistance',this.getPrivate('initDistance')
+                    this.setProtected('scaleDistance',this.getProtected('initDistance')
                         + delta/Math.abs(delta) * defaults.pinchMinOffset)
                     this.state = BCSGestureRecognizerStateEnum.BEGAN
                     calculateScaleVelocity(this)

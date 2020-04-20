@@ -1,34 +1,35 @@
 /**
  * Created by kenhuang on 2019/1/26.
  */
-import {BCSView,BCSView1} from '../view/BCSView'
-export function BCSViewController(element) {
+import {BCSView} from '../view/BCSView'
+var controllerComponentName = 'controller'
+export function BCSViewController(view) {
     var propertiesMap = {
         childViewControllers : [],
         parent : null,
         presentedViewController : null,
         presentingViewController : null
     }
-    this.enablePrivateProperty(propertiesMap)
-    if(typeof element === "string" ){
-        this.view = BCSView.findViewById(element)
-    }else{
-        this.view = new BCSView({width:'100%',height:'100%'},element)
+    this.enableProtectedProperty(propertiesMap)
+    if (view && view.isKindOf(BCSView)) {
+        this.view = view
+    }else {
+        this.view = new BCSView({width:'100%',height:'100%'})
     }
-    this.view.getLayer().setAttribute('controller',this.getClass())
+    this.view.getLayer().setAttribute(controllerComponentName,this.getClass())
 }
 var prototype = BCSViewController.prototype
 prototype.getChildViewControllers = function () {
-    return this.getPrivate('childViewControllers')
+    return this.getProtected('childViewControllers')
 }
 prototype.getParent = function () {
-    return this.getPrivate('parent')
+    return this.getProtected('parent')
 }
 prototype.getPresentedViewController = function () {
-    return this.getPrivate('presentedViewController')
+    return this.getProtected('presentedViewController')
 }
 prototype.getPresentingViewController = function () {
-    return this.getPrivate('presentingViewController')
+    return this.getProtected('presentingViewController')
 }
 // 构造函数会在document.onload事件触发时调用，viewDidLoad则在window.onload事件中调用
 prototype.viewDidLoad = function () {

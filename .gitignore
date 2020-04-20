@@ -443,3 +443,6 @@ $RECYCLE.BIN/
 *.lnk
 ### Maven template
 targ
+
+node_modules/
+.idea/

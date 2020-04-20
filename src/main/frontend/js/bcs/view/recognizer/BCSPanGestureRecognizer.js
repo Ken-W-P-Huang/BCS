@@ -17,7 +17,7 @@ export function BCSPanGestureRecognizer(target,action){
         translation :new BCSPoint(0,0),
         velocity:new BCSPoint(0,0)
     }
-    this.initProperties(propertiesMap)
+    this.enableProtectedProperty(propertiesMap)
 }
 
 BCSPanGestureRecognizer.extend(BCSGestureRecognizer)
@@ -45,11 +45,11 @@ prototype.locateTouch = function (index,view) {
 }
 prototype.reset = function() {
     BCSGestureRecognizer.prototype.reset.call(this)
-    this.setPrivate('initLocation',null)
-    this.setPrivate('panLocation',null)
-    this.setPrivate('lastTimestamp',0)
-    this.setPrivate('translation',new BCSPoint(0,0))
-    this.setPrivate('velocity',new BCSPoint(0,0))
+    this.setProtected('initLocation',null)
+    this.setProtected('panLocation',null)
+    this.setProtected('lastTimestamp',0)
+    this.setProtected('translation',new BCSPoint(0,0))
+    this.setProtected('velocity',new BCSPoint(0,0))
 }
 
 prototype.shouldRequireFailureOf = function(otherGestureRecognizer){
@@ -84,21 +84,21 @@ prototype.touchesBegan = function (touches, event){
         if(number > this.maximumNumberOfTouches){
             this.state =  BCSGestureRecognizerStateEnum.FAILED
         }else if (number >= this.minimumNumberOfTouches ) {
-            this.setPrivate('initLocation',BCSGestureRecognizer.prototype.locate.call(this,this.getView().window))
-            this.setPrivate('lastTimestamp',event.timeStamp)
+            this.setProtected('initLocation',BCSGestureRecognizer.prototype.locate.call(this,this.getView().window))
+            this.setProtected('lastTimestamp',event.timeStamp)
         }
     }
 }
 
 function setTranslation(self,event,location) {
-    var duration = (event.timeStamp - self.getPrivate('lastTimestamp'))/1000,
-        deltaX = location.x - self.getPrivate('panLocation').x,
-        deltaY = location.y - self.getPrivate('panLocation').y,
-        translation = self.getPrivate('translation')
-    self.setPrivate('translation',new BCSPoint(translation.x +  deltaX,translation.y + deltaY ))
-    self.setPrivate('velocity',new BCSPoint(deltaX / duration,deltaY / duration))
-    self.setPrivate('panLocation',location)
-    self.setPrivate('lastTimestamp',event.timeStamp)
+    var duration = (event.timeStamp - self.getProtected('lastTimestamp'))/1000,
+        deltaX = location.x - self.getProtected('panLocation').x,
+        deltaY = location.y - self.getProtected('panLocation').y,
+        translation = self.getProtected('translation')
+    self.setProtected('translation',new BCSPoint(translation.x +  deltaX,translation.y + deltaY ))
+    self.setProtected('velocity',new BCSPoint(deltaX / duration,deltaY / duration))
+    self.setProtected('panLocation',location)
+    self.setProtected('lastTimestamp',event.timeStamp)
 }
 
 prototype.touchesMoved = function (touches, event){
@@ -108,26 +108,26 @@ prototype.touchesMoved = function (touches, event){
     switch(this.state){
         case BCSGestureRecognizerStateEnum.POSSIBLE:
             if (BCSGestureRecognizer.prototype.getNumberOfTouches.call(this) >= this.minimumNumberOfTouches ) {
-                delta = location.x - this.getPrivate('initLocation').x
+                delta = location.x - this.getProtected('initLocation').x
                 if (Math.abs(delta) >= defaults.panMinOffset) {
                     if (delta < 0 ) {
-                        this.setPrivate('panLocation',new BCSPoint(
-                            this.getPrivate('initLocation').x - defaults.panMinOffset,location.y))
+                        this.setProtected('panLocation',new BCSPoint(
+                            this.getProtected('initLocation').x - defaults.panMinOffset,location.y))
                     }else{
-                        this.setPrivate('panLocation',new BCSPoint(
-                            this.getPrivate('initLocation').x + defaults.panMinOffset,location.y))
+                        this.setProtected('panLocation',new BCSPoint(
+                            this.getProtected('initLocation').x + defaults.panMinOffset,location.y))
                     }
                     this.state =  BCSGestureRecognizerStateEnum.BEGAN
                     setTranslation()
                 }
-                delta = location.y - this.getPrivate('initLocation').y
+                delta = location.y - this.getProtected('initLocation').y
                 if (Math.abs(delta) >= defaults.panMinOffset) {
                     if (delta < 0 ) {
-                        this.setPrivate('panLocation',new BCSPoint(location.x,
-                            this.getPrivate('initLocation').y - defaults.panMinOffset))
+                        this.setProtected('panLocation',new BCSPoint(location.x,
+                            this.getProtected('initLocation').y - defaults.panMinOffset))
                     }else{
-                        this.setPrivate('panLocation',new BCSPoint(location.x,
-                            this.getPrivate('initLocation').y + defaults.panMinOffset))
+                        this.setProtected('panLocation',new BCSPoint(location.x,
+                            this.getProtected('initLocation').y + defaults.panMinOffset))
                     }
                     this.state =  BCSGestureRecognizerStateEnum.BEGAN
                     setTranslation()
@@ -164,15 +164,15 @@ prototype.touchesEnded = function (touches, event){
 }
 
 prototype.translation = function (view) {
-    return this.getPrivate('translation')
+    return this.getProtected('translation')
 }
 
 prototype.setTranslation = function (translation,view) {
-    this.setPrivate('translation',translation)
+    this.setProtected('translation',translation)
 }
 
 prototype.velocity = function (view) {
-    return this.getPrivate('velocity')
+    return this.getProtected('velocity')
 }
 
 

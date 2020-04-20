@@ -1,7 +1,7 @@
 /**
  * Created by kenhuang on 2019/2/16.
  */
-import {BCSView,BCSView1} from './BCSView'
+import {BCSView} from './BCSView'
 import BCSButton from './BCSButton'
 import {BCSDatePicker} from "./BCSDatePicker";
 
@@ -13,7 +13,7 @@ BCSBarButton.extend(BCSButton)
 var prototype1 = BCSBarButton.prototype
 
 export function BCSNavigationBar() {
-    BCSView1.call(this,BCSNavigationBar.style)
+    BCSView.call(this,BCSNavigationBar.style)
     this.isTranslucent = false
     this.delegate = null
 }

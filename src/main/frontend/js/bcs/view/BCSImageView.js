@@ -1,10 +1,13 @@
 /**
  * Created by kenhuang on 2019/2/16.
  */
-import {BCSView,BCSView1} from './BCSView'
+import {BCSView} from './BCSView'
 
-export function BCSImageView(style,imageSrc) {
-    BCSView1.call(this,style,'img')
+export function BCSImageView(style,imageSrc,element) {
+    if (! element) {
+        element = document.createElement('label')
+    }
+    BCSView.call(this,style,element)
     if (imageSrc) {
         this.getLayer().src = imageSrc
     }
@@ -22,6 +25,7 @@ export function BCSImageView(style,imageSrc) {
 }
 
 BCSImageView.extend(BCSView)
+BCSView.import('IMG',BCSImageView)
 var prototype = BCSImageView.prototype
 prototype.startAnimating = function () {
     

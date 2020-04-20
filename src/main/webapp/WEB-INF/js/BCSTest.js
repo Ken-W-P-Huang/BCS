@@ -6,12 +6,18 @@ function NavigationController() {
     BCSNavigationController.call(this)
     var controller = new ViewController()
     this.pushViewController(controller)
+    console.log(this.view.window.findViewById('1'))
+    console.log(this.view.window.findViewById('2'))
+    console.log(this.view.window.findViewById('3'))
+    console.log(this.view.window.findViewById('4'))
 }
 NavigationController.extend(BCSNavigationController)
 
 function ViewController(){
     BCSViewController.call(this)
     this.view.setStyle({
+        width:'100%',
+        height:'100%',
         backgroundColor:'green'
     })
     var button = new BCSButton({
@@ -31,22 +37,23 @@ function ViewController(){
     })
     label.setText('hello')
     this.view.addSubView(label)
-    button.getLayer().addEventListener('click',function () {
-       if(this.navigationController){
-           var red  = new ViewController1()
-           this.navigationController.pushViewController(red,true)
-       }
-    }.bind(this))
+    // button.getLayer().addEventListener('click',function () {
+    //    if(this.navigationController){
+    //        var red  = new ViewController1()
+    //        this.navigationController.pushViewController(red,true)
+    //    }
+    // }.bind(this))
 
-    var label1 = new BCSLabel({
-        top:'0px',
-        width:'375px',
-        height:'500px',
-        left:'0px',
-        color:'white',
-        backgroundColor:'blue'
-    })
-    this.view.addSubView(label1)
+
+    // var label1 = new BCSLabel({
+    //     top:'0px',
+    //     width:'375px',
+    //     height:'500px',
+    //     left:'0px',
+    //     color:'white',
+    //     backgroundColor:'blue'
+    // })
+    // this.view.addSubView(label1)
     // fetch('http://localhost:8080/person/data').then(function (response) {
     //     return response.text()
     // }).then(function (text) {
@@ -103,23 +110,32 @@ function ViewController(){
     // label1.addGestureRecognizer(pinchGestureRecognizer)
     // var rotateGestureRecognizer = new BCSRotationGestureRecognizer(this,this.rotate)
     // label1.addGestureRecognizer(rotateGestureRecognizer)
-    var panGestureRecognizer = new BCSPanGestureRecognizer(this,this.pan)
-    panGestureRecognizer.minimumNumberOfTouches = 2
-    label1.addGestureRecognizer(panGestureRecognizer)
+    // var panGestureRecognizer = new BCSPanGestureRecognizer(this,this.pan)
+    // panGestureRecognizer.minimumNumberOfTouches = 2
+    // label1.addGestureRecognizer(panGestureRecognizer)
+    var gestureRecognizer = new BCSTapGestureRecognizer(this,function () {
+        if(this.navigationController){
+            var red  = new ViewController1()
+            this.navigationController.pushViewController(red,true)
+        }
+    }.bind(this))
+    button.addGestureRecognizer(gestureRecognizer)
 }
 ViewController.extend(BCSViewController)
 
 function ViewController1(){
     BCSViewController.call(this)
     this.view.setStyle({
-        backgroundColor:'red'
+        backgroundColor:'blue',
+        width:'100%',
+        height:'100%'
     })
     var button = new BCSButton({
         top:'50px',
         width:'100px',
         height:'20px',
         left:'100px',
-        backgroundColor:'yellow'
+        backgroundColor:'green'
     })
     this.view.addSubView(button)
     button.getLayer().addEventListener('click',function () {
@@ -134,22 +150,33 @@ function ViewController1(){
         width:'100px',
         height:'20px',
         left:'100px',
-        backgroundColor:'gray'
+        backgroundColor:'black'
     })
     this.view.addSubView(button1)
-    button1.getLayer().addEventListener('click',function () {
+    // button1.getLayer().addEventListener('click',function () {
+    //     if(this.navigationController){
+    //         var blue  = new ViewController2()
+    //         this.navigationController.pushViewController(blue,true)
+    //     }
+    // }.bind(this))
+    var gestureRecognizer2 = new BCSTapGestureRecognizer(this,function () {
         if(this.navigationController){
             var blue  = new ViewController2()
             this.navigationController.pushViewController(blue,true)
         }
     }.bind(this))
+    gestureRecognizer2.numberOfTapsRequired = 2
+    gestureRecognizer2.name = 'hello'
+    button1.addGestureRecognizer(gestureRecognizer2)
 }
 ViewController1.extend(BCSViewController)
 
 function ViewController2(){
     BCSViewController.call(this)
     this.view.setStyle({
-        backgroundColor:'blue'
+        backgroundColor:'blue',
+        width:'100%',
+        height:'100%'
     })
     var button = new BCSButton({
         top:'50px',
@@ -168,28 +195,28 @@ function ViewController2(){
 }
 ViewController2.extend(BCSViewController)
 
-function Person() {
-    this.name ='a'
-    var b = 'b'
-    var map = new ListMap()
-    this.enableKVO(map)
-    this.getB = function () {
-        return b
-    }
-    this.setB = function (newB) {
-        b = newB
-    }
-}
-
-function Observer() {
-    this.observeValueForKey = function(object, key, oldValue, newValue){
-        console.log(key,oldValue, newValue)
-    }
-}
-
-var p = new Person()
-var o = new Observer()
-p.addObserver(o,'name')
-p.name = 'hello'
-p.removeObserver(o,'name')
+// function Person() {
+//     this.name ='a'
+//     var b = 'b'
+//     var map = new ListMap()
+//     this.enableKVO(map)
+//     this.getB = function () {
+//         return b
+//     }
+//     this.setB = function (newB) {
+//         b = newB
+//     }
+// }
+//
+// function Observer() {
+//     this.observeValueForKey = function(object, key, oldValue, newValue){
+//         console.log(key,oldValue, newValue)
+//     }
+// }
+//
+// var p = new Person()
+// var o = new Observer()
+// p.addObserver(o,'name')
+// p.name = 'hello'
+// p.removeObserver(o,'name')
 browser.runWith(NavigationController)

@@ -2,8 +2,8 @@
  * Created by kenhuang on 2019/2/19.
  */
 (function (window,document) {
-// http://vinc.top/2017/02/09/jsonp%E5%AF%BC%E8%87%B4%E7%9A%84%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/
     /**
+     * http://vinc.top/2017/02/09/jsonp%E5%AF%BC%E8%87%B4%E7%9A%84%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/
      * jsonpCallback:链接指定回调函数所用的参数名。如果不指定，则默认使用callback的值
      * jsonpCallbackFunction:用户自定义函数名，该函数必须为window的属性，在生成的随机函数callbackFunction中被调用
      */
